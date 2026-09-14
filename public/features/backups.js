@@ -52,7 +52,7 @@ export function createBackups(c) {
     $('#restoreV2').onclick = () => {
       modal(
         '恢复分块加密备份',
-        '<p>先完整校验，再追加恢复；现有日记不会被覆盖。</p><input type="file" id="v2File" class="field" accept=".syvault2"><input type="password" id="v2RestorePassword" class="field" placeholder="备份密码"><button class="primary" id="runV2Restore">校验并恢复</button><p id="v2RestoreStatus" role="status"></p>',
+        '<p>先完整校验，再追加恢复；现有日记不会被覆盖。</p><input type="file" id="v2File" class="field" accept=".syvault2"><input type="password" id="v2RestorePassword" class="field" placeholder="备份密码"><label class="check-row"><input type="checkbox" id="restoreAppearance">同时恢复备份中的主题、背景和折叠设置</label><button class="primary" id="runV2Restore">校验并恢复</button><p id="v2RestoreStatus" role="status"></p>',
       );
       $('#runV2Restore').onclick = async () => {
         const f = $('#v2File').files[0],
@@ -71,6 +71,7 @@ export function createBackups(c) {
             passwordField.value,
             (n, total) =>
               (status.textContent = `解密校验 ${(n / 1048576).toFixed(1)} / ${(total / 1048576).toFixed(1)} MB`),
+            { restoreAppearance: $('#restoreAppearance').checked },
           );
           await c.refreshLibrary();
           c.renderView();

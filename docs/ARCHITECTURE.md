@@ -42,3 +42,7 @@ flowchart LR
 ## 暂时保留的技术限制
 
 工作库仍是整体 JSON，保存会复制与重写整个库；分块备份解决大附件处理，不能消除大元数据的内存成本。新旧两套备份协议并存；删除旧入口前必须考虑已有文件的恢复。富文本仍使用浏览器编辑命令，未来替换编辑器需兼容旧 HTML 和历史记录。界面视觉整体重做、增量同步和数据库升级属于后续独立变更。
+
+## 0.5 装配与隔离
+
+appearance、layout、context-menu 在 features/index 显式安装，各自管理界面状态与 CSS。entry-actions 通过主协调器 withLibraryMutation 等待草稿保存，暂时禁止编辑区输入，按目标 ID 与 revision 写入并刷新。背景复用媒体与加密备份底层，不新建第二套文件加密协议。appearance-compat 仅在服务创建时兼容旧背景，保留原件。样式新增三层放在 theme-print 后，新增背景规则显式排除打印。

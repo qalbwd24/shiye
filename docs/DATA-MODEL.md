@@ -49,3 +49,12 @@ Android `createTime` → 新 `date`；`recordTime` → 新 `createdAt`。分类�
 ## 将来进行结构迁移
 
 先复制工作库并校验原件，迁移在隔离目录运行；每个版本有明确输入schema、输出schema、默认值与失败回退。验证记录数、ID唯一性、分类、日期、未知字段、媒体哈希和历史关联。全部通过后再切换正式数据位置。当前0.3.0结构整理没有对工作库执行schema迁移。
+
+## 0.5.0 向后兼容扩展
+
+- 顶层可选 tags:string[] 用于保存尚未附到日记上的独立标签；显示与 entries[].tags 取并集。
+- media[].purpose=background 标记外观图片；文件仍是 media/id，MIME 按文件签名识别。相册与日记统计仍只计算日记实际引用的媒体。
+- settings.preferences.appearance={accent,backgrounds:[{region,id,opacity,fill,position}]}；region 为 app/sidebar/list/editor/topbar，opacity 为 0–1，fill 为 cover/contain/tile，position 为 center/top/bottom/left/right。
+- settings.preferences.layout={categories,tags,list}，布尔值 true 表示折叠。兼容读取旧 shiye.collapsed 浏览器偏好，首次切换后保存到库。
+- 首次升级复制第四版被引用的 data/backgrounds 图片到 media 并登记引用；旧文件保留，缺失原件不编造。
+- .syvault2 仍使用相同加密协议。恢复请求可选 restoreAppearance:true；仅此时恢复 theme、appearance、layout，并映射背景 ID。默认保留当前偏好。旧 .syvault 设置恢复行为不变。

@@ -73,9 +73,8 @@ function renderSide() {
         `<button class="category-item ${category === c ? 'active' : ''}" data-category="${escape(c)}"><span class="category-dot" style="--dot:${colors[i % colors.length]}"></span>${escape(c)}<span class="count">${live.filter((e) => e.category === c).length}</span></button>`,
     )
     .join('');
-  const tags = [...new Set(live.flatMap((e) => e.tags))];
+  const tags = [...new Set([...(library.tags || []), ...live.flatMap((e) => e.tags)])];
   $('#tagCloud').innerHTML = tags
-    .slice(0, 12)
     .map(
       (t) =>
         `<button class="${t === tag ? 'active' : ''}" data-tag="${escape(t)}"># ${escape(t)}</button>`,
@@ -278,9 +277,19 @@ async function selectEntry(id) {
   renderList();
   renderEditor();
 }
-async function newEntry(date = new Date()) {
+async function withLibraryMutation(action) {
+  const editor = $('#editorPanel');
+  editor.inert = true;
+  try {
+    await flush();
+    return await action();
+  } finally {
+    editor.inert = false;
+  }
+}
+async function newEntry(date = new Date(), initial = {}) {
   await flush();
-  const chosenCategory = category || '日常';
+  const chosenCategory = initial.category || category || '日常';
   if (offline?.prefs().nightYesterday && date.getHours() < 4) date.setDate(date.getDate() - 1);
   const boundTemplate = library.templates?.find((t) => !t.deleted && t.category === chosenCategory);
   view = 'all';
@@ -296,7 +305,7 @@ async function newEntry(date = new Date()) {
       content: boundTemplate?.content || (offline?.prefs().autoIndent ? '　　' : ''),
       date: date.toISOString(),
       category: chosenCategory,
-      tags: [],
+      tags: initial.tags || [],
       attachments: [],
       weather: '',
       mood: '',
@@ -316,6 +325,16 @@ async function changeView(next) {
   category = null;
   tag = null;
   day = null;
+  renderView();
+}
+async function filterView({ category: cat = null, tag: t = null } = {}) {
+  await flush();
+  view = 'all';
+  category = cat;
+  tag = t;
+  day = null;
+  query = '';
+  $('#search').value = '';
   renderView();
 }
 function renderView() {
@@ -436,6 +455,7 @@ function renderAlternate() {
   }
 }
 function modal(title, html) {
+  $('#modal').dispatchEvent(new Event('modalreplace'));
   $('#modalTitle').textContent = title;
   $('#modalBody').innerHTML = html;
   icons($('#modalBody'));
@@ -1033,6 +1053,10 @@ offline = installOffline({
   upload,
   download,
   legacyBackups: backups,
+  selectEntry,
+  newEntry,
+  filterView,
+  withLibraryMutation,
 });
 async function unlockGate() {
   const access = await api('/api/access');

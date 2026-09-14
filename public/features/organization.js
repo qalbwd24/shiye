@@ -12,7 +12,7 @@ export function createOrganization(c) {
       ($('#taxFrom').innerHTML = (
         $('#taxKind').value === 'category'
           ? c.library.categories
-          : [...new Set(c.library.entries.flatMap((e) => e.tags))]
+          : [...new Set([...(c.library.tags || []), ...c.library.entries.flatMap((e) => e.tags)])]
       )
         .map((v) => `<option>${esc(v)}</option>`)
         .join(''));

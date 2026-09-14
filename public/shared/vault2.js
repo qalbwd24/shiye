@@ -154,7 +154,13 @@ export async function createBackup(api, password, progress) {
     throw e;
   }
 }
-export async function restoreBackup(api, file, password, progress) {
+export async function restoreBackup(
+  api,
+  file,
+  password,
+  progress,
+  { restoreAppearance = false } = {},
+) {
   let read,
     manifest,
     job,
@@ -172,7 +178,10 @@ export async function restoreBackup(api, file, password, progress) {
       if (payload.kind === 'manifest') {
         if (manifest) throw Error('重复备份目录');
         manifest = payload;
-        job = await api('/api/restore-jobs', { method: 'POST', data: manifest });
+        job = await api('/api/restore-jobs', {
+          method: 'POST',
+          data: { ...manifest, restoreAppearance },
+        });
       } else if (payload.kind === 'file') {
         if (!job) throw Error('缺少备份目录');
         const data = fromBase64(payload.data);

@@ -26,3 +26,14 @@
 表中 features、core、shared 相对于 public；domain、routes、imports、storage、security 相对于 src/server；测试文件相对于 tests。
 
 定位建议：先按表找到模块，再搜索接口路径或命令ID。新增功能更新本表；原安卓特色功能的兼容进度仍以项目上级 research 中的“离线功能对照与验收”报告为依据，避免在不同文档里写出相互矛盾的完成状态。
+
+## 0.5 新增模块
+
+| 功能           | 前端                                                                         | 后端                                                 | 验证                      |
+| -------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------- |
+| 背景与主题     | features/appearance.js、shared/appearance.js、styles/appearance.css          | routes/appearance.mjs、storage/appearance-compat.mjs | appearance.test.mjs、界面 |
+| 右键操作       | features/context-menu.js、features/entry-actions.js、styles/context-menu.css | 复用 entries、organization                           | appearance.test.mjs、界面 |
+| 折叠           | features/layout.js、styles/layout.css                                        | preferences.layout                                   | appearance.test.mjs、界面 |
+| 背景随备份恢复 | features/backups.js、shared/vault2.js                                        | routes/backups.mjs                                   | vault2-roundtrip.test.mjs |
+
+右键菜单只负责交互与提示，entry-actions 负责带 revision 的库操作；不通过 markDirty 修改删除状态。背景不使用日记附件列表显示。

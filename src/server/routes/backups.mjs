@@ -1,4 +1,5 @@
 import { LIMITS } from '../../../public/shared/limits.js';
+import { normalizeAppearance, normalizeLayout } from '../../../public/shared/appearance.js';
 import { promises as fs, createReadStream } from 'node:fs';
 import path from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
@@ -201,7 +202,13 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
           if (!files.has(folder + '/' + item.id)) throw fail(400, '备份目录缺少附件');
       await fs.mkdir(dir, { recursive: true });
       for (const f of files.values()) await fs.writeFile(f.path, '', { flag: 'wx' });
-      restores.set(id, { dir, lib, files, busy: false });
+      restores.set(id, {
+        dir,
+        lib,
+        files,
+        busy: false,
+        restoreAppearance: manifest.restoreAppearance === true,
+      });
       reply(res, 201, { id });
       return true;
     }
@@ -283,12 +290,39 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
               : 'application/octet-stream',
           })),
           imports = lib.imports.map((m) => ({ ...m, id: remap.get('originals/' + m.id) }));
+        const preferences = {};
+        if (job.restoreAppearance) {
+          const source = lib.settings?.preferences || {};
+          try {
+            if (source.appearance) {
+              preferences.appearance = normalizeAppearance(source.appearance);
+              preferences.appearance.backgrounds = preferences.appearance.backgrounds.map((b) => {
+                const id = remap.get('media/' + b.id);
+                if (!id || !lib.media.some((m) => m.id === b.id && m.purpose === 'background'))
+                  throw Error('备份中缺少背景图片');
+                return { ...b, id };
+              });
+            }
+            if (source.layout) preferences.layout = normalizeLayout(source.layout);
+            if (['light', 'dark', 'system'].includes(source.theme))
+              preferences.theme = source.theme;
+          } catch (e) {
+            throw fail(400, e.message);
+          }
+        }
         for (const [key, f] of job.files)
           await fs.copyFile(f.path, path.join(dataDir, f.folder, remap.get(key)));
         await mutate((d) => {
           d.entries.push(...entries);
           d.media.push(...media);
           d.imports.push(...imports);
+          d.tags = [
+            ...new Set([
+              ...(d.tags || []),
+              ...(Array.isArray(lib.tags) ? lib.tags.filter((t) => typeof t === 'string') : []),
+            ]),
+          ];
+          d.settings.preferences = { ...d.settings.preferences, ...preferences };
           d.categories = [
             ...new Set([...d.categories, ...lib.categories.filter((c) => typeof c === 'string')]),
           ];

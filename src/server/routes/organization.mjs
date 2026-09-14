@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { normalizeAppearance, normalizeLayout } from '../../../public/shared/appearance.js';
 export function offlineRoutes({ mutate, body, reply, fail }) {
   return async (req, res, p) => {
     if (p === '/api/preferences' && req.method === 'PUT') {
@@ -30,6 +31,12 @@ export function offlineRoutes({ mutate, body, reply, fail }) {
           if (value !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value))
             throw fail(400, '提醒时间错误');
           next[key] = value;
+        } else if (key === 'appearance' || key === 'layout') {
+          try {
+            next[key] = key === 'appearance' ? normalizeAppearance(value) : normalizeLayout(value);
+          } catch (e) {
+            throw fail(400, e.message);
+          }
         } else if (!allowed[key]?.includes(value)) throw fail(400, '设置值不正确');
         else next[key] = value;
       }
@@ -37,6 +44,10 @@ export function offlineRoutes({ mutate, body, reply, fail }) {
         res,
         200,
         await mutate((d) => {
+          for (const b of next.appearance?.backgrounds || []) {
+            if (!d.media.some((m) => m.id === b.id && m.purpose === 'background'))
+              throw fail(400, '背景图片不存在，请重新选择');
+          }
           d.settings.preferences = { ...d.settings.preferences, ...next };
           return d.settings.preferences;
         }),
@@ -47,7 +58,7 @@ export function offlineRoutes({ mutate, body, reply, fail }) {
       const v = JSON.parse(await body(req));
       if (
         !['category', 'tag'].includes(v.kind) ||
-        !['rename', 'remove', 'merge'].includes(v.action) ||
+        !['create', 'rename', 'remove', 'merge'].includes(v.action) ||
         typeof v.from !== 'string' ||
         typeof v.to !== 'string'
       )
@@ -58,6 +69,12 @@ export function offlineRoutes({ mutate, body, reply, fail }) {
         res,
         200,
         await mutate((d) => {
+          d.tags ||= [];
+          if (v.action === 'create') {
+            const list = v.kind === 'category' ? d.categories : d.tags;
+            if (!list.includes(target)) list.push(target);
+            return { updated: true };
+          }
           for (const e of d.entries) {
             const before = structuredClone(e);
             let changed = false;
@@ -81,6 +98,20 @@ export function offlineRoutes({ mutate, body, reply, fail }) {
           if (v.kind === 'category') {
             d.categories = d.categories.filter((c) => c !== v.from);
             if (!d.categories.includes(target || '未分类')) d.categories.push(target || '未分类');
+            for (const template of d.templates || [])
+              if (template.category === v.from) template.category = target;
+            const prefs = d.settings?.preferences;
+            if (prefs?.memoryCategories)
+              prefs.memoryCategories = [
+                ...new Set(
+                  prefs.memoryCategories.flatMap((c) =>
+                    c === v.from ? (target ? [target] : []) : [c],
+                  ),
+                ),
+              ];
+          } else {
+            d.tags = d.tags.filter((t) => t !== v.from);
+            if (target && !d.tags.includes(target)) d.tags.push(target);
           }
           return { updated: true };
         }),

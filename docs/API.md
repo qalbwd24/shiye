@@ -61,3 +61,10 @@
 更新时先GET库取得日记完整对象，修改所需字段，携带原revision执行PUT。删除是同样的PUT将deleted设为true；恢复设为false。当前不提供永久删除日记或自动清除所有未引用媒体的接口。
 
 完整备份协议由 public/shared/vault2.js 驱动；调用方必须验证结束记录，不能只收到部分文件就提交恢复。服务器不知道备份密码，不能代替客户端验证AES认证标签。
+
+## 0.5.0 接口扩展
+
+- POST /api/backgrounds：图片原始字节，X-File-Name 为 URL 编码文件名；20 MiB 上限，签名识别 PNG/JPEG/WebP/GIF。返回 media 元数据，purpose=background，使用现有 GET /media/:id 读取。
+- PUT /api/preferences：支持 appearance 和 layout，服务端规范化且核对背景归属；错误不写入部分设置。
+- POST /api/taxonomy：action 新增 create；kind=tag 可创建独立标签。rename/merge 同步分类模板与回忆筛选，remove 不删除日记。
+- POST /api/restore-jobs：原 manifest 之外可带 restoreAppearance:true，经过整包校验后应用外观；不传则保留本机偏好。

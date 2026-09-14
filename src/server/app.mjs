@@ -11,11 +11,14 @@ import { createRoutes as legacyRoutes } from './routes/legacy-backups.mjs';
 import { createRoutes as entryRoutes } from './routes/entries.mjs';
 import { createRoutes as mediaRoutes } from './routes/media.mjs';
 import { staticRoute } from './routes/static.mjs';
+import { createAppearanceRoutes } from './routes/appearance.mjs';
+import { preserveOldBackgrounds } from './storage/appearance-compat.mjs';
 
 /** Composition root: construct storage and explicit route factories once per server. */
 export async function createDiaryServer({ dataDir = DEFAULT_DATA_DIR, seed = true } = {}) {
   const store = await createLibraryStore({ dataDir, seed });
   const context = { dataDir, ...store, body, reply, fail };
+  await preserveOldBackgrounds(context);
   const security = await localSecurity(context);
   const routes = [
     backupStore(context),
@@ -25,6 +28,7 @@ export async function createDiaryServer({ dataDir = DEFAULT_DATA_DIR, seed = tru
     legacyRoutes(context),
     entryRoutes(context),
     mediaRoutes(context),
+    createAppearanceRoutes(context),
     staticRoute,
   ];
   const server = http.createServer(async (req, res) => {

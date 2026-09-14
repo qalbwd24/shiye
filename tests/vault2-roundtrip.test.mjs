@@ -55,9 +55,33 @@ test('compressed encrypted archive restores multiple chunks; truncated archive c
       },
     });
   await api('/api/entries/' + entry.id, { method: 'PUT', data: { ...entry, title: '新标题' } });
+  const background = await api('/api/backgrounds', {
+    method: 'POST',
+    raw: Buffer.from('GIF89a-test'),
+    headers: { 'Content-Type': 'image/gif' },
+  });
+  const appearance = {
+    accent: '#8066b5',
+    backgrounds: [
+      { id: background.id, region: 'app', opacity: 0.3, fill: 'cover', position: 'center' },
+    ],
+  };
+  await api('/api/preferences', {
+    method: 'PUT',
+    data: { appearance, theme: 'dark', layout: { list: true } },
+  });
   const saved = await createBackup(api, 'synthetic-test-backup-123', () => {}),
-    raw = await fs.readFile(saved.path),
-    result = await restoreBackup(api, new Blob([raw]), 'synthetic-test-backup-123', () => {});
+    raw = await fs.readFile(saved.path);
+  await api('/api/preferences', {
+    method: 'PUT',
+    data: {
+      appearance: { accent: '#05a6b2', backgrounds: [] },
+      theme: 'light',
+      layout: { list: false },
+    },
+  });
+  const result = await restoreBackup(api, new Blob([raw]), 'synthetic-test-backup-123', () => {});
+  assert.equal((await api('/api/library')).settings.preferences.theme, 'light');
   assert.equal(result.entries, 1);
   const db = await api('/api/library'),
     restored = db.entries.find((e) => e.id !== entry.id);
@@ -85,4 +109,15 @@ test('compressed encrypted archive restores multiple chunks; truncated archive c
     restoreBackup(api, new Blob([raw]), 'incorrect-password-123', () => {}),
   );
   assert.equal((await api('/api/library')).entries.length, 2);
+  await restoreBackup(api, new Blob([raw]), 'synthetic-test-backup-123', () => {}, {
+    restoreAppearance: true,
+  });
+  const restoredPrefs = (await api('/api/library')).settings.preferences;
+  assert.equal(restoredPrefs.theme, 'dark');
+  assert.equal(restoredPrefs.layout.list, true);
+  assert.notEqual(restoredPrefs.appearance.backgrounds[0].id, background.id);
+  assert.equal(
+    await (await fetch('/media/' + restoredPrefs.appearance.backgrounds[0].id)).text(),
+    'GIF89a-test',
+  );
 });

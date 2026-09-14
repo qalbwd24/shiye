@@ -1,4 +1,7 @@
 import { createPreferences } from './preferences.js';
+import { createAppearance } from './appearance.js';
+import { createLayout } from './layout.js';
+import { createContextMenu } from './context-menu.js';
 import { createSearch } from './search.js';
 import { createInsights } from './insights.js';
 import { createOrganization } from './organization.js';
@@ -9,7 +12,14 @@ import { createExport } from './export.js';
 import { createBackups } from './backups.js';
 export function installOffline(c) {
   const { $, modal, closeModal, toast, command } = c;
-  const { apply, preference, prefs, settings, lock } = createPreferences(c);
+  const { apply: applyPreferences, preference, prefs, settings, lock } = createPreferences(c);
+  const appearance = createAppearance(c);
+  const layout = createLayout(c);
+  const apply = () => {
+    applyPreferences();
+    appearance.apply();
+    layout.apply();
+  };
   const { advancedSearch, filter } = createSearch(c);
   const { render } = createInsights(c, { prefs, preference });
   const { manage } = createOrganization(c);
@@ -17,6 +27,7 @@ export function installOffline(c) {
   const { toggle, markdown } = createEditorTools(c);
   const { recording, draw, speak } = createMediaTools(c);
   const { exportMenu } = createExport(c);
+  createContextMenu(c, { exportMenu });
   const { backupsV2 } = createBackups(c);
   const button = (name, fn, parent = $('.bottom-actions')) => {
     const b = document.createElement('button');
@@ -29,6 +40,7 @@ export function installOffline(c) {
     return b;
   };
   button('功能设置', settings);
+  button('外观与背景', appearance.settings);
   button('分类管理', manage);
   button('完整备份', backupsV2);
   button('锁定', lock);

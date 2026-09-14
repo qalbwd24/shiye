@@ -8,7 +8,7 @@
   </head>
   <body>
     <div id="app">
-      <aside class="sidebar">
+      <aside class="sidebar" data-bg-region="sidebar">
         <a class="brand" href="/" aria-label="拾页首页"
           ><span class="brand-mark">页</span><span>拾页<small>把日子，收进书里</small></span></a
         >
@@ -32,8 +32,16 @@
             <span data-icon="chart"></span>记录统计
           </button>
         </nav>
-        <div class="section-label">
-          我的分类
+        <div class="section-label" id="section-categories-head">
+          <button
+            type="button"
+            class="section-toggle"
+            data-fold="categories"
+            aria-controls="categories"
+            aria-expanded="true"
+          >
+            <span class="fold-caret" aria-hidden="true">⌄</span>我的分类
+          </button>
           <button
             id="addCategory"
             class="icon-button"
@@ -42,7 +50,17 @@
           ></button>
         </div>
         <div id="categories"></div>
-        <div class="section-label tags-label">常用标签</div>
+        <div class="section-label tags-label" id="section-tags-head">
+          <button
+            type="button"
+            class="section-toggle"
+            data-fold="tags"
+            aria-controls="tagCloud"
+            aria-expanded="true"
+          >
+            <span class="fold-caret" aria-hidden="true">⌄</span>常用标签</button
+          ><button id="addTag" class="icon-button" aria-label="添加标签" data-icon="plus"></button>
+        </div>
         <div id="tagCloud" class="tag-cloud"></div>
         <div class="sidebar-bottom">
           <button id="cloudStatus" class="local-status">
@@ -63,7 +81,7 @@
         </div>
       </aside>
       <main class="workspace">
-        <header class="topbar">
+        <header class="topbar" data-bg-region="topbar">
           <div>
             <span class="eyebrow">每一页，都是生活</span>
             <h1 id="viewTitle">我的日记<span class="heading-dot">.</span></h1>
@@ -85,8 +103,18 @@
           </div>
         </header>
         <section id="journalView" class="journal-view">
-          <section class="entry-panel">
+          <section class="entry-panel" id="entryPanel" data-bg-region="list">
             <div class="list-heading">
+              <button
+                id="listFold"
+                class="icon-button"
+                type="button"
+                aria-label="折叠日记列表"
+                aria-controls="entryList"
+                aria-expanded="true"
+              >
+                ‹
+              </button>
               <span id="listSubtitle">最近的记录</span
               ><button
                 id="sortButton"
@@ -99,7 +127,7 @@
             <div id="entryList" class="entry-list"></div>
             <div class="list-footer">生活里的小事，也值得被记住。</div>
           </section>
-          <section class="editor-panel" id="editorPanel">
+          <section class="editor-panel" id="editorPanel" data-bg-region="editor">
             <div id="editorEmpty" class="empty hidden">
               <span data-icon="book"></span>
               <h2>为今天，留下一页</h2>

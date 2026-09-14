@@ -15,6 +15,10 @@
  * @property {()=>void} renderEditor Render the current editor.
  * @property {(entry:Entry)=>void} markDirty Queue an entry for automatic persistence.
  * @property {(view:string)=>Promise<void>} changeView Change the active view.
+ * @property {(opts:{category?:string,tag?:string})=>Promise<void>} filterView Filter the list by category or tag.
+ * @property {(id:string)=>Promise<void>} selectEntry Open an entry in the editor.
+ * @property {(date?:Date,initial?:{category?:string,tags?:string[]})=>Promise<void>} newEntry Create a new diary entry.
+ * @property {(action:()=>Promise<any>)=>Promise<any>} withLibraryMutation Flush drafts and hold editor input while mutating and refreshing the library.
  * @property {()=>Entry[]} filtered Current filtered entry collection.
  * @property {(title:string,html:string)=>void} modal Open the shared dialog.
  * @property {()=>void} closeModal Close the dialog.

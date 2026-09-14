@@ -21,7 +21,7 @@ export function createExport(c) {
       )
       .join('')}</html>`;
   }
-  async function exportMenu() {
+  async function exportMenu(entryId = null) {
     await c.flush();
     modal(
       '本地导出',
@@ -29,7 +29,7 @@ export function createExport(c) {
     );
     const entries = () =>
       $('#exportScope').value === 'current'
-        ? [c.current()].filter(Boolean)
+        ? [entryId ? c.library.entries.find((e) => e.id === entryId) : c.current()].filter(Boolean)
         : $('#exportScope').value === 'visible'
           ? c.filtered()
           : c.library.entries.filter((e) => !e.deleted && !e.draft && !isHidden(e));
@@ -73,7 +73,7 @@ export function createExport(c) {
       Promise.all(imgs.map((img) => img.decode().catch(() => {}))).then(() => window.print());
     };
     $('#exportPng').onclick = () => {
-      const e = c.current();
+      const e = entryId ? c.library.entries.find((e) => e.id === entryId) : c.current();
       if (!e) return;
       const canvas = document.createElement('canvas'),
         ctx = canvas.getContext('2d'),

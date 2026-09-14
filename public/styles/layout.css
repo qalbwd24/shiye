@@ -1,0 +1,78 @@
+/* Section controls stay outside their collapsed content. */
+[hidden] {
+  display: none !important;
+}
+.section-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 0;
+  text-align: left;
+  color: inherit;
+}
+.fold-caret {
+  font-size: 17px;
+  width: 10px;
+}
+#categories {
+  max-height: 27vh;
+  overflow: auto;
+  flex-shrink: 0;
+}
+.tag-cloud {
+  flex-shrink: 0;
+}
+.sidebar {
+  overflow-y: auto;
+}
+.bottom-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+.bottom-actions button {
+  padding: 7px 4px;
+  border-radius: 5px;
+  font-size: 11px;
+}
+.bottom-actions button:hover {
+  background: var(--mint);
+  color: var(--accent-ink);
+}
+.list-heading {
+  gap: 8px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+#listSubtitle {
+  flex: 1;
+}
+#listFold {
+  flex-shrink: 0;
+  font-size: 22px;
+}
+.entry-panel.list-collapsed {
+  width: 48px;
+}
+.entry-panel.list-collapsed :is(#entryList, .list-footer, #listSubtitle, #sortButton) {
+  display: none;
+}
+.entry-panel.list-collapsed .list-heading {
+  padding: 15px 8px;
+}
+@media (max-width: 650px) {
+  .entry-panel.list-collapsed {
+    width: 100%;
+  }
+  .entry-panel.list-collapsed :is(#entryList, #listSubtitle) {
+    display: block;
+  }
+  #listFold {
+    display: none;
+  }
+}
+@media (max-width: 850px) {
+  .bottom-actions {
+    grid-template-columns: 1fr;
+  }
+}

@@ -9,6 +9,7 @@ export const LIMITS = Object.freeze({
   archiveMembers: 100000,
   metadataBytes: 64 * MiB,
   mediaUploadBytes: 16 * GiB,
+  backgroundBytes: 20 * MiB,
   vaultChunkBytes: 2 * MiB,
   vaultRecordBytes: 32 * MiB,
   recordingBytes: 100 * MiB,

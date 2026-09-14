@@ -7,3 +7,6 @@
 @import url('./styles/shortcuts.css');
 @import url('./styles/features.css');
 @import url('./styles/theme-print.css');
+@import url('./styles/appearance.css');
+@import url('./styles/context-menu.css');
+@import url('./styles/layout.css');
