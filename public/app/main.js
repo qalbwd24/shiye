@@ -1,3 +1,7 @@
+import { createPersistence } from '../editor/persistence.js';
+import { createMediaImport } from '../features/media-import.js';
+import { sortedTaxonomy } from '../shared/taxonomy.js';
+import { createEditorCommands } from '../editor/commands.js';
 import { createLegacyBackups } from '../features/legacy-backups.js';
 import { download } from '../core/downloads.js';
 import { LIMITS } from '../shared/limits.js';
@@ -32,17 +36,41 @@ let library = { entries: [], categories: [], media: [], imports: [] },
   day = null,
   ascending = false,
   query = '',
-  timer,
-  saveQueue = Promise.resolve(),
-  saving = 0,
-  range = null,
   calendarDate = new Date();
-const dirty = new Map(),
-  versions = new Map();
 let listLimit = LIMITS.pageEntries;
 let recordingShortcut = null,
   shortcutQuery = '';
 const shortcuts = () => library.settings?.shortcuts || {};
+
+const persistence = createPersistence({
+  api,
+  sanitize,
+  status,
+  toast,
+  current,
+  onDirty: countWords,
+  onSaved() {
+    renderList();
+    renderSide();
+  },
+});
+const { markDirty, flush } = persistence;
+const editorCommands = createEditorCommands({ $, sanitize, current, markDirty });
+const { command } = editorCommands;
+
+const mediaImport = createMediaImport({
+  $,
+  escape,
+  toast,
+  current,
+  get library() {
+    return library;
+  },
+  markDirty,
+  flush,
+  renderAttachments,
+});
+const { upload } = mediaImport;
 
 function toast(message) {
   $('#toast').textContent = message;
@@ -67,13 +95,14 @@ function renderSide() {
   const live = library.entries.filter((e) => !e.deleted && !e.draft && !isHidden(e));
   $('#allCount').textContent = live.length;
   const colors = ['#72b8b7', '#b8a4cc', '#d1b67f', '#8fadcd', '#c49c96'];
-  $('#categories').innerHTML = library.categories
+  $('#categories').innerHTML = sortedTaxonomy(library, 'category')
+    .map((i) => i.name)
     .map(
       (c, i) =>
         `<button class="category-item ${category === c ? 'active' : ''}" data-category="${escape(c)}"><span class="category-dot" style="--dot:${colors[i % colors.length]}"></span>${escape(c)}<span class="count">${live.filter((e) => e.category === c).length}</span></button>`,
     )
     .join('');
-  const tags = [...new Set([...(library.tags || []), ...live.flatMap((e) => e.tags)])];
+  const tags = sortedTaxonomy(library, 'tag').map((i) => i.name);
   $('#tagCloud').innerHTML = tags
     .map(
       (t) =>
@@ -132,7 +161,7 @@ function renderList() {
         month = m;
         return (
           heading +
-          `<button class="entry-card ${e.id === selected ? 'active' : ''}" data-entry="${e.id}"><div class="card-date"><strong>${String(d.getDate()).padStart(2, '0')}</strong>${d.toLocaleDateString('zh-CN', { weekday: 'short' })} · ${timeText(d)}<span class="card-weather">${escape(e.weather)}</span></div><h3>${escape(e.title || '无标题日记')}</h3>${offline?.prefs().showPreview === false ? '' : `<p>${escape(textOf(e.content) || '留一点空间，给今天的故事。')}</p>`}<div class="card-bottom"><span class="small-chip">${escape(e.category)}</span>${e.tags[0] ? `<span># ${escape(e.tags[0])}</span>` : ''}${e.pinned ? icon('pin') : e.attachments.length ? icon('image') : ''}</div></button>`
+          `<button class="entry-card ${e.id === selected ? 'active' : ''}" data-entry="${e.id}"><div class="card-date"><strong>${String(d.getDate()).padStart(2, '0')}</strong>${d.toLocaleDateString('zh-CN', { weekday: 'short' })} · ${timeText(d)}<span class="card-weather">${escape(e.weather)}</span></div><h3>${escape(e.title || '无标题日记')}</h3>${offline?.prefs().showPreview === false ? '' : `<p>${escape(textOf(e.content) || '留一点空间，给今天的故事。')}</p>`}<div class="card-bottom"><span class="small-chip">${escape(e.category)}</span>${e.tags[0] ? `<span># ${escape(e.tags[0])}</span>` : ''}${e.pinned ? icon('pin') : e.attachments.length ? icon('image') : ''}${(library.conflicts || []).some((item) => item.kind === 'entry' && item.status === 'open' && [item.left, item.right].includes(e.id)) ? '<span class="conflict-badge">待核对</span>' : ''}</div></button>`
         );
       })
       .join('') || '<div class="empty-list">这里还没有记录<br>换个关键词，或写下新的一页。</div>';
@@ -186,7 +215,7 @@ function renderEditor() {
   status(e.deleted ? '在回收站 · 可恢复' : '已保存到本地');
   countWords();
   renderAttachments();
-  range = null;
+  editorCommands.resetSelection();
   for (const id of [
     'entryTitle',
     'entryDate',
@@ -228,47 +257,7 @@ function renderAttachments() {
 }
 function countWords() {
   $('#wordCount').textContent =
-    textOf($('#bodyEditor').innerHTML).replace(/\s/g, '').length + ' 字';
-}
-function markDirty(e = current()) {
-  if (!e || e.deleted) return;
-  dirty.set(e.id, e);
-  versions.set(e.id, (versions.get(e.id) || 0) + 1);
-  status('正在保存…');
-  clearTimeout(timer);
-  timer = setTimeout(() => flush().catch(() => {}), 450);
-  countWords();
-}
-async function flush() {
-  clearTimeout(timer);
-  const task = saveQueue.then(async () => {
-    for (const [id, e] of dirty) {
-      const version = versions.get(id);
-      saving++;
-      try {
-        const saved = await api('/api/entries/' + id, {
-          method: 'PUT',
-          data: { ...e, content: sanitize(e.content) },
-        });
-        e.revision = saved.revision;
-        e.history = saved.history;
-        e.updatedAt = saved.updatedAt;
-        if (versions.get(id) === version) dirty.delete(id);
-        if (selected === id) status(dirty.has(id) ? '正在保存…' : '已保存到本地');
-      } catch (err) {
-        if (selected === id) status('保存失败 · 内容仍在此页', true);
-        toast(err.message);
-        throw err;
-      } finally {
-        saving--;
-      }
-    }
-    renderList();
-    renderSide();
-  });
-  saveQueue = task.catch(() => {});
-  await task;
-  if (dirty.size) return flush();
+    Array.from(textOf($('#bodyEditor').innerHTML).replace(/\s/g, '')).length + ' 字';
 }
 async function selectEntry(id) {
   await flush();
@@ -348,6 +337,8 @@ function renderView() {
     gallery: '相册',
     memories: '拾光回顾',
     stats: '记录统计',
+    organization: '分类与标签',
+    conflicts: '重复与冲突',
     recall: '往日此时',
     places: '地点',
     drafts: '草稿箱',
@@ -465,66 +456,10 @@ function closeModal() {
   recordingShortcut = null;
   $('#modal').close();
 }
-function recoverRange() {
-  const editor = $('#bodyEditor');
-  editor.focus();
-  const s = getSelection();
-  if (range && editor.contains(range.commonAncestorContainer)) {
-    s.removeAllRanges();
-    s.addRange(range);
-  } else {
-    const r = document.createRange();
-    r.selectNodeContents(editor);
-    r.collapse(false);
-    s.removeAllRanges();
-    s.addRange(r);
-  }
-}
-function command(cmd, value) {
-  if (!current() || current().deleted) return;
-  recoverRange();
-  document.execCommand(cmd, false, value);
-  current().content = sanitize($('#bodyEditor').innerHTML);
-  markDirty();
-}
 function insertDate() {
   const d = new Date();
   command('insertText', dateText(d) + ' ' + timeText(d));
 }
-async function upload(files, targetEntry = null) {
-  const entry = targetEntry || current();
-  if (!entry || entry.deleted) {
-    toast('请先选择或新建一篇日记');
-    return;
-  }
-  const id = entry.id;
-  let added = 0,
-    failed = 0;
-  for (const file of files) {
-    try {
-      toast('正在加入 ' + file.name);
-      const media = await api('/api/media', {
-        method: 'POST',
-        raw: file,
-        headers: {
-          'Content-Type': file.type || 'application/octet-stream',
-          'X-File-Name': encodeURIComponent(file.name),
-        },
-      });
-      library.media.push(media);
-      entry.attachments.push(media.id);
-      added++;
-      markDirty(entry);
-      if (selected === id) renderAttachments();
-    } catch (e) {
-      failed++;
-      toast(e.message);
-    }
-  }
-  await flush();
-  if (added) toast(`已保存 ${added} 个媒体文件${failed ? '，' + failed + ' 个失败' : ''}`);
-}
-
 function showHistory() {
   const e = current();
   if (!e) return;
@@ -770,7 +705,7 @@ function bind() {
     }
   });
   $('#bodyEditor').addEventListener('compositionstart', () => {
-    clearTimeout(timer);
+    persistence.pause();
   });
   $('#bodyEditor').addEventListener('compositionend', () => {
     if (current()) {
@@ -819,11 +754,7 @@ function bind() {
   $('#insertDateTime').onclick = insertDate;
   $('#indentButton').onclick = () => command('insertText', '　　');
   $('#templateButton').onclick = () => offline.templates();
-  document.addEventListener('selectionchange', () => {
-    const s = getSelection();
-    if (s.rangeCount && $('#bodyEditor').contains(s.anchorNode))
-      range = s.getRangeAt(0).cloneRange();
-  });
+  document.addEventListener('selectionchange', editorCommands.captureSelection);
   $('#bodyEditor').onpaste = (e) => {
     const files = [...e.clipboardData.files];
     if (files.length) {
@@ -835,22 +766,14 @@ function bind() {
     }
   };
   $('#chooseMedia').onclick = () => $('#mediaInput').click();
+  const queueButton = document.createElement('button');
+  queueButton.className = 'secondary';
+  queueButton.textContent = '上传队列';
+  queueButton.onclick = mediaImport.show;
+  $('#chooseMedia').after(queueButton);
   $('#mediaInput').onchange = (e) => {
     upload([...e.target.files]).catch((e) => toast(e.message));
     e.target.value = '';
-  };
-  $('#editorPanel').ondragover = (e) => {
-    e.preventDefault();
-    $('#editorPanel').classList.add('dragging');
-  };
-  $('#editorPanel').ondragleave = (e) => {
-    if (!$('#editorPanel').contains(e.relatedTarget))
-      $('#editorPanel').classList.remove('dragging');
-  };
-  $('#editorPanel').ondrop = (e) => {
-    e.preventDefault();
-    $('#editorPanel').classList.remove('dragging');
-    upload([...e.dataTransfer.files]).catch((e) => toast(e.message));
   };
   $('#attachments').onclick = (e) => {
     const b = e.target.closest('[data-remove-media]');
@@ -991,13 +914,13 @@ function bind() {
     true,
   );
   window.addEventListener('beforeunload', (e) => {
-    if (dirty.size || saving) {
+    if (persistence.pending) {
       e.preventDefault();
       e.returnValue = '';
     }
   });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden && dirty.size) flush().catch(() => {});
+    if (document.hidden && persistence.pending) flush().catch(() => {});
   });
   window.addEventListener('unhandledrejection', (e) => {
     toast(e.reason?.message || '操作没有完成');

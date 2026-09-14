@@ -1,5 +1,5 @@
 import { fail } from '../http.mjs';
-export function validateEntry(v, db) {
+export function validateEntry(v, db, previous = null) {
   if (
     !v ||
     typeof v.title !== 'string' ||
@@ -38,7 +38,8 @@ export function validateEntry(v, db) {
     mood: String(v.mood || '').slice(0, 30),
     weather: String(v.weather || '').slice(0, 30),
     location: String(v.location || '').slice(0, 100),
-    hidden: !!v.hidden,
+    hidden:
+      v.hidden === undefined ? !!(previous?.hidden ?? previous?.legacy?.isHidden) : !!v.hidden,
     draft: !!v.draft,
     pinned: !!v.pinned,
     deleted: !!v.deleted,

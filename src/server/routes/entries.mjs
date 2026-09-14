@@ -46,7 +46,11 @@ export function createRoutes({ getDb, mutate, body, reply, fail }) {
     const match = p.match(/^\/api\/entries\/([a-f0-9-]+)$/);
     if (match && req.method === 'PUT') {
       const input = JSON.parse((await body(req)).toString('utf8')),
-        v = validateEntry(input, db);
+        v = validateEntry(
+          input,
+          db,
+          db.entries.find((e) => e.id === match[1]),
+        );
       return reply(
         res,
         200,

@@ -43,11 +43,11 @@ test('media bytes, range playback and full encrypted bundle restore', async (t) 
   const decrypted = await decryptVault(encrypted, 'testing-password-not-real-123');
   assert.deepEqual(decrypted, bundle);
   const restored = await (await request('/api/restore', 'POST', decrypted)).json();
-  assert.equal(restored.entries, 1);
+  assert.equal(restored.entries, 0);
+  assert.equal(restored.mergedEntries, 1);
   const lib = await (await request('/api/library')).json();
-  assert.equal(lib.entries.length, 2);
-  assert.notEqual(lib.entries[0].id, lib.entries[1].id);
-  const newMedia = lib.entries[1].attachments[0];
+  assert.equal(lib.entries.length, 1);
+  const newMedia = lib.entries[0].attachments[0];
   assert.deepEqual(
     Buffer.from(await (await fetch(base + '/media/' + newMedia)).arrayBuffer()),
     bytes,

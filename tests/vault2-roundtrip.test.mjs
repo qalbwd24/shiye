@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createDiaryServer } from '../server.mjs';
 import { createBackup, restoreBackup } from '../public/shared/vault2.js';
+import { fixture } from './helpers.mjs';
 test('compressed encrypted archive restores multiple chunks; truncated archive commits nothing', async (t) => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'diary-vault2-test-')),
     server = await createDiaryServer({ dataDir: dir, seed: false });
@@ -82,9 +83,11 @@ test('compressed encrypted archive restores multiple chunks; truncated archive c
   });
   const result = await restoreBackup(api, new Blob([raw]), 'synthetic-test-backup-123', () => {});
   assert.equal((await api('/api/library')).settings.preferences.theme, 'light');
-  assert.equal(result.entries, 1);
+  assert.equal(result.entries, 0);
+  assert.equal(result.mergedEntries, 1);
+  assert.equal(result.mergedMedia, 2);
   const db = await api('/api/library'),
-    restored = db.entries.find((e) => e.id !== entry.id);
+    restored = db.entries.find((e) => e.id === entry.id);
   assert.equal(restored.title, '新标题');
   assert.equal(restored.history[0].title, '分块测试');
   assert.equal(restored.history[0].attachments[0], restored.attachments[0]);
@@ -103,21 +106,36 @@ test('compressed encrypted archive restores multiple chunks; truncated archive c
       ),
     /截断/,
   );
-  assert.equal((await api('/api/library')).entries.length, 2);
+  assert.equal((await api('/api/library')).entries.length, 1);
   assert.equal((await fs.readdir(path.join(dir, 'restore-staging'))).length, 0);
   await assert.rejects(() =>
     restoreBackup(api, new Blob([raw]), 'incorrect-password-123', () => {}),
   );
-  assert.equal((await api('/api/library')).entries.length, 2);
+  assert.equal((await api('/api/library')).entries.length, 1);
   await restoreBackup(api, new Blob([raw]), 'synthetic-test-backup-123', () => {}, {
     restoreAppearance: true,
   });
   const restoredPrefs = (await api('/api/library')).settings.preferences;
   assert.equal(restoredPrefs.theme, 'dark');
   assert.equal(restoredPrefs.layout.list, true);
-  assert.notEqual(restoredPrefs.appearance.backgrounds[0].id, background.id);
+  assert.equal(restoredPrefs.appearance.backgrounds[0].id, background.id);
   assert.equal(
     await (await fetch('/media/' + restoredPrefs.appearance.backgrounds[0].id)).text(),
     'GIF89a-test',
   );
+  const empty = await fixture(t);
+  globalThis.fetch = (url, opt) => native(new URL(url, empty.base), opt);
+  const fresh = await restoreBackup(api, new Blob([raw]), 'synthetic-test-backup-123', () => {}, {
+    restoreAppearance: true,
+  });
+  assert.equal(fresh.entries, 1);
+  assert.equal(fresh.mergedEntries, 0);
+  const freshDb = await api('/api/library');
+  assert.notEqual(freshDb.entries[0].id, entry.id);
+  assert.equal(freshDb.entries[0].history[0].attachments[0], freshDb.entries[0].attachments[0]);
+  assert.deepEqual(
+    Buffer.from(await (await fetch('/media/' + freshDb.entries[0].attachments[0])).arrayBuffer()),
+    bytes,
+  );
+  assert.notEqual(freshDb.settings.preferences.appearance.backgrounds[0].id, background.id);
 });

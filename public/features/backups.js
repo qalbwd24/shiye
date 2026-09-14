@@ -76,7 +76,7 @@ export function createBackups(c) {
           await c.refreshLibrary();
           c.renderView();
           passwordField.value = '';
-          status.textContent = `已追加恢复 ${result.entries} 篇日记、${result.media} 个附件。`;
+          status.textContent = `已追加恢复 ${result.entries} 篇日记、${result.media} 个附件；合并 ${result.mergedEntries || 0} 篇相同日记、${result.mergedMedia || 0} 个相同附件，${result.conflicts || 0} 项差异请到“冲突管理”核对。`;
         } catch (e) {
           status.textContent = '没有恢复：' + e.message;
         } finally {

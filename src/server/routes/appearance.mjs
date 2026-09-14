@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { imageType } from '../../../public/shared/appearance.js';
 import { LIMITS } from '../../../public/shared/limits.js';
 
@@ -19,7 +19,14 @@ export function createAppearanceRoutes({ dataDir, mutate, reply, fail, body }) {
     } catch {
       throw fail(400, '文件名格式错误');
     }
-    const item = { id, name, type, size: bytes.length, purpose: 'background' };
+    const item = {
+      id,
+      name,
+      type,
+      size: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+      purpose: 'background',
+    };
     await fs.writeFile(file, bytes, { flag: 'wx' });
     try {
       await mutate((d) => {

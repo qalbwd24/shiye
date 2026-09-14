@@ -46,3 +46,7 @@ flowchart LR
 ## 0.5 装配与隔离
 
 appearance、layout、context-menu 在 features/index 显式安装，各自管理界面状态与 CSS。entry-actions 通过主协调器 withLibraryMutation 等待草稿保存，暂时禁止编辑区输入，按目标 ID 与 revision 写入并刷新。背景复用媒体与加密备份底层，不新建第二套文件加密协议。appearance-compat 仅在服务创建时兼容旧背景，保留原件。样式新增三层放在 theme-print 后，新增背景规则显式排除打印。
+
+## 0.6 结构
+
+编辑核心现在在 public/editor 下独立管理；统计纯函数在 shared/statistics.js，周期回忆在 shared/recall.js；分类、模板和偏好分别使用各自后端路由。上传交互、冲突比较各为独立功能模块。完整职责表见 ITERATION-0.6.md。app/main.js 仍负责页面导航、列表、日历等组合流程，不代表所有界面都已拆成独立包。

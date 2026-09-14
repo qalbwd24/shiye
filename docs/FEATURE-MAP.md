@@ -37,3 +37,21 @@
 | 背景随备份恢复 | features/backups.js、shared/vault2.js                                        | routes/backups.mjs                                   | vault2-roundtrip.test.mjs |
 
 右键菜单只负责交互与提示，entry-actions 负责带 revision 的库操作；不通过 markDirty 修改删除状态。背景不使用日记附件列表显示。
+
+## 0.6 模块细分与兼容状态
+
+当前完整对照见 [原版功能核对](FEATURE-PARITY.md)，模块职责见 [0.6 工作交接](ITERATION-0.6.md)。这是后续功能增删的首要索引。
+
+| 功能               | 前端                                           | 后端／共享逻辑                                         | 测试                                        |
+| ------------------ | ---------------------------------------------- | ------------------------------------------------------ | ------------------------------------------- |
+| 文本编辑、保存     | editor/commands.js、content.js、persistence.js | domain/entries.mjs、routes/entries.mjs                 | feature-boundaries、entries                 |
+| 分类和标签管理页   | features/organization.js                       | routes/taxonomy.mjs、shared/taxonomy.js                | feature-boundaries                          |
+| 模板               | features/templates.js                          | routes/templates.mjs                                   | entries、imports                            |
+| 偏好               | features/preferences.js                        | routes/preferences.mjs                                 | entries、appearance                         |
+| 统计               | features/statistics.js                         | shared/statistics.js                                   | insights                                    |
+| 周期回忆           | features/insights.js                           | shared/recall.js、entry-state.js                       | insights                                    |
+| 上传反馈和文件落区 | features/media-import.js、core/api.js          | routes/media.mjs                                       | feature-boundaries、界面                    |
+| 去重与冲突管理     | features/conflicts.js                          | domain/import-reconciliation.mjs、routes/conflicts.mjs | feature-boundaries、vault、vault2-roundtrip |
+| 旧元信息修复       | shared/legacy-content.js                       | storage/legacy-metadata.mjs、media-hashes.mjs          | feature-boundaries                          |
+
+上表替代旧表对应模块路径。旧转发模块保留以兼容引用，不再承担业务逻辑。

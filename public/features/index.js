@@ -1,3 +1,4 @@
+import { createConflicts } from './conflicts.js';
 import { createPreferences } from './preferences.js';
 import { createAppearance } from './appearance.js';
 import { createLayout } from './layout.js';
@@ -21,8 +22,11 @@ export function installOffline(c) {
     layout.apply();
   };
   const { advancedSearch, filter } = createSearch(c);
-  const { render } = createInsights(c, { prefs, preference });
-  const { manage } = createOrganization(c);
+  const { render: renderInsights } = createInsights(c, { prefs, preference });
+  const { manage, render: renderOrganization } = createOrganization(c);
+  const conflicts = createConflicts(c);
+  const render = (view, root) =>
+    conflicts.render(view, root) || renderOrganization(view, root) || renderInsights(view, root);
   const { templates } = createTemplates(c);
   const { toggle, markdown } = createEditorTools(c);
   const { recording, draw, speak } = createMediaTools(c);
@@ -42,6 +46,7 @@ export function installOffline(c) {
   button('功能设置', settings);
   button('外观与背景', appearance.settings);
   button('分类管理', manage);
+  button('冲突管理', conflicts.manage);
   button('完整备份', backupsV2);
   button('锁定', lock);
   button('导出', exportMenu);

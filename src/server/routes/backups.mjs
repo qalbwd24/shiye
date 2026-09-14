@@ -1,3 +1,4 @@
+import { reconcileImport, reconcileArchives } from '../domain/import-reconciliation.mjs';
 import { LIMITS } from '../../../public/shared/limits.js';
 import { normalizeAppearance, normalizeLayout } from '../../../public/shared/appearance.js';
 import { promises as fs, createReadStream } from 'node:fs';
@@ -283,6 +284,7 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
         const media = lib.media.map((m) => ({
             ...m,
             id: remap.get('media/' + m.id),
+            sha256: job.files.get('media/' + m.id).sha256,
             type: /^(image\/(png|jpeg|webp|gif|avif)|video\/(mp4|webm|quicktime)|audio\/(mpeg|mp4|ogg|wav|x-wav|webm|aac))$/.test(
               m.type,
             )
@@ -312,10 +314,36 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
         }
         for (const [key, f] of job.files)
           await fs.copyFile(f.path, path.join(dataDir, f.folder, remap.get(key)));
+        let reconciliation;
         await mutate((d) => {
-          d.entries.push(...entries);
-          d.media.push(...media);
-          d.imports.push(...imports);
+          const result = reconcileImport(d, { entries, media });
+          reconciliation = result.report;
+          if (preferences.appearance)
+            for (const bg of preferences.appearance.backgrounds)
+              bg.id = result.mediaMap.get(bg.id) || bg.id;
+          const oldEntryMap = new Map(
+            lib.entries.map((old, i) => [old.id, result.entryMap.get(entries[i].id)]),
+          );
+          for (const old of lib.conflicts || []) {
+            const lookup = (id) =>
+              old.kind === 'entry'
+                ? oldEntryMap.get(id)
+                : result.mediaMap.get(remap.get('media/' + id)) || remap.get('media/' + id);
+            const left = lookup(old.left),
+              right = lookup(old.right);
+            if (
+              left &&
+              right &&
+              left !== right &&
+              !(d.conflicts || []).some(
+                (c) => c.kind === old.kind && c.left === left && c.right === right,
+              )
+            ) {
+              d.conflicts ||= [];
+              d.conflicts.push({ ...old, id: randomUUID(), left, right });
+            }
+          }
+          reconciliation.redundantOriginals = reconcileArchives(d, imports);
           d.tags = [
             ...new Set([
               ...(d.tags || []),
@@ -333,9 +361,15 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
               .map((t) => ({ ...t, id: randomUUID() })),
           ];
         });
+        for (const id of reconciliation.redundantMedia)
+          await fs.unlink(path.join(dataDir, 'media', id)).catch(() => {});
+        for (const id of reconciliation.redundantOriginals)
+          await fs.unlink(path.join(dataDir, 'originals', id)).catch(() => {});
+        delete reconciliation.redundantOriginals;
+        delete reconciliation.redundantMedia;
         await cleanup(job);
         restores.delete(id);
-        reply(res, 200, { entries: entries.length, media: media.length });
+        reply(res, 200, reconciliation);
         return true;
       } finally {
         job.busy = false;

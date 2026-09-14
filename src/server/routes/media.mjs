@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { addConflict } from '../domain/import-reconciliation.mjs';
 import { LIMITS } from '../../../public/shared/limits.js';
 import { promises as fs, createReadStream } from 'node:fs';
 import path from 'node:path';
@@ -17,10 +19,12 @@ export function createRoutes({ dataDir, getDb, mutate, reply, fail }) {
       const id = randomUUID(),
         pending = path.join(dataDir, 'media', id + '.uploading'),
         out = await fs.open(pending, 'wx');
+      const hash = createHash('sha256');
       let size = 0;
       try {
         for await (const chunk of req) {
           size += chunk.length;
+          hash.update(chunk);
           if (size > LIMITS.mediaUploadBytes) throw fail(413, '单个媒体超过 16 GB');
           await out.writeFile(chunk);
         }
@@ -36,10 +40,20 @@ export function createRoutes({ dataDir, getDb, mutate, reply, fail }) {
       }
       await fs.rename(pending, path.join(dataDir, 'media', id));
       const name = decodeURIComponent(req.headers['x-file-name'] || '附件').slice(0, 250);
-      const item = { id, name, type: mime, size };
+      let item = { id, name, type: mime, size, sha256: hash.digest('hex') };
       await mutate((d) => {
+        const duplicate = d.media.find(
+          (m) => !m.purpose && m.sha256 === item.sha256 && m.size === size && m.type === mime,
+        );
+        if (duplicate) {
+          item = duplicate;
+          return;
+        }
+        for (const old of d.media.filter((m) => !m.purpose && m.name === name))
+          addConflict(d, 'media', old.id, id, 'same-name');
         d.media.push(item);
       });
+      if (item.id !== id) await fs.unlink(path.join(dataDir, 'media', id));
       return reply(res, 201, item);
     }
     if (p.startsWith('/media/') && req.method === 'GET') {

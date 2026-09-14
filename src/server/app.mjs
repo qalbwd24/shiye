@@ -1,11 +1,16 @@
+import { createRoutes as conflictRoutes } from './routes/conflicts.mjs';
 import http from 'node:http';
+import { preserveLegacyMetadata } from './storage/legacy-metadata.mjs';
+import { ensureMediaHashes } from './storage/media-hashes.mjs';
 import { APP, VERSION, DEFAULT_DATA_DIR } from './config.mjs';
 import { body, reply, fail, guardRequest, replyError } from './http.mjs';
 import { createLibraryStore } from './storage/library-store.mjs';
 import { localSecurity } from './security/access.mjs';
 import { backupStore } from './routes/backups.mjs';
 import { largeImporter } from './routes/imports.mjs';
-import { offlineRoutes } from './routes/organization.mjs';
+import { createRoutes as preferenceRoutes } from './routes/preferences.mjs';
+import { createRoutes as taxonomyRoutes } from './routes/taxonomy.mjs';
+import { createRoutes as templateRoutes } from './routes/templates.mjs';
 import { createRoutes as settingsRoutes } from './routes/settings.mjs';
 import { createRoutes as legacyRoutes } from './routes/legacy-backups.mjs';
 import { createRoutes as entryRoutes } from './routes/entries.mjs';
@@ -19,11 +24,16 @@ export async function createDiaryServer({ dataDir = DEFAULT_DATA_DIR, seed = tru
   const store = await createLibraryStore({ dataDir, seed });
   const context = { dataDir, ...store, body, reply, fail };
   await preserveOldBackgrounds(context);
+  await preserveLegacyMetadata(context);
+  await ensureMediaHashes(context);
   const security = await localSecurity(context);
   const routes = [
     backupStore(context),
     largeImporter(context),
-    offlineRoutes(context),
+    preferenceRoutes(context),
+    taxonomyRoutes(context),
+    conflictRoutes(context),
+    templateRoutes(context),
     settingsRoutes(context),
     legacyRoutes(context),
     entryRoutes(context),

@@ -76,7 +76,7 @@ export function createLegacyBackups(c) {
           renderView();
           $('#restorePassword').value = '';
           $('#restoreMessage').textContent =
-            `已追加恢复 ${result.entries} 篇日记、${result.media} 个媒体文件。`;
+            `已追加恢复 ${result.entries} 篇日记、${result.media} 个媒体文件；合并 ${result.mergedEntries || 0} 篇相同日记、${result.mergedMedia || 0} 个相同附件，${result.conflicts || 0} 项差异请到“冲突管理”核对。`;
         } catch (e) {
           $('#restoreMessage').textContent = e.message;
         } finally {
@@ -109,7 +109,7 @@ export function createLegacyBackups(c) {
           await refreshLibrary();
           renderView();
           $('#importMessage').textContent =
-            `已导入 ${r.entries} 篇日记，保留 ${r.media} 个媒体文件；${r.unresolved} 项引用未匹配。${r.formatting}`;
+            `已导入 ${r.entries} 篇日记，保留 ${r.media} 个媒体文件；${r.unresolved} 项引用未匹配。${r.formatting} 合并 ${r.mergedEntries || 0} 篇相同日记、${r.mergedMedia || 0} 个相同媒体，${r.conflicts || 0} 项差异请到“冲突管理”核对。`;
         } catch (e) {
           $('#importMessage').textContent = e.message;
         } finally {

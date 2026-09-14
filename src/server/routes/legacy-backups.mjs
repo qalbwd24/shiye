@@ -1,3 +1,4 @@
+import { reconcileImport, reconcileArchives } from '../domain/import-reconciliation.mjs';
 import { LIMITS } from '../../../public/shared/limits.js';
 import { promises as fs, createReadStream } from 'node:fs';
 import path from 'node:path';
@@ -41,11 +42,16 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
       await fs.writeFile(path.join(dataDir, 'originals', imported.archive.id), raw, { flag: 'wx' });
       for (const m of imported.media)
         await fs.writeFile(path.join(dataDir, 'media', m.id), m.data, { flag: 'wx' });
+      let reconciliation;
       await mutate((d) => {
         if (d.imports.some((a) => a.sha256 === hash)) throw fail(409, '这个备份已导入');
         d.imports.push(imported.archive);
-        d.entries.push(...imported.entries);
-        d.media.push(...imported.media.map(({ data, ...m }) => m));
+        reconciliation = reconcileImport(d, {
+          entries: imported.entries,
+          media: imported.media.map(({ data, sourcePath, ...m }) => m),
+        }).report;
+        d.templates.push(...(imported.templates || []));
+        d.tags = [...new Set([...(d.tags || []), ...(imported.tags || [])])];
         d.categories = [
           ...new Set([
             ...d.categories,
@@ -54,6 +60,10 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
           ]),
         ];
       });
+      for (const id of reconciliation.redundantMedia)
+        await fs.unlink(path.join(dataDir, 'media', id)).catch(() => {});
+      Object.assign(imported.report, reconciliation);
+      delete imported.report.redundantMedia;
       return reply(res, 200, imported.report);
     }
     if (p.startsWith('/api/original/') && req.method === 'GET') {
@@ -100,6 +110,7 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
       const media = lib.media.map((m) => ({
         ...m,
         id: remap.get('media' + m.id),
+        sha256: bundle.files.find((f) => f.folder === 'media' && f.id === m.id).sha256,
         type: /^(image\/(png|jpeg|webp|gif|avif)|video\/(mp4|webm|quicktime)|audio\/(mpeg|mp4|ogg|wav|x-wav|webm|aac))$/.test(
           m.type,
         )
@@ -120,7 +131,7 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
           throw fail(400, '备份日记缺少附件');
         const m = structuredClone(e);
         m.id = randomUUID();
-        m.title = db.entries.some((old) => old.id === e.id) ? e.title + '（恢复副本）' : e.title;
+        m.title = e.title;
         m.attachments = e.attachments.map((id) => remap.get('media' + id));
         m.revision = 1;
         m.history = (e.history || []).map((h) => ({
@@ -138,19 +149,49 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
       const imports = lib.imports.map((a) => ({ ...a, id: remap.get('originals' + a.id) }));
       for (const f of writes)
         await fs.writeFile(path.join(dataDir, f.folder, f.id), f.data, { flag: 'wx' });
+      let reconciliation;
       await mutate((d) => {
         d.templates = [
           ...(d.templates || []),
           ...(lib.templates || []).map((t) => ({ ...t, id: randomUUID() })),
         ];
-        d.entries.push(...entries);
-        d.media.push(...media);
-        d.imports.push(...imports);
+        const result = reconcileImport(d, { entries, media });
+        reconciliation = result.report;
+        const entryIds = new Map(
+          lib.entries.map((e, i) => [e.id, result.entryMap.get(entries[i].id)]),
+        );
+        for (const old of lib.conflicts || []) {
+          const lookup = (id) =>
+            old.kind === 'entry'
+              ? entryIds.get(id)
+              : result.mediaMap.get(remap.get('media' + id)) || remap.get('media' + id);
+          const left = lookup(old.left),
+            right = lookup(old.right);
+          if (
+            left &&
+            right &&
+            left !== right &&
+            !(d.conflicts || []).some(
+              (c) => c.kind === old.kind && c.left === left && c.right === right,
+            )
+          ) {
+            d.conflicts ||= [];
+            d.conflicts.push({ ...old, id: randomUUID(), left, right });
+          }
+        }
+        d.tags = [...new Set([...(d.tags || []), ...(lib.tags || [])])];
+        reconciliation.redundantOriginals = reconcileArchives(d, imports);
         d.categories = [
           ...new Set([...d.categories, ...lib.categories.filter((c) => typeof c === 'string')]),
         ];
       });
-      return reply(res, 200, { entries: entries.length, media: media.length });
+      for (const id of reconciliation.redundantMedia)
+        await fs.unlink(path.join(dataDir, 'media', id)).catch(() => {});
+      for (const id of reconciliation.redundantOriginals)
+        await fs.unlink(path.join(dataDir, 'originals', id)).catch(() => {});
+      delete reconciliation.redundantOriginals;
+      delete reconciliation.redundantMedia;
+      return reply(res, 200, reconciliation);
     }
     if (p === '/api/export' && req.method === 'GET') {
       res.setHeader('Content-Disposition', 'attachment; filename="diary-library.json"');

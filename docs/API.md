@@ -68,3 +68,13 @@
 - PUT /api/preferences：支持 appearance 和 layout，服务端规范化且核对背景归属；错误不写入部分设置。
 - POST /api/taxonomy：action 新增 create；kind=tag 可创建独立标签。rename/merge 同步分类模板与回忆筛选，remove 不删除日记。
 - POST /api/restore-jobs：原 manifest 之外可带 restoreAppearance:true，经过整包校验后应用外观；不传则保留本机偏好。
+
+## 0.6 新增接口
+
+- `PUT /api/taxonomy/order`：`{kind:"category"|"tag", order:string[]}`，必须包含该类型完整、不重复的名称集合；过期顺序返回409；保存后该类型切换到手动排序。
+- `PUT /api/preferences`：增加 categorySort/tagSort，值 manual/name/count。
+- `PUT /api/conflicts/:id`：`{choice:"both"|"left"|"right", title?:string, leftRevision?:number, rightRevision?:number}`；title 可修改导入侧名称；日记冲突要求两边 revision 匹配。结果进入 conflicts 处理记录。
+- 旧导入和加密恢复响应新增 mergedEntries、mergedMedia、conflicts。entries/media 表示实际新增量。
+- 普通媒体上传返回的 ID 可能是已有相同文件的 ID，客户端必须按 ID 去重，不得重复追加附件。
+
+规则详见 IMPORT-CONFLICTS.md。

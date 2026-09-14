@@ -1,3 +1,4 @@
+import { legacyMood } from '../../../public/shared/legacy-content.js';
 import { marked } from '../../../public/vendor/marked.js';
 import { createDecipheriv, createHash, randomUUID } from 'node:crypto';
 import { inflateRawSync } from 'node:zlib';
@@ -271,6 +272,10 @@ export async function decodeLegacy(raw, name = 'backup', options = {}) {
               .split(/\r?\n/)
               .map((s) => '<p>' + esc(s) + '</p>')
               .join(''),
+      ...(Number(e.contentType) === 1
+        ? { markdownSource: originalContent, markdownHtml: marked.parse(originalContent) }
+        : {}),
+      hidden: !!e.isHidden,
       date: dateOf(e.createTime) || dateOf(e.recordTime) || now,
       createdAt: dateOf(e.recordTime) || dateOf(e.createTime) || now,
       updatedAt: dateOf(e.updateTime) || now,
@@ -283,7 +288,7 @@ export async function decodeLegacy(raw, name = 'backup', options = {}) {
       attachments: [...new Set(attachments)],
       history: [],
       weather: String(e.weather ?? ''),
-      mood: String(e.mood ?? ''),
+      mood: String(e.mood ?? legacyMood(e.m)),
       location: String(e.address || e.city || ''),
       pinned: !!e.top,
       deleted: !!e.deleted,
@@ -307,6 +312,7 @@ export async function decodeLegacy(raw, name = 'backup', options = {}) {
         ? marked.parse(String(t.content || ''))
         : '<p>' + esc(t.content || '') + '</p>',
     category: '',
+    deleted: !!t.isDelete,
     legacy: t,
   }));
   return {
@@ -314,6 +320,9 @@ export async function decodeLegacy(raw, name = 'backup', options = {}) {
     entries,
     media,
     templates,
+    tags: tags
+      .filter((t) => !t.isDeleted && !t.isDelete)
+      .map((t) => lookup(tags, t.uuid ?? t.id ?? t.name)),
     categories: cats.map((c) => String(c.name || c.title || c.uuid || '未分类')),
     archive: {
       id: randomUUID(),

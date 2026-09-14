@@ -1,3 +1,4 @@
+import { reconcileImport } from '../domain/import-reconciliation.mjs';
 import { LIMITS } from '../../../public/shared/limits.js';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
@@ -85,11 +86,15 @@ export function largeImporter({ dataDir, getDb, mutate, reply, fail }) {
         if (media.sourcePath) await fs.copyFile(media.sourcePath, dest, fs.constants.COPYFILE_EXCL);
         else await fs.writeFile(dest, media.data, { flag: 'wx' });
       }
+      let reconciliation;
       await mutate((d) => {
         if (d.imports.some((a) => a.sha256 === job.hash)) throw fail(409, '这份备份已导入');
         d.imports.push(imported.archive);
-        d.entries.push(...imported.entries);
-        d.media.push(...imported.media.map(({ data, sourcePath, ...m }) => m));
+        reconciliation = reconcileImport(d, {
+          entries: imported.entries,
+          media: imported.media.map(({ data, sourcePath, ...m }) => m),
+        }).report;
+        d.tags = [...new Set([...(d.tags || []), ...(imported.tags || [])])];
         d.templates.push(...(imported.templates || []));
         d.categories = [
           ...new Set([
@@ -100,6 +105,10 @@ export function largeImporter({ dataDir, getDb, mutate, reply, fail }) {
         ];
       });
       committed = true;
+      for (const id of reconciliation.redundantMedia)
+        await fs.unlink(path.join(dataDir, 'media', id)).catch(() => {});
+      Object.assign(imported.report, reconciliation);
+      delete imported.report.redundantMedia;
       reply(res, 200, imported.report);
     } catch (e) {
       if (e.status) throw e;

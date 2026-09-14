@@ -1,0 +1,227 @@
+.taxonomy-workspace {
+  max-width: 1150px;
+  margin: 0 auto;
+}
+.taxonomy-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.8fr);
+  gap: 28px;
+  align-items: start;
+}
+.taxonomy-workspace .field {
+  min-width: 0;
+}
+.taxonomy-workspace .filter-row input {
+  flex: 1;
+  width: auto;
+}
+.taxonomy-hint {
+  font-size: 12px;
+  opacity: 0.8;
+}
+.taxonomy-row {
+  display: flex;
+  gap: 6px;
+  padding: 7px;
+  margin-bottom: 6px;
+  border: 1px solid var(--line, #d7dede);
+  border-radius: 12px;
+}
+.taxonomy-row.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.taxonomy-select {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  padding: 8px;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+}
+.taxonomy-select strong {
+  overflow-wrap: anywhere;
+}
+.taxonomy-select small {
+  flex-shrink: 0;
+}
+.taxonomy-detail {
+  padding: 22px;
+  border: 1px solid var(--line, #d7dede);
+  border-radius: 16px;
+  background: var(--paper);
+}
+.taxonomy-detail label {
+  display: block;
+  margin-top: 20px;
+}
+.taxonomy-detail button {
+  margin: 6px 5px 6px 0;
+}
+.media-drop-overlay[hidden],
+.media-upload-panel[hidden] {
+  display: none;
+}
+.media-drop-overlay {
+  position: fixed;
+  inset: 16px;
+  z-index: 80;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  border: 3px dashed var(--accent);
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--paper) 68%, transparent);
+  backdrop-filter: blur(5px);
+}
+.media-drop-overlay div {
+  padding: 28px;
+  border-radius: 18px;
+  text-align: center;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 12px 55px #0002;
+}
+.media-drop-overlay strong {
+  font-size: 24px;
+}
+.media-upload-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: min(420px, calc(100vw - 48px));
+  z-index: 81;
+  padding: 18px;
+  border: 1px solid var(--line, #d7dede);
+  border-radius: 16px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 8px 45px #0003;
+}
+.media-upload-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.media-upload-rows {
+  max-height: 32vh;
+  overflow: auto;
+}
+.media-upload-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line, #d7dede);
+}
+.media-upload-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.media-upload-row small {
+  max-width: 190px;
+  overflow-wrap: anywhere;
+}
+.media-upload-row progress {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 5px;
+  accent-color: var(--accent);
+}
+.media-upload-panel p {
+  font-size: 12px;
+  margin-bottom: 0;
+}
+@media (max-width: 850px) {
+  .taxonomy-columns {
+    grid-template-columns: 1fr;
+  }
+}
+@media print {
+  .media-drop-overlay,
+  .media-upload-panel {
+    display: none;
+  }
+}
+.conflict-workspace {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.conflict-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.conflict-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.conflict-columns article {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.conflict-body {
+  max-height: 40vh;
+  overflow: auto;
+  border-block: 1px solid var(--line);
+  padding: 12px 0;
+}
+.conflict-image {
+  max-width: 100%;
+  max-height: 350px;
+  object-fit: contain;
+}
+.conflict-hash {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.conflict-actions {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.conflict-actions button {
+  margin: 5px 6px 5px 0;
+}
+@media (max-width: 850px) {
+  .conflict-columns {
+    grid-template-columns: 1fr;
+  }
+}
+.taxonomy-detail .field,
+.conflict-actions .field {
+  display: block;
+  width: 100%;
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+.taxonomy-detail h3 {
+  margin-top: 0;
+}
+
+.conflict-badge {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: 11px;
+}

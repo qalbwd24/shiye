@@ -67,3 +67,7 @@ export function createExampleRoutes({ getDb, reply, fail }) {
 - 注释解释接口约束、数据口径和必要原因；不要逐行复述代码。新增配置只在实际被使用时添加，不建立空的通用框架。
 
 目前没有自动 Git 提交、远程仓库或 CI 发布。忽略规则已准备好；启用版本控制时，应先检查文件清单是否包含任何真实数据。
+
+## 0.6 后续维护入口
+
+当前模块边界和原版差距见 ITERATION-0.6.md / FEATURE-PARITY.md；历史章节的旧路径不再作为新代码落点。通用升级工具为 tools/upgrade.ps1，必须从已验证的开发工作区运行，提供 SourceRef 和 ExpectedVersion；升级前核对正式编辑保存状态。工具检查正式Git状态和服务进程，保存快照、切换发布分支、启动并核对版本。

@@ -1,3 +1,4 @@
+import { markdownFor } from '../shared/legacy-content.js';
 import { isHidden } from '../shared/insights.js';
 
 import { marked } from '../vendor/marked.js';
@@ -22,7 +23,7 @@ export function createEditorTools(c) {
     if (!e) return;
     modal(
       'Markdown 编辑',
-      `<p>保留 Markdown 源码并转为富文本。若直接修改富文本，下次打开将以最新正文为起点；旧内容保留在历史中。</p><textarea class="field" rows="12" id="markdownSource" aria-label="Markdown 源码">${esc(e.markdownHtml === e.content && typeof e.markdownSource === 'string' ? e.markdownSource : textOf(e.content))}</textarea><button class="secondary" id="previewMarkdown">预览</button><button class="primary" id="applyMarkdown">应用到正文</button><div id="markdownPreview"></div>`,
+      `<p>保留 Markdown 源码并转为富文本。若直接修改富文本，下次打开将以最新正文为起点；旧内容保留在历史中。</p><textarea class="field" rows="12" id="markdownSource" aria-label="Markdown 源码">${esc(markdownFor(e, sanitize, textOf))}</textarea><button class="secondary" id="previewMarkdown">预览</button><button class="primary" id="applyMarkdown">应用到正文</button><div id="markdownPreview"></div>`,
     );
     $('#previewMarkdown').onclick = () =>
       ($('#markdownPreview').innerHTML = sanitize(marked.parse($('#markdownSource').value)));

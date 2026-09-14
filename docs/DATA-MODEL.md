@@ -58,3 +58,11 @@ Android `createTime` → 新 `date`；`recordTime` → 新 `createdAt`。分类�
 - settings.preferences.layout={categories,tags,list}，布尔值 true 表示折叠。兼容读取旧 shiye.collapsed 浏览器偏好，首次切换后保存到库。
 - 首次升级复制第四版被引用的 data/backgrounds 图片到 media 并登记引用；旧文件保留，缺失原件不编造。
 - .syvault2 仍使用相同加密协议。恢复请求可选 restoreAppearance:true；仅此时恢复 theme、appearance、layout，并映射背景 ID。默认保留当前偏好。旧 .syvault 设置恢复行为不变。
+
+## 0.6 数据扩展
+
+增加可选 conflicts 数组保存重复导入的比较记录及人工处理结果；media.sha256 用于复用完全相同的附件。categorySort/tagSort 在 settings.preferences 中，手动顺序保存在 categories/tags。
+
+启动阶段可补齐旧日记的 hidden、mood、markdownSource/markdownHtml；只在缺失且能核对原始字段时修复。发生修复的日记提高 revision，保持正文、日期、分类标签、原字段和媒体关联不变。修复前在 data 下生成 before-legacy-metadata-v06-时间.json 快照，migrations.legacyMetadataV06 标记已执行。
+
+日期/分类/标题相同不等于重复，导入冲突依据见 IMPORT-CONFLICTS.md。syvault2 加密协议未变。不要把跨库重复识别当作已实现多设备同步。
