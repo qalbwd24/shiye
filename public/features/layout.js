@@ -7,6 +7,50 @@ export function createLayout(c) {
   let dragWidth = null;
   let queue = Promise.resolve();
   let legacy = {};
+  let positionFrame = 0;
+  const positionTabs = () => {
+    positionFrame = 0;
+    const sidebar = $('#mainSidebar').getBoundingClientRect();
+    const list = $('#entryPanel').getBoundingClientRect();
+    const workspace = $('.workspace').getBoundingClientRect();
+    const editor = $('#editorPanel').getBoundingClientRect();
+    const media = $('#entryMediaPane').getBoundingClientRect();
+    const columns = $('#entryColumns');
+    const stacked = getComputedStyle(columns).display === 'block';
+    const listVisible = !$('#journalView').classList.contains('hidden') && list.height > 0;
+    const viewport = document.documentElement.clientWidth;
+    const tabWidth = 30;
+    const positions = [
+      ['sidebarFold', sidebar.right, sidebar.top + 22, 'right'],
+      [
+        'listToggle',
+        listVisible ? list.right : workspace.left,
+        Math.max(workspace.top + 110, sidebar.top + 112),
+        'right',
+      ],
+      [
+        'mediaToggle',
+        stacked
+          ? editor.right - tabWidth
+          : columns.dataset.mediaPosition === 'left'
+            ? media.right
+            : media.left - tabWidth,
+        editor.top + 118,
+        columns.dataset.mediaPosition === 'left' ? 'right' : 'left',
+      ],
+    ];
+    // Read all geometry before writing; no diary list/editor rebuild is involved.
+    for (const [id, x, y, edge] of positions) {
+      const button = $('#' + id);
+      const transform = `translate3d(${Math.round(Math.max(12, Math.min(viewport - tabWidth - 12, x)))}px, ${Math.round(Math.max(20, y))}px, 0)`;
+      if (button.style.transform !== transform) button.style.transform = transform;
+      button.dataset.edge = edge;
+    }
+  };
+  const scheduleTabPosition = () => {
+    if (!positionFrame && typeof requestAnimationFrame === 'function')
+      positionFrame = requestAnimationFrame(positionTabs);
+  };
   try {
     legacy = normalizeLayout(JSON.parse(localStorage.getItem('shiye.collapsed') || '{}'));
   } catch {
@@ -50,7 +94,7 @@ export function createLayout(c) {
     for (const [id, key, name] of [
       ['sidebarFold', 'sidebar', '导航'],
       ['listFold', 'list', '日记列表'],
-      ['listToggle', 'list', '日记列表'],
+      ['listToggle', 'list', $('#listToggleLabel')?.textContent || '日记列表'],
       ['mediaToggle', 'media', '图片与评论'],
       ['mediaFold', 'media', '图片与评论'],
     ]) {
@@ -61,6 +105,7 @@ export function createLayout(c) {
       button.classList.toggle('active', !state[key]);
     }
     $('#listFold').textContent = state.list ? '›' : '‹';
+    scheduleTabPosition();
   }
   function set(changes) {
     normalizeLayout(changes);
@@ -105,14 +150,9 @@ export function createLayout(c) {
         }
         return;
       }
-      if (['sidebar', 'list'].includes(key) && document.body.classList.contains('writing-mode')) {
-        document.dispatchEvent(new Event('shiye:read-mode'));
-        if (!read()[key]) return;
-      }
-      document.body.classList.remove('focus-mode');
-      $('#focusButton').classList.remove('active');
       if (id === 'listToggle' && matchMedia('(max-width: 650px)').matches) {
         $('#journalView').classList.toggle('has-selected');
+        scheduleTabPosition();
         return;
       }
       toggle(key);
@@ -149,6 +189,13 @@ export function createLayout(c) {
       startWidth = renderedWidth();
     resizer.setPointerCapture(event.pointerId);
     document.body.classList.add('resizing-pane');
+    let previewFrame = 0;
+    const preview = () => {
+      previewFrame = 0;
+      document.documentElement.style.setProperty('--media-width', dragWidth + 'px');
+      resizer.setAttribute('aria-valuenow', dragWidth);
+      scheduleTabPosition();
+    };
     const move = (e) => {
       if (e.pointerId !== event.pointerId) return;
       dragWidth = Math.max(
@@ -160,10 +207,11 @@ export function createLayout(c) {
           ),
         ),
       );
-      apply();
+      if (!previewFrame) previewFrame = requestAnimationFrame(preview);
     };
     const finish = (commit) => {
       const width = dragWidth;
+      cancelAnimationFrame(previewFrame);
       dragWidth = null;
       document.body.classList.remove('resizing-pane');
       resizer.removeEventListener('pointermove', move);
@@ -196,5 +244,26 @@ export function createLayout(c) {
       ...(matchMedia('(max-width: 650px)').matches ? { sidebar: true } : {}),
     });
   }
+  if (typeof ResizeObserver === 'function') {
+    const observer = new ResizeObserver(scheduleTabPosition);
+    for (const selector of [
+      '#mainSidebar',
+      '#entryPanel',
+      '#editorPanel',
+      '#entryMediaPane',
+      '.workspace',
+    ])
+      observer.observe($(selector));
+  }
+  if (typeof MutationObserver === 'function') {
+    const observer = new MutationObserver(scheduleTabPosition);
+    for (const selector of ['#journalView', '#alternateView', '#entryColumns'])
+      observer.observe($(selector), {
+        attributes: true,
+        attributeFilter: ['class', 'data-media-position'],
+      });
+  }
+  window.addEventListener('resize', scheduleTabPosition);
+  scheduleTabPosition();
   return { apply, set, read, showList };
 }

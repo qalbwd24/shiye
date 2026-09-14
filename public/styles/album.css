@@ -60,6 +60,18 @@
   font: inherit;
   cursor: pointer;
 }
+.album-shuffle {
+  flex: 0 0 auto;
+  min-height: 36px;
+  white-space: nowrap;
+}
+.album-shuffle[hidden] {
+  display: none;
+}
+.album-shuffle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .album-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(var(--album-column), 100%), 1fr));

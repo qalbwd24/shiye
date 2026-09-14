@@ -2,6 +2,7 @@ import { createPersistence } from '../editor/persistence.js';
 import { createMediaImport } from '../features/media-import.js';
 import { sortedTaxonomy } from '../shared/taxonomy.js';
 import { createEditorCommands } from '../editor/commands.js';
+import { coverMarkup } from '../features/entry-cards.js';
 import { createLegacyBackups } from '../features/legacy-backups.js';
 import { download } from '../core/downloads.js';
 import { LIMITS } from '../shared/limits.js';
@@ -143,6 +144,22 @@ function filtered() {
 }
 function renderList() {
   const entries = filtered();
+  const mediaById = new Map(library.media.map((media) => [media.id, media]));
+  const listName =
+    day ||
+    category ||
+    (tag
+      ? '# ' + tag
+      : { trash: '回收站', drafts: '草稿箱', hidden: '隐藏日记' }[view] || '全部日记');
+  const listLabel = $('#listToggleLabel');
+  if (listLabel) {
+    listLabel.textContent = listName;
+    const toggle = $('#listToggle');
+    const description =
+      (toggle.getAttribute('aria-expanded') === 'true' ? '折叠' : '展开') + listName;
+    toggle.setAttribute('aria-label', description);
+    toggle.title = description;
+  }
   $('#listSubtitle').textContent = day
     ? `${day} · ${entries.length} 篇`
     : `${category || (tag ? '# ' + tag : view === 'trash' ? '回收站' : '最近的记录')} · ${entries.length} 篇`;
@@ -157,7 +174,7 @@ function renderList() {
         month = m;
         return (
           heading +
-          `<button class="entry-card ${e.id === selected ? 'active' : ''}" data-entry="${e.id}"><div class="card-date"><strong>${String(d.getDate()).padStart(2, '0')}</strong>${d.toLocaleDateString('zh-CN', { weekday: 'short' })} · ${timeText(d)}<span class="card-weather">${escape(e.weather)}</span></div><h3>${escape(e.title || '无标题日记')}</h3>${offline?.prefs().showPreview === false ? '' : `<p>${escape(textOf(e.content) || '留一点空间，给今天的故事。')}</p>`}<div class="card-bottom"><span class="small-chip">${escape(e.category)}</span>${e.tags[0] ? `<span># ${escape(e.tags[0])}</span>` : ''}${e.pinned ? icon('pin') : e.attachments.length ? icon('image') : ''}${(library.conflicts || []).some((item) => item.kind === 'entry' && item.status === 'open' && [item.left, item.right].includes(e.id)) ? '<span class="conflict-badge">待核对</span>' : ''}</div></button>`
+          `<button class="entry-card ${e.id === selected ? 'active' : ''}" data-entry="${e.id}">${coverMarkup(e, mediaById, escape)}<div class="card-date"><strong>${String(d.getDate()).padStart(2, '0')}</strong>${d.toLocaleDateString('zh-CN', { weekday: 'short' })} · ${timeText(d)}<span class="card-weather">${escape(e.weather)}</span></div><h3>${escape(e.title || '无标题日记')}</h3>${offline?.prefs().showPreview === false ? '' : `<p>${escape(textOf(e.content).slice(0, 240) || '留一点空间，给今天的故事。')}</p>`}<div class="card-bottom"><span class="small-chip">${escape(e.category)}</span>${e.tags[0] ? `<span># ${escape(e.tags[0])}</span>` : ''}${e.pinned ? icon('pin') : e.attachments.length ? icon('image') : ''}${(library.conflicts || []).some((item) => item.kind === 'entry' && item.status === 'open' && [item.left, item.right].includes(e.id)) ? '<span class="conflict-badge">待核对</span>' : ''}</div></button>`
         );
       })
       .join('') || '<div class="empty-list">这里还没有记录<br>换个关键词，或写下新的一页。</div>';
@@ -282,7 +299,7 @@ async function newEntry(date = new Date(), initial = {}) {
     method: 'POST',
     data: {
       title: '',
-      content: boundTemplate?.content || (offline?.prefs().autoIndent ? '　　' : ''),
+      content: offline.editorInput.initialContent(boundTemplate?.content || ''),
       date: date.toISOString(),
       category: chosenCategory,
       tags: initial.tags || [],
@@ -407,8 +424,7 @@ function closeModal() {
   $('#modal').close();
 }
 function insertDate() {
-  const d = new Date();
-  command('insertText', dateText(d) + ' ' + timeText(d));
+  offline.editorInput.insertDateTime();
 }
 function showHistory() {
   const e = current();

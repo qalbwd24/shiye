@@ -7,6 +7,9 @@ import {
   normalizeAlbumPreferences,
   readAlbumPreferences,
   saveAlbumPreferences,
+  readAlbumRandomSeed,
+  saveAlbumRandomSeed,
+  nextAlbumRandomSeed,
 } from '../public/features/album.js';
 const entry = (id, attachments, extra = {}) => ({
   id,
@@ -14,6 +17,104 @@ const entry = (id, attachments, extra = {}) => ({
   date: '2026-01-01',
   attachments,
   ...extra,
+});
+
+test('random order stays stable across redraw, filtering, source changes and pagination', () => {
+  const library = {
+    media: Array.from({ length: 241 }, (_, index) =>
+      media(`m-${index}`, index % 3 ? 'image/png' : 'video/mp4'),
+    ),
+    entries: [
+      entry(
+        'visible',
+        Array.from({ length: 241 }, (_, index) => `m-${index}`),
+      ),
+    ],
+  };
+  const options = { sort: 'random', randomSeed: 123456789 };
+  const ids = (cards) => cards.map((card) => card.id);
+  const initial = albumItems(library, options);
+  assert.deepEqual(ids(albumItems(library, options)), ids(initial));
+  assert.deepEqual(
+    ids(albumItems(library, { ...options, type: 'image' })),
+    ids(initial.filter((card) => card.type === 'image')),
+  );
+  const next = [...albumPage(initial).items, ...albumPage(albumItems(library, options), 80).items];
+  assert.deepEqual(ids(next), ids(initial.slice(0, 160)));
+  const modified = structuredClone(library);
+  modified.media.reverse().forEach((item) => {
+    item.name = `renamed-${item.id}`;
+  });
+  modified.entries[0].attachments.reverse();
+  modified.entries[0].date = '2027-02-01';
+  modified.media.push(media('new-media'));
+  modified.entries[0].attachments.push('new-media');
+  assert.deepEqual(
+    ids(albumItems(modified, options).filter((card) => card.id !== 'new-media')),
+    ids(initial),
+  );
+});
+
+test('a new random seed reshuffles without changing membership or leaking invisible media', () => {
+  const library = {
+    media: Array.from({ length: 120 }, (_, index) => media(`m-${index}`)),
+    entries: [
+      entry(
+        'visible',
+        Array.from({ length: 119 }, (_, index) => `m-${index}`),
+      ),
+      entry('secret', ['m-119'], { hidden: true }),
+    ],
+  };
+  const before = structuredClone(library);
+  const previous = 0xffffffff;
+  const seed = nextAlbumRandomSeed(previous, () => previous / 0x100000000);
+  assert.equal(seed, 0, 'a repeated random sample still changes seed, including uint32 wrap');
+  const original = albumItems(library, { sort: 'random', randomSeed: previous }).map(
+    (card) => card.id,
+  );
+  const shuffled = albumItems(library, { sort: 'random', randomSeed: seed }).map((card) => card.id);
+  assert.notDeepEqual(shuffled, original);
+  assert.deepEqual([...shuffled].sort(), [...original].sort());
+  assert.equal(shuffled.includes('m-119'), false);
+  assert.deepEqual(library, before);
+});
+
+test('random seed and selected sort survive refresh independently and tolerate blocked storage', () => {
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key),
+    setItem: (key, value) => values.set(key, value),
+  };
+  saveAlbumPreferences(storage, { sort: 'name' });
+  saveAlbumRandomSeed(storage, 0);
+  assert.equal(readAlbumRandomSeed(storage), 0);
+  assert.equal(readAlbumPreferences(storage).sort, 'name');
+  saveAlbumPreferences(storage, { sort: 'random' });
+  assert.equal(readAlbumPreferences(storage).sort, 'random');
+  assert.equal(readAlbumRandomSeed(storage), 0);
+  assert.deepEqual(JSON.parse(values.get('shiye.album-random.v1')), { version: 1, seed: 0 });
+  for (const invalid of [
+    '{broken',
+    '{"version":2,"seed":1}',
+    '{"version":1,"seed":-1}',
+    '{"version":1,"seed":"1"}',
+    '{"version":1,"seed":4294967296}',
+  ]) {
+    assert.equal(readAlbumRandomSeed({ getItem: () => invalid }), null);
+  }
+  const denied = {
+    getItem() {
+      throw Error('Denied');
+    },
+    setItem() {
+      throw Error('Quota');
+    },
+  };
+  assert.equal(readAlbumRandomSeed(denied), null);
+  assert.doesNotThrow(() => saveAlbumRandomSeed(denied, 42));
+  saveAlbumRandomSeed(storage, -1);
+  assert.equal(readAlbumRandomSeed(storage), 0);
 });
 const media = (id, type = 'image/png', name = id) => ({ id, type, name });
 

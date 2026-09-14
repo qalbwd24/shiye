@@ -19,6 +19,7 @@ export function createRoutes({ mutate, body, reply, fail }) {
         showPreview: [true, false],
         nightYesterday: [true, false],
         autoIndent: [true, false],
+        autoIndentParagraph: [true, false],
       };
       const next = {};
       for (const [key, value] of Object.entries(input)) {

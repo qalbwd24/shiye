@@ -2,6 +2,7 @@ import { isHidden } from '../shared/entry-state.js';
 
 export const ALBUM_PAGE_SIZE = 80;
 const PREF_KEY = 'shiye.album.v1';
+const RANDOM_KEY = 'shiye.album-random.v1';
 const defaults = Object.freeze({
   layout: 'masonry',
   density: 'comfortable',
@@ -11,7 +12,7 @@ const defaults = Object.freeze({
 const allowed = {
   layout: ['masonry', 'grid', 'list'],
   density: ['comfortable', 'compact'],
-  sort: ['date-desc', 'date-asc', 'name'],
+  sort: ['date-desc', 'date-asc', 'name', 'random'],
   type: ['all', 'image', 'video', 'audio'],
 };
 export function normalizeAlbumPreferences(value) {
@@ -36,6 +37,35 @@ export function saveAlbumPreferences(storage, value) {
   } catch {
     /* Layout still changes if device storage is blocked or full. */
   }
+}
+const validSeed = (seed) => Number.isInteger(seed) && seed >= 0 && seed <= 0xffffffff;
+export function readAlbumRandomSeed(storage) {
+  try {
+    const saved = JSON.parse(storage?.getItem(RANDOM_KEY) || 'null');
+    return saved?.version === 1 && validSeed(saved.seed) ? saved.seed : null;
+  } catch {
+    return null;
+  }
+}
+export function nextAlbumRandomSeed(previous, random = Math.random) {
+  const value = Math.floor(random() * 0x100000000) >>> 0;
+  return value === previous ? (value + 1) >>> 0 : value;
+}
+export function saveAlbumRandomSeed(storage, seed) {
+  if (!validSeed(seed)) return;
+  try {
+    storage?.setItem(RANDOM_KEY, JSON.stringify({ version: 1, seed }));
+  } catch {
+    /* Keep the same in-memory shuffle when device storage is unavailable. */
+  }
+}
+// Rank IDs independently so filtering and newly added media preserve relative order.
+function randomRank(id, seed) {
+  let value = (2166136261 ^ seed) >>> 0;
+  for (const character of String(id)) value = Math.imul(value ^ character.codePointAt(0), 16777619);
+  value = Math.imul(value ^ (value >>> 16), 0x85ebca6b);
+  value = Math.imul(value ^ (value >>> 13), 0xc2b2ae35);
+  return (value ^ (value >>> 16)) >>> 0;
 }
 const mediaType = (media) => {
   const type = (media.type || '').split('/')[0];
@@ -81,6 +111,13 @@ export function albumItems(library, options = {}) {
     String(a.media.name || '').localeCompare(String(b.media.name || ''), 'zh-CN', {
       numeric: true,
     });
+  if (prefs.sort === 'random') {
+    const seed = validSeed(options.randomSeed) ? options.randomSeed : 0;
+    const ranks = new Map(cards.map((card) => [card.id, randomRank(card.id, seed)]));
+    return cards.sort(
+      (a, b) => ranks.get(a.id) - ranks.get(b.id) || String(a.id).localeCompare(String(b.id)),
+    );
+  }
   cards.sort(
     (a, b) =>
       (prefs.sort === 'name' ? compareName(a, b) : byDate(a.sources[0], b.sources[0], ascending)) ||
@@ -112,7 +149,12 @@ export function createAlbum(c) {
     /* Device preferences are optional. */
   }
   let preferences = readAlbumPreferences(storage),
+    randomSeed = readAlbumRandomSeed(storage),
     disconnect = () => {};
+  if (randomSeed === null) {
+    randomSeed = nextAlbumRandomSeed(null);
+    saveAlbumRandomSeed(storage, randomSeed);
+  }
   function render(view, root) {
     if (view !== 'gallery') {
       disconnect();
@@ -124,7 +166,7 @@ export function createAlbum(c) {
       presented = [],
       resizeObserver;
     const doc = root.ownerDocument || document;
-    root.innerHTML = `<section class="album-workspace" aria-label="相册"><header class="album-heading"><div><span class="album-eyebrow">拾起日常的片段</span><h2>日子里的画面</h2><p data-album-summary></p></div><button class="primary" data-album-new>新建图文日记</button></header><div class="album-controls" aria-label="相册显示选项"><label>排列<select data-album-pref="layout"><option value="masonry">自然比例瀑布流</option><option value="grid">整齐方格</option><option value="list">列表</option></select></label><label>密度<select data-album-pref="density"><option value="comfortable">舒适</option><option value="compact">紧凑</option></select></label><label>排序<select data-album-pref="sort"><option value="date-desc">日记日期 · 从新到旧</option><option value="date-asc">日记日期 · 从旧到新</option><option value="name">媒体名称</option></select></label><label>类型<select data-album-pref="type"><option value="all">全部媒体</option><option value="image">图片</option><option value="video">视频</option><option value="audio">音频</option></select></label></div><div class="album-cards" data-album-cards></div><footer class="album-footer"><p role="status" aria-live="polite" data-album-count></p><button class="secondary" data-album-more>再显示 80 项</button></footer></section>`;
+    root.innerHTML = `<section class="album-workspace" aria-label="相册"><header class="album-heading"><div><span class="album-eyebrow">拾起日常的片段</span><h2>日子里的画面</h2><p data-album-summary></p></div><button class="primary" data-album-new>新建图文日记</button></header><div class="album-controls" aria-label="相册显示选项"><label>排列<select data-album-pref="layout"><option value="masonry">自然比例瀑布流</option><option value="grid">整齐方格</option><option value="list">列表</option></select></label><label>密度<select data-album-pref="density"><option value="comfortable">舒适</option><option value="compact">紧凑</option></select></label><label>排序<select data-album-pref="sort"><option value="date-desc">日记日期 · 从新到旧</option><option value="date-asc">日记日期 · 从旧到新</option><option value="name">媒体名称</option><option value="random">随机排列</option></select></label><label>类型<select data-album-pref="type"><option value="all">全部媒体</option><option value="image">图片</option><option value="video">视频</option><option value="audio">音频</option></select></label><button class="secondary album-shuffle" data-album-shuffle hidden title="更换随机顺序；筛选和加载更多不会打乱">重新打乱相册</button></div><div class="album-cards" data-album-cards></div><footer class="album-footer"><p role="status" aria-live="polite" data-album-count></p><button class="secondary" data-album-more>再显示 80 项</button></footer></section>`;
     const workspace = root.querySelector('.album-workspace'),
       grid = root.querySelector('[data-album-cards]');
     const measure = (card) => {
@@ -184,7 +226,7 @@ export function createAlbum(c) {
       return `<article class="album-card" data-album-media="${esc(card.id)}"><button class="album-preview" data-open-entry="${esc(source.id)}" aria-label="打开${esc(source.title || '无标题日记')}，查看${esc(name)}">${preview}<span class="album-type-badge">${typeNames[card.type]}</span></button><div class="album-card-info"><h3><button data-open-entry="${esc(source.id)}">${esc(name)}</button></h3><p class="album-source-title">${esc(source.title || '无标题日记')}</p><time>${esc(date)}</time>${excerpt ? `<p class="album-excerpt">${esc(excerpt)}</p>` : ''}${sources}</div></article>`;
     }
     function draw(reset = false) {
-      const cards = albumItems(c.library, preferences);
+      const cards = albumItems(c.library, { ...preferences, randomSeed });
       const signature = (card) =>
         JSON.stringify([
           card.id,
@@ -221,6 +263,9 @@ export function createAlbum(c) {
       root.querySelector('[data-album-count]').textContent =
         `已显示 ${shown.length} / ${cards.length} 项`;
       const more = root.querySelector('[data-album-more]');
+      const shuffle = root.querySelector('[data-album-shuffle]');
+      shuffle.hidden = preferences.sort !== 'random';
+      shuffle.disabled = cards.length < 2;
       more.hidden = shown.length >= cards.length;
       more.textContent = `再显示 ${Math.min(ALBUM_PAGE_SIZE, cards.length - shown.length)} 项`;
       grid.querySelectorAll('.album-card').forEach((card) => {
@@ -245,6 +290,19 @@ export function createAlbum(c) {
     root.querySelector('[data-album-more]').onclick = () => {
       limit += ALBUM_PAGE_SIZE;
       draw();
+    };
+    root.querySelector('[data-album-shuffle]').onclick = () => {
+      const before = albumItems(c.library, { ...preferences, randomSeed }).map((card) => card.id);
+      // Avoid an apparently unchanged shuffle in small filtered albums when possible.
+      for (let attempt = 0; attempt < 16; attempt++) {
+        randomSeed = nextAlbumRandomSeed(randomSeed);
+        const after = albumItems(c.library, { ...preferences, randomSeed });
+        if (after.some((card, index) => card.id !== before[index])) break;
+      }
+      saveAlbumRandomSeed(storage, randomSeed);
+      limit = ALBUM_PAGE_SIZE;
+      draw(true);
+      root.querySelector('[data-album-count]').textContent += '，已重新打乱';
     };
     draw(true);
     return true;

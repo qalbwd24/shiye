@@ -87,3 +87,7 @@
 `features/workbench.js` 在 `#editorPanel` 上控制 `inline-editing`，正文和标题聚焦时显示工具，侧栏保持布局。正文下方 `#attachmentEditor` 提供附件缩略图；`features/gallery.js` 在编辑期间冻结同篇右侧展示，完成编辑先 `await flush()`，再同步最新附件。正文和附件仍自动保存，“完成编辑”不是事务提交。入口／样式由 `app/main.js`、`index.html`、workbench 与 gallery 相关模块配合。
 
 相册由 `features/album.js` 与 `styles/album.css` 接管 `gallery` 视图。它按媒体 ID 合并可见日记来源，每批最多 80 项，支持瀑布流／方格／列表、密度、排序与类型；偏好在 `shiye.album.v1`。纯逻辑测试见 `tests/album.test.mjs`。完整阅读器搬移由 `features/entry-reader.js` 与 `styles/entry-reader.css` 负责，供两种回顾复用。
+
+## 0.7.2 输入与侧栏细节
+
+正文初始缩进、原生换段和日期格式：public/features/editor-input.js，features/index.js 装配，main.js 调用；autoIndentParagraph 在 preferences.js 和 routes/preferences.mjs 管理。列表封面：features/entry-cards.js、styles/entry-cards.css；仅引用现有媒体。侧栏边界跟随继续由 layout.js 负责，相册随机种子由 album.js 独立管理。详见 [0.7.2 工作文档](ITERATION-0.7.2.md)。

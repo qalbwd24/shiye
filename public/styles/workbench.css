@@ -1154,29 +1154,24 @@ dialog.settings-dialog {
   white-space: nowrap;
 }
 
-/* Binder dividers stay on the viewport edge in both open and closed states. */
+/* Each drawer owns a narrow gutter toward the page; its tab survives collapse. */
 #app {
-  padding-inline: 30px;
+  padding-inline: 12px;
 }
 .binder-tabs {
   position: fixed;
-  top: 108px;
+  inset: 0 auto auto 0;
   z-index: 8;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  width: 30px;
-}
-.binder-tabs-left {
-  left: 0;
-}
-.binder-tabs-right {
-  right: 0;
+  width: 0;
+  height: 0;
 }
 body:has(#journalView.hidden):not(:has(#alternateView.has-entry-reader)) .binder-tabs-right {
   visibility: hidden;
 }
 .binder-tabs .binder-tab {
+  position: fixed;
+  left: 0;
+  top: 0;
   display: flex;
   flex-direction: column;
   width: 30px;
@@ -1190,6 +1185,33 @@ body:has(#journalView.hidden):not(:has(#alternateView.has-entry-reader)) .binder
   box-shadow: 2px 2px 5px #0000000c;
   opacity: 0.8;
 }
+.sidebar,
+.entry-panel {
+  margin-right: 30px;
+}
+.sidebar > * {
+  min-width: calc(var(--sidebar) - 28px);
+}
+.entry-panel > * {
+  width: var(--list);
+  min-width: var(--list);
+}
+.entry-list {
+  contain: layout style;
+}
+.entry-media-pane {
+  margin-left: 30px;
+}
+.entry-columns[data-media-position='left'] .entry-media-pane {
+  margin-left: 0;
+  margin-right: 30px;
+}
+.entry-columns[data-media-position='bottom'] {
+  padding-right: 30px;
+}
+.entry-columns[data-media-position='bottom'] .entry-media-pane {
+  margin-inline: 0;
+}
 .binder-tab#sidebarFold {
   --tab-color: var(--accent);
 }
@@ -1198,6 +1220,8 @@ body:has(#journalView.hidden):not(:has(#alternateView.has-entry-reader)) .binder
 }
 .binder-tab#mediaToggle {
   --tab-color: var(--accent);
+}
+.binder-tab[data-edge='left'] {
   border-radius: 9px 0 0 9px;
 }
 .binder-tabs .binder-tab span {
@@ -1205,6 +1229,10 @@ body:has(#journalView.hidden):not(:has(#alternateView.has-entry-reader)) .binder
   writing-mode: vertical-rl;
   letter-spacing: 3px;
   font-size: 12px;
+  max-height: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .binder-tabs .binder-tab[aria-expanded='true'],
 .binder-tabs .binder-tab:hover {
@@ -1251,21 +1279,33 @@ body:has(#journalView.hidden):not(:has(#alternateView.has-entry-reader)) .binder
   transition: none;
 }
 @media (max-width: 650px) {
-  #app {
-    padding-inline: 27px;
-  }
-  .binder-tabs,
-  .binder-tabs .binder-tab {
-    width: 27px;
-  }
   .sidebar {
-    left: 27px;
+    left: 12px;
   }
   #app.sidebar-collapsed .sidebar {
     transform: translateX(-110%);
   }
+  .entry-panel,
+  .entry-panel.list-collapsed {
+    margin-right: 30px;
+    width: calc(100% - 30px);
+  }
+  .entry-panel > * {
+    width: 100%;
+    min-width: 0;
+  }
+  body:has(#journalView:not(.has-selected)):not(:has(#alternateView.has-entry-reader))
+    .binder-tabs-right {
+    visibility: hidden;
+  }
 }
 @container (max-width: 640px) {
+  .entry-columns {
+    padding-right: 30px;
+  }
+  .entry-columns .entry-media-pane {
+    margin-inline: 0;
+  }
   .entry-columns.media-collapsed .entry-media-pane {
     width: 100%;
     max-height: 0;

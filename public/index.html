@@ -25,7 +25,7 @@
         aria-expanded="true"
         title="折叠日记列表"
       >
-        ▤<span>列表</span>
+        ▤<span id="listToggleLabel">我的日记</span>
       </button>
     </nav>
     <nav class="binder-tabs binder-tabs-right" aria-label="右侧分隔页">
@@ -82,21 +82,6 @@
             <div id="categories"></div>
           </div>
 
-          <div class="sidebar-view-label">浏览视图</div>
-          <nav id="navigation" aria-label="日记视图">
-            <button data-view="calendar" class="nav-button">
-              <span data-icon="calendar"></span>日历
-            </button>
-            <button data-view="gallery" class="nav-button">
-              <span data-icon="image"></span>相册
-            </button>
-            <button data-view="memories" class="nav-button">
-              <span data-icon="sparkles"></span>拾光回顾
-            </button>
-            <button data-view="stats" class="nav-button">
-              <span data-icon="chart"></span>记录统计
-            </button>
-          </nav>
           <div class="section-label tags-label" id="section-tags-head">
             <button
               type="button"
@@ -114,6 +99,22 @@
             ></button>
           </div>
           <div id="tagCloud" class="tag-cloud"></div>
+
+          <div class="sidebar-view-label">浏览视图</div>
+          <nav id="navigation" aria-label="日记视图">
+            <button data-view="calendar" class="nav-button">
+              <span data-icon="calendar"></span>日历
+            </button>
+            <button data-view="gallery" class="nav-button">
+              <span data-icon="image"></span>相册
+            </button>
+            <button data-view="memories" class="nav-button">
+              <span data-icon="sparkles"></span>拾光回顾
+            </button>
+            <button data-view="stats" class="nav-button">
+              <span data-icon="chart"></span>记录统计
+            </button>
+          </nav>
         </div>
         <div class="sidebar-bottom">
           <button id="settingsButton" class="settings-entry">

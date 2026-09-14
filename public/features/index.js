@@ -1,6 +1,7 @@
 import { createAlbum } from './album.js';
 import { createRecollection } from './recollection.js';
 import { createEntryReader } from './entry-reader.js';
+import { createEditorInput } from './editor-input.js';
 import { createConflicts } from './conflicts.js';
 import { createPreferences } from './preferences.js';
 import { createAppearance } from './appearance.js';
@@ -22,6 +23,7 @@ import { createBackups } from './backups.js';
 export function installOffline(c) {
   const { $, modal, closeModal, toast, command } = c;
   const reader = createEntryReader(c);
+  const editorInput = createEditorInput(c);
   const browsingContext = Object.create(c);
   browsingContext.releaseEntryReader = reader.release;
   browsingContext.mountEntryReader = reader.mount;
@@ -165,6 +167,7 @@ export function installOffline(c) {
   imageNote.textContent = '双击图片可旋转或裁剪副本';
   $('#attachmentEditor').after(imageNote);
   return {
+    editorInput,
     render,
     releaseEntryReader: reader.release,
     gallery,
