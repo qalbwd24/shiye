@@ -5,10 +5,98 @@
   --media-width: 340px;
   --chrome: color-mix(in srgb, var(--paper) 65%, var(--bg));
 }
-#app {
-  min-height: 480px;
-  height: 100dvh;
+/* The viewport never scrolls; only the pane bodies own overflow. */
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
+#app {
+  min-height: 0;
+  height: 100dvh;
+  overflow: hidden;
+}
+.workspace,
+.journal-view,
+.editor-panel,
+.entry-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+.editor-panel {
+  container-type: inline-size;
+}
+.sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+.sidebar > .profile-brand,
+.sidebar-bottom {
+  flex-shrink: 0;
+}
+.sidebar {
+  overflow: hidden;
+}
+.sidebar-bottom {
+  margin-top: 0;
+}
+.list-heading,
+.list-footer,
+.media-pane-head,
+.editor-footer {
+  flex-shrink: 0;
+}
+.entry-list,
+.writing-scroll,
+.media-pane-scroll,
+.alternate-view {
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+.writing-scroll {
+  flex: 1;
+}
+.workspace-search,
+.search-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.workspace-search {
+  justify-content: center;
+  flex: 1;
+}
+.search-controls .search-box {
+  min-width: 0;
+}
+#filterButton {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+#filterButton.active {
+  background: var(--mint);
+  color: var(--accent-dark);
+}
+.workspace-heading {
+  flex-shrink: 0;
+}
+.topbar-right {
+  flex-shrink: 0;
+}
+.entry-list:focus-visible,
+.writing-scroll:focus-visible,
+.media-pane-scroll:focus-visible {
+  outline-offset: -2px;
+}
+
 .sidebar {
   width: var(--sidebar);
   padding: 24px 14px 14px;
@@ -79,11 +167,16 @@
   font-weight: 400;
 }
 #app.sidebar-collapsed .sidebar {
-  display: none;
+  width: 0;
+  padding-inline: 0;
+  border-width: 0;
+  opacity: 0;
+  visibility: hidden;
 }
 .topbar {
-  min-height: 76px;
-  height: 76px;
+  flex-shrink: 0;
+  min-height: 64px;
+  height: 64px;
   padding: 14px 22px;
   background: var(--paper);
   gap: 12px;
@@ -168,6 +261,15 @@
   width: 0;
   overflow: hidden;
   border: 0;
+  opacity: 0;
+  visibility: hidden;
+}
+/* Keep the list content laid out while its parent folds; legacy layout.css hid it. */
+.entry-panel.list-collapsed :is(#entryList, .list-footer, #listSubtitle) {
+  display: block;
+}
+.entry-panel.list-collapsed #sortButton {
+  display: inline-flex;
 }
 .list-heading {
   min-height: 54px;
@@ -212,13 +314,13 @@
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-  container-type: inline-size;
 }
 .entry-writing {
   flex: 1;
   min-width: 0;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 .paper {
   padding: 30px clamp(22px, 3vw, 46px) 24px;
@@ -250,7 +352,7 @@
   min-height: 250px;
 }
 .entry-media-pane {
-  width: min(var(--media-width), 45%);
+  width: min(var(--media-width), 50%);
   min-width: 225px;
   flex: 0 0 auto;
   background: var(--chrome);
@@ -263,9 +365,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 18px 18px 14px;
+  padding: 12px;
+  flex-wrap: wrap;
   border-bottom: 1px solid var(--line);
-  min-height: 70px;
+  min-height: 54px;
 }
 .media-pane-head strong {
   font-size: 13px;
@@ -278,11 +381,11 @@
   margin-top: 5px;
 }
 .media-pane-scroll {
-  padding: 0 16px 22px;
+  padding: 0 0 22px;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
-  scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 .media-pane-scroll > small {
   display: block;
@@ -328,8 +431,10 @@
   display: block;
   overflow-y: auto;
 }
-.entry-columns[data-media-position='bottom'] .entry-writing {
+.entry-columns[data-media-position='bottom'] .entry-writing,
+.entry-columns[data-media-position='bottom'] .writing-scroll {
   overflow: visible;
+  flex: none;
 }
 .entry-columns[data-media-position='bottom'] .entry-media-pane {
   width: 100%;
@@ -342,9 +447,23 @@
 .entry-columns[data-media-position='bottom'] .media-resizer {
   display: none;
 }
-.entry-columns.media-collapsed .entry-media-pane,
+.entry-columns[data-media-position='bottom'].media-collapsed .entry-media-pane {
+  width: 100%;
+  max-height: 0;
+  min-height: 0;
+}
+.entry-columns.media-collapsed .entry-media-pane {
+  width: 0;
+  min-width: 0;
+  border-width: 0;
+  opacity: 0;
+  visibility: hidden;
+}
 .entry-columns.media-collapsed .media-resizer {
-  display: none;
+  width: 0;
+  flex-basis: 0;
+  border: 0;
+  visibility: hidden;
 }
 .editor-footer {
   color: var(--muted);
@@ -501,32 +620,6 @@ dialog.settings-dialog {
 .settings-content #bgPreview {
   max-height: 220px;
 }
-@media (max-width: 1180px) {
-  .workspace-heading {
-    gap: 14px;
-  }
-  .panel-switch span {
-    display: none;
-  }
-  .entry-columns {
-    display: block;
-    overflow-y: auto;
-  }
-  .entry-writing {
-    overflow: visible;
-  }
-  .entry-media-pane {
-    width: 100%;
-    min-width: 0;
-    border-top: 1px solid var(--line);
-  }
-  .media-pane-scroll {
-    overflow: visible;
-  }
-  .media-resizer {
-    display: none;
-  }
-}
 @media (max-width: 850px) {
   :root {
     --sidebar: 184px;
@@ -562,8 +655,8 @@ dialog.settings-dialog {
     display: flex;
   }
   .topbar {
-    height: 72px;
-    min-height: 72px;
+    height: 64px;
+    min-height: 64px;
     padding: 12px;
   }
   .topbar .eyebrow {
@@ -594,7 +687,7 @@ dialog.settings-dialog {
 @media (max-width: 650px) {
   .sidebar {
     position: fixed;
-    top: 72px;
+    top: 64px;
     bottom: 0;
     left: 0;
     width: 210px;
@@ -624,16 +717,11 @@ dialog.settings-dialog {
   }
   .entry-panel.list-collapsed {
     width: 100%;
-  }
-  .entry-panel.list-collapsed :is(#entryList, .list-footer, #listSubtitle, #sortButton) {
-    display: block;
+    opacity: 1;
+    visibility: visible;
   }
   .entry-panel.list-collapsed .list-heading {
     padding: 10px 12px;
-  }
-  .entry-columns {
-    display: block;
-    overflow-y: auto;
   }
   .paper {
     padding: 23px 22px;
@@ -726,7 +814,7 @@ dialog.settings-dialog {
     gap: 12px;
   }
 }
-/* Reading keeps images and their discussion together; writing gives the page the full center. */
+/* Editing stays in the current pane; only its local tools become visible. */
 .writing-mode-button {
   min-height: 34px;
   padding: 7px 13px;
@@ -745,73 +833,28 @@ dialog.settings-dialog {
   background: var(--mint);
   border-color: var(--accent);
 }
-body:not(.writing-mode) #formatToolbar {
+#editorPanel:not(.inline-editing) #formatToolbar,
+#editorPanel:not(.inline-editing) #attachmentEditor,
+#writingModeButton[hidden] {
   display: none;
 }
-body.writing-mode .sidebar,
-body.writing-mode .entry-panel {
-  display: none;
+@media (prefers-reduced-motion: no-preference) {
+  #editorPanel.inline-editing #formatToolbar,
+  #editorPanel.inline-editing #attachmentEditor {
+    animation: inline-tools-appear 140ms ease-out;
+  }
 }
-body.writing-mode .entry-columns {
-  display: flex;
-  overflow: hidden;
-}
-body.writing-mode .entry-columns .entry-writing {
-  overflow-y: auto;
-}
-body.writing-mode .entry-columns .entry-media-pane {
-  width: 300px;
-  min-width: 280px;
-  border-top: 0;
-  border-left: 1px solid var(--line);
-}
-body.writing-mode .entry-columns .media-pane-scroll {
-  overflow-y: auto;
-}
-body.writing-mode .entry-columns .media-resizer {
-  display: none;
-}
-body.writing-mode .paper {
-  max-width: 920px;
-  padding: 38px clamp(30px, 5vw, 74px) 44px;
-}
-body.writing-mode .body-editor {
-  min-height: 58vh;
-}
-body.writing-mode .entry-title {
-  font-size: 32px;
-}
-body.writing-mode .media-pane-head {
-  min-height: 56px;
-  padding: 12px 15px;
-}
-body.writing-mode .media-pane-head small {
-  display: none;
+@keyframes inline-tools-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .entry-media-pane #entryComments {
   max-width: none;
   margin: 20px 0 0;
-}
-@media (max-width: 850px) {
-  body.writing-mode .entry-columns {
-    display: block;
-    overflow-y: auto;
-  }
-  body.writing-mode .entry-columns .entry-writing {
-    overflow: visible;
-  }
-  body.writing-mode .entry-columns .entry-media-pane {
-    width: 100%;
-    min-width: 0;
-    border-left: 0;
-    border-top: 1px solid var(--line);
-  }
-  body.writing-mode .entry-columns .media-pane-scroll {
-    overflow: visible;
-  }
-  body.writing-mode .paper {
-    padding: 28px;
-  }
 }
 @media (max-width: 650px) {
   .writing-mode-button {
@@ -830,9 +873,6 @@ body.writing-mode .media-pane-head small {
   #saveStatus {
     max-width: 92px;
     font-size: 9px;
-  }
-  body.writing-mode .entry-title {
-    font-size: 26px;
   }
 }
 .media-quality-settings {
@@ -971,5 +1011,310 @@ body.writing-mode .media-pane-head small {
   }
   .profile-crop-controls {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Respond to the actual editor width, including when other panels are folded. */
+@container (max-width: 640px) {
+  .entry-columns {
+    display: block;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .entry-writing,
+  .writing-scroll {
+    overflow: visible;
+    flex: none;
+  }
+  .entry-media-pane {
+    width: 100%;
+    min-width: 0;
+    border-top: 1px solid var(--line);
+  }
+  .media-pane-scroll {
+    overflow: visible;
+  }
+  .media-resizer {
+    display: none;
+  }
+}
+
+/* Scoped motion: avoid animation on editor input and while resizing. */
+@media (prefers-reduced-motion: no-preference) {
+  .entry-panel {
+    transition: width 180ms ease;
+  }
+  .entry-card {
+    transition:
+      background 160ms ease,
+      border-color 160ms ease;
+  }
+  .entry-media-pane {
+    transition: width 180ms ease;
+  }
+  dialog[open] {
+    animation: dialog-appear 160ms ease-out;
+  }
+  dialog::backdrop {
+    animation: backdrop-appear 160ms ease-out;
+  }
+  .settings-content {
+    animation: content-appear 150ms ease-out;
+  }
+}
+.resizing-pane,
+.resizing-pane * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+.resizing-pane .entry-media-pane {
+  transition: none;
+}
+@keyframes dialog-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes backdrop-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes content-appear {
+  from {
+    opacity: 0.5;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 1100px) {
+  .workspace-search .workspace-title {
+    display: none;
+  }
+  .panel-switch span {
+    display: none;
+  }
+}
+@media (max-width: 650px) {
+  .workspace-search {
+    justify-content: flex-start;
+  }
+  .workspace-search .search-controls {
+    gap: 5px;
+  }
+  .search-box {
+    flex: 1;
+  }
+  .search-box input {
+    width: 100%;
+    min-width: 0;
+  }
+  .topbar {
+    gap: 6px;
+  }
+  .topbar .panel-switch span {
+    display: none;
+  }
+  .workspace-search .search-controls {
+    width: 100%;
+  }
+  .entry-media-pane #entryComments {
+    padding-inline: 16px;
+  }
+}
+@media print {
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+  }
+}
+
+#editorPanel:not(.inline-editing) .gallery-edit-hint {
+  display: none;
+}
+.entry-media-pane .drop-zone {
+  margin: 16px;
+}
+.media-pane-head > div:first-child {
+  flex: 1 1 90px;
+}
+.media-pane-head .media-queue-toggle {
+  white-space: nowrap;
+}
+
+/* Binder dividers stay on the viewport edge in both open and closed states. */
+#app {
+  padding-inline: 30px;
+}
+.binder-tabs {
+  position: fixed;
+  top: 108px;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 30px;
+}
+.binder-tabs-left {
+  left: 0;
+}
+.binder-tabs-right {
+  right: 0;
+}
+body:has(#journalView.hidden):not(:has(#alternateView.has-entry-reader)) .binder-tabs-right {
+  visibility: hidden;
+}
+.binder-tabs .binder-tab {
+  display: flex;
+  flex-direction: column;
+  width: 30px;
+  min-height: 82px;
+  padding: 10px 5px;
+  gap: 7px;
+  border: 1px solid color-mix(in srgb, var(--tab-color), var(--ink) 12%);
+  background: color-mix(in srgb, var(--tab-color), var(--paper) 85%);
+  color: var(--ink);
+  border-radius: 0 9px 9px 0;
+  box-shadow: 2px 2px 5px #0000000c;
+  opacity: 0.8;
+}
+.binder-tab#sidebarFold {
+  --tab-color: var(--accent);
+}
+.binder-tab#listToggle {
+  --tab-color: var(--accent);
+}
+.binder-tab#mediaToggle {
+  --tab-color: var(--accent);
+  border-radius: 9px 0 0 9px;
+}
+.binder-tabs .binder-tab span {
+  display: block;
+  writing-mode: vertical-rl;
+  letter-spacing: 3px;
+  font-size: 12px;
+}
+.binder-tabs .binder-tab[aria-expanded='true'],
+.binder-tabs .binder-tab:hover {
+  background: color-mix(in srgb, var(--tab-color), var(--paper) 70%);
+  opacity: 1;
+}
+.binder-tabs .binder-tab:focus-visible {
+  outline-offset: -3px;
+}
+.binder-tab#mediaToggle span {
+  font-size: 0;
+}
+.binder-tab#mediaToggle span::after {
+  content: '图评';
+  font-size: 12px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sidebar {
+    transition:
+      width 220ms ease,
+      padding 220ms ease,
+      opacity 160ms ease,
+      transform 220ms ease,
+      visibility 220ms;
+  }
+  .entry-panel,
+  .entry-media-pane {
+    transition:
+      width 220ms ease,
+      opacity 160ms ease,
+      visibility 220ms;
+  }
+  .media-resizer {
+    transition: flex-basis 220ms ease;
+  }
+  .binder-tabs .binder-tab {
+    transition:
+      background 180ms ease,
+      opacity 180ms ease,
+      box-shadow 180ms ease;
+  }
+}
+.resizing-pane .entry-media-pane {
+  transition: none;
+}
+@media (max-width: 650px) {
+  #app {
+    padding-inline: 27px;
+  }
+  .binder-tabs,
+  .binder-tabs .binder-tab {
+    width: 27px;
+  }
+  .sidebar {
+    left: 27px;
+  }
+  #app.sidebar-collapsed .sidebar {
+    transform: translateX(-110%);
+  }
+}
+@container (max-width: 640px) {
+  .entry-columns.media-collapsed .entry-media-pane {
+    width: 100%;
+    max-height: 0;
+    min-height: 0;
+  }
+}
+
+.sidebar-view-label {
+  margin: 22px 10px 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+#categoryGroup {
+  flex-shrink: 0;
+}
+#allEntries {
+  margin-bottom: 3px;
+}
+#allEntries svg {
+  width: 15px;
+  height: 15px;
+}
+#categoryGroup .category-item {
+  min-height: 36px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .binder-tabs .binder-tab span {
+    transition: transform 180ms ease;
+  }
+  .binder-tabs .binder-tab:is(:hover, :focus-visible) {
+    box-shadow: 0 3px 12px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  .binder-tabs .binder-tab:is(:hover, :focus-visible) span {
+    transform: translateY(-2px);
+  }
+  .binder-tabs .binder-tab:active span {
+    transform: translateY(1px);
+  }
+  .category-item,
+  .nav-button {
+    transition:
+      background 170ms ease,
+      color 170ms ease,
+      box-shadow 170ms ease;
+  }
+  .category-item:is(:hover, :focus-visible),
+  .nav-button:is(:hover, :focus-visible) {
+    background: var(--mint);
+    box-shadow: inset 2px 0 0 var(--accent);
   }
 }

@@ -11,7 +11,9 @@ foreach ($taskListener in $taskListeners) {
     }
     Stop-Process -Id $taskListener.OwningProcess -ErrorAction Stop
 }
-$taskLauncher = Start-Process -FilePath (Join-Path $taskRoot '拾页日记.exe') -ArgumentList '--check' -WorkingDirectory $taskRoot -WindowStyle Hidden -Wait -PassThru
+$taskLauncher = Start-Process -FilePath (Join-Path $taskRoot '拾页日记.exe') -ArgumentList '--check' -WorkingDirectory $taskRoot -WindowStyle Hidden -PassThru
+# Wait for the launcher only: Start-Process -Wait also waits for its long-lived server child.
+if (!$taskLauncher.WaitForExit(60000)) { throw 'Launcher did not finish within 60 seconds.' }
 if ($taskLauncher.ExitCode -ne 0) { throw 'Launcher failed. Check the application directory.' }
 $taskHealth = Invoke-RestMethod ('http://127.0.0.1:' + $taskConfig.port + '/api/health')
 $taskVersion = (Get-Content -LiteralPath (Join-Path $taskRoot 'package.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version

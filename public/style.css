@@ -16,3 +16,7 @@
 @import url('./styles/workbench.css');
 @import url('./styles/comments.css');
 @import url('./styles/stickers.css');
+
+@import url('./styles/entry-reader.css');
+@import url('./styles/album.css');
+@import url('./styles/recollection.css');

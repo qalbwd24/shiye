@@ -7,6 +7,39 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
+    <nav class="binder-tabs binder-tabs-left" aria-label="左侧分隔页">
+      <button
+        id="sidebarFold"
+        class="panel-switch binder-tab"
+        type="button"
+        aria-controls="mainSidebar"
+        aria-expanded="true"
+        title="折叠导航"
+      >
+        ☰<span>导航</span></button
+      ><button
+        id="listToggle"
+        class="panel-switch binder-tab"
+        type="button"
+        aria-controls="entryPanel"
+        aria-expanded="true"
+        title="折叠日记列表"
+      >
+        ▤<span>列表</span>
+      </button>
+    </nav>
+    <nav class="binder-tabs binder-tabs-right" aria-label="右侧分隔页">
+      <button
+        id="mediaToggle"
+        class="panel-switch binder-tab"
+        type="button"
+        aria-controls="entryMediaPane"
+        aria-expanded="true"
+        title="折叠图片与评论"
+      >
+        ▧<span>图片与评论</span>
+      </button>
+    </nav>
     <div id="app">
       <aside class="sidebar" id="mainSidebar" data-bg-region="sidebar" aria-label="日记导航">
         <button
@@ -21,56 +54,67 @@
             ><small id="profileBrandMotto">把日子，收藏起来</small></span
           >
         </button>
-        <button id="newEntry" class="primary new-entry">
-          <span data-icon="plus"></span> 写一篇日记 <kbd>N</kbd>
-        </button>
-        <nav id="navigation" aria-label="日记视图">
-          <button data-view="all" class="nav-button active">
-            <span data-icon="book"></span>全部日记 <span class="count" id="allCount">0</span>
+        <div class="sidebar-scroll">
+          <button id="newEntry" class="primary new-entry">
+            <span data-icon="plus"></span> 写一篇日记 <kbd>N</kbd>
           </button>
-          <button data-view="calendar" class="nav-button">
-            <span data-icon="calendar"></span>日历
-          </button>
-          <button data-view="gallery" class="nav-button">
-            <span data-icon="image"></span>相册
-          </button>
-          <button data-view="memories" class="nav-button">
-            <span data-icon="sparkles"></span>拾光回顾
-          </button>
-          <button data-view="stats" class="nav-button">
-            <span data-icon="chart"></span>记录统计
-          </button>
-        </nav>
-        <div class="section-label" id="section-categories-head">
-          <button
-            type="button"
-            class="section-toggle"
-            data-fold="categories"
-            aria-controls="categories"
-            aria-expanded="true"
-          >
-            <span class="fold-caret" aria-hidden="true">⌄</span>我的分类
-          </button>
-          <button
-            id="addCategory"
-            class="icon-button"
-            aria-label="添加分类"
-            data-icon="plus"
-          ></button>
+          <div class="section-label" id="section-categories-head">
+            <button
+              type="button"
+              class="section-toggle"
+              data-fold="categories"
+              aria-controls="categoryGroup"
+              aria-expanded="true"
+            >
+              <span class="fold-caret" aria-hidden="true">⌄</span>日记分类
+            </button>
+            <button
+              id="addCategory"
+              class="icon-button"
+              aria-label="添加分类"
+              data-icon="plus"
+            ></button>
+          </div>
+          <div id="categoryGroup">
+            <button data-view="all" class="category-item active" id="allEntries">
+              <span data-icon="book"></span>全部日记 <span class="count" id="allCount">0</span>
+            </button>
+            <div id="categories"></div>
+          </div>
+
+          <div class="sidebar-view-label">浏览视图</div>
+          <nav id="navigation" aria-label="日记视图">
+            <button data-view="calendar" class="nav-button">
+              <span data-icon="calendar"></span>日历
+            </button>
+            <button data-view="gallery" class="nav-button">
+              <span data-icon="image"></span>相册
+            </button>
+            <button data-view="memories" class="nav-button">
+              <span data-icon="sparkles"></span>拾光回顾
+            </button>
+            <button data-view="stats" class="nav-button">
+              <span data-icon="chart"></span>记录统计
+            </button>
+          </nav>
+          <div class="section-label tags-label" id="section-tags-head">
+            <button
+              type="button"
+              class="section-toggle"
+              data-fold="tags"
+              aria-controls="tagCloud"
+              aria-expanded="true"
+            >
+              <span class="fold-caret" aria-hidden="true">⌄</span>常用标签</button
+            ><button
+              id="addTag"
+              class="icon-button"
+              aria-label="添加标签"
+              data-icon="plus"
+            ></button>
+          </div>
+          <div id="tagCloud" class="tag-cloud"></div>
         </div>
-        <div id="categories"></div>
-        <div class="section-label tags-label" id="section-tags-head">
-          <button
-            type="button"
-            class="section-toggle"
-            data-fold="tags"
-            aria-controls="tagCloud"
-            aria-expanded="true"
-          >
-            <span class="fold-caret" aria-hidden="true">⌄</span>常用标签</button
-          ><button id="addTag" class="icon-button" aria-label="添加标签" data-icon="plus"></button>
-        </div>
-        <div id="tagCloud" class="tag-cloud"></div>
         <div class="sidebar-bottom">
           <button id="settingsButton" class="settings-entry">
             <span aria-hidden="true">⚙</span> 设置<span class="settings-caption"
@@ -96,51 +140,22 @@
       </aside>
       <main class="workspace">
         <header class="topbar" data-bg-region="topbar">
-          <div class="workspace-heading">
-            <div class="panel-switches" aria-label="工作区面板">
-              <button
-                id="sidebarFold"
-                class="panel-switch"
-                type="button"
-                aria-controls="mainSidebar"
-                aria-expanded="true"
-                title="折叠导航"
-              >
-                ☰<span>导航</span>
-              </button>
-              <button
-                id="listToggle"
-                class="panel-switch"
-                type="button"
-                aria-controls="entryPanel"
-                aria-expanded="true"
-                title="折叠日记列表"
-              >
-                ▤<span>列表</span>
-              </button>
-              <button
-                id="mediaToggle"
-                class="panel-switch"
-                type="button"
-                aria-controls="entryMediaPane"
-                aria-expanded="true"
-                title="折叠图片与评论"
-              >
-                ▧<span>图片与评论</span>
-              </button>
-            </div>
+          <div class="workspace-search">
             <div class="workspace-title">
               <span class="eyebrow">每一页，都是生活</span>
               <h1 id="viewTitle">我的日记<span class="heading-dot">.</span></h1>
             </div>
+            <div class="search-controls">
+              <label class="search-box"
+                ><span data-icon="search"></span
+                ><input id="search" placeholder="搜索文字、标签、地点" aria-label="搜索日记" /><kbd
+                  >/</kbd
+                ></label
+              >
+            </div>
           </div>
           <div class="topbar-right">
-            <label class="search-box"
-              ><span data-icon="search"></span
-              ><input id="search" placeholder="搜索文字、标签、地点" aria-label="搜索日记" /><kbd
-                >/</kbd
-              ></label
-            ><button
+            <button
               id="focusButton"
               class="icon-button"
               title="专注写作"
@@ -183,152 +198,171 @@
               <button id="emptyNew" class="primary">写一篇日记</button>
             </div>
             <div id="editorWrap">
-              <div class="editor-top">
-                <span id="entryDateline"></span>
-                <div class="editor-actions">
-                  <button
-                    id="writingModeButton"
-                    class="writing-mode-button"
-                    type="button"
-                    aria-pressed="false"
-                  >
-                    进入写作
-                  </button>
-                  <span id="saveStatus" role="status">已保存到本地</span
-                  ><button
-                    id="pinButton"
-                    class="icon-button"
-                    title="置顶日记"
-                    aria-label="置顶日记"
-                    data-icon="pin"
-                  ></button
-                  ><button
-                    id="historyButton"
-                    class="icon-button"
-                    title="编辑历史"
-                    aria-label="编辑历史"
-                    data-icon="history"
-                  ></button
-                  ><button
-                    id="moreButton"
-                    class="icon-button"
-                    title="日记操作"
-                    aria-label="日记操作"
-                    data-icon="more"
-                  ></button>
-                </div>
-              </div>
               <div class="entry-columns" id="entryColumns" data-media-position="right">
-                <div class="entry-writing editor-scroll">
-                  <article class="paper">
-                    <div class="entry-meta">
-                      <select id="entryCategory" aria-label="日记分类"></select
-                      ><span class="meta-separator">·</span
-                      ><input id="entryDate" type="datetime-local" aria-label="日记日期时间" /><span
-                        id="demoBadge"
-                        class="demo-badge"
-                        >体验示例</span
+                <div class="entry-writing">
+                  <div class="editor-top">
+                    <span id="entryDateline"></span>
+                    <div class="editor-actions">
+                      <button
+                        id="writingModeButton"
+                        class="writing-mode-button"
+                        type="button"
+                        aria-pressed="false"
                       >
-                    </div>
-                    <input
-                      id="entryTitle"
-                      class="entry-title"
-                      placeholder="给今天起个名字…"
-                      aria-label="日记标题"
-                    />
-                    <div class="mood-row">
-                      <select id="entryWeather" aria-label="天气">
-                        <option value="">＋ 天气</option>
-                        <option>晴</option>
-                        <option>多云</option>
-                        <option>阴</option>
-                        <option>雨</option>
-                        <option>雷阵雨</option>
-                        <option>雪</option>
-                        <option>大风</option>
-                        <option>雾</option></select
-                      ><select id="entryMood" aria-label="心情">
-                        <option value="">＋ 心情</option>
-                        <option>平静</option>
-                        <option>开心</option>
-                        <option>充实</option>
-                        <option>期待</option>
-                        <option>疲惫</option>
-                        <option>难过</option></select
-                      ><label class="location-field"
-                        ><span data-icon="pin-location"></span
-                        ><input id="entryLocation" placeholder="添加地点" aria-label="地点"
-                      /></label>
-                    </div>
-                    <div id="formatToolbar" class="format-toolbar" aria-label="文字格式">
-                      <button data-command="bold" title="粗体" aria-label="粗体"><b>B</b></button
-                      ><button data-command="italic" title="斜体" aria-label="斜体"><i>I</i></button
-                      ><button data-command="strikeThrough" title="删除线" aria-label="删除线">
-                        <s>S</s></button
-                      ><span></span
+                        进入写作
+                      </button>
+                      <span id="saveStatus" role="status">已保存到本地</span
                       ><button
-                        data-command="insertUnorderedList"
-                        title="项目列表"
-                        aria-label="项目列表"
-                        data-icon="list"
+                        id="pinButton"
+                        class="icon-button"
+                        title="置顶日记"
+                        aria-label="置顶日记"
+                        data-icon="pin"
                       ></button
                       ><button
-                        data-block="blockquote"
-                        title="引用"
-                        aria-label="引用"
-                        data-icon="quote"
-                      ></button
-                      ><button data-block="h2" title="小标题" aria-label="小标题">H₂</button
-                      ><button
-                        data-command="removeFormat"
-                        title="清除格式"
-                        aria-label="清除格式"
-                        data-icon="eraser"
-                      ></button
-                      ><span></span
-                      ><button
-                        id="insertDateTime"
-                        title="插入日期时间（按住 CapsLock＋T）"
-                        aria-label="插入日期时间"
-                        data-icon="clock"
+                        id="historyButton"
+                        class="icon-button"
+                        title="编辑历史"
+                        aria-label="编辑历史"
+                        data-icon="history"
                       ></button
                       ><button
-                        id="indentButton"
-                        title="空两格（Tab）"
-                        aria-label="空两格"
-                        data-icon="indent"
-                      ></button
-                      ><button
-                        id="templateButton"
-                        title="使用写作模板"
-                        aria-label="写作模板"
-                        data-icon="template"
+                        id="moreButton"
+                        class="icon-button"
+                        title="日记操作"
+                        aria-label="日记操作"
+                        data-icon="more"
                       ></button>
                     </div>
-                    <div
-                      id="bodyEditor"
-                      class="body-editor"
-                      contenteditable="true"
-                      role="textbox"
-                      aria-label="日记正文"
-                      aria-multiline="true"
-                      data-placeholder="记录此刻的想法…"
-                      spellcheck="false"
-                    ></div>
-                    <div id="entryCover" class="entry-cover hidden">
-                      <div class="cover-orb"></div>
-                      <div class="cover-hill"></div>
-                      <span>把平凡的日子，过成喜欢的样子</span><small>示例插画</small>
-                    </div>
-                    <div class="entry-tags">
-                      <span data-icon="tag"></span
-                      ><input
-                        id="entryTags"
-                        aria-label="日记标签"
-                        placeholder="添加标签，用逗号分隔"
+                  </div>
+
+                  <div class="writing-scroll editor-scroll">
+                    <article class="paper">
+                      <div class="entry-meta">
+                        <select id="entryCategory" aria-label="日记分类"></select
+                        ><span class="meta-separator">·</span
+                        ><input
+                          id="entryDate"
+                          type="datetime-local"
+                          aria-label="日记日期时间"
+                        /><span id="demoBadge" class="demo-badge">体验示例</span>
+                      </div>
+                      <input
+                        id="entryTitle"
+                        class="entry-title"
+                        placeholder="给今天起个名字…"
+                        aria-label="日记标题"
                       />
-                    </div>
-                  </article>
+                      <div class="mood-row">
+                        <select id="entryWeather" aria-label="天气">
+                          <option value="">＋ 天气</option>
+                          <option>晴</option>
+                          <option>多云</option>
+                          <option>阴</option>
+                          <option>雨</option>
+                          <option>雷阵雨</option>
+                          <option>雪</option>
+                          <option>大风</option>
+                          <option>雾</option></select
+                        ><select id="entryMood" aria-label="心情">
+                          <option value="">＋ 心情</option>
+                          <option>平静</option>
+                          <option>开心</option>
+                          <option>充实</option>
+                          <option>期待</option>
+                          <option>疲惫</option>
+                          <option>难过</option></select
+                        ><label class="location-field"
+                          ><span data-icon="pin-location"></span
+                          ><input id="entryLocation" placeholder="添加地点" aria-label="地点"
+                        /></label>
+                      </div>
+                      <div id="formatToolbar" class="format-toolbar" aria-label="文字格式">
+                        <button data-command="bold" title="粗体" aria-label="粗体"><b>B</b></button
+                        ><button data-command="italic" title="斜体" aria-label="斜体">
+                          <i>I</i></button
+                        ><button data-command="strikeThrough" title="删除线" aria-label="删除线">
+                          <s>S</s></button
+                        ><span></span
+                        ><button
+                          data-command="insertUnorderedList"
+                          title="项目列表"
+                          aria-label="项目列表"
+                          data-icon="list"
+                        ></button
+                        ><button
+                          data-block="blockquote"
+                          title="引用"
+                          aria-label="引用"
+                          data-icon="quote"
+                        ></button
+                        ><button data-block="h2" title="小标题" aria-label="小标题">H₂</button
+                        ><button
+                          data-command="removeFormat"
+                          title="清除格式"
+                          aria-label="清除格式"
+                          data-icon="eraser"
+                        ></button
+                        ><span></span
+                        ><button
+                          id="insertDateTime"
+                          title="插入日期时间（按住 CapsLock＋T）"
+                          aria-label="插入日期时间"
+                          data-icon="clock"
+                        ></button
+                        ><button
+                          id="indentButton"
+                          title="空两格（Tab）"
+                          aria-label="空两格"
+                          data-icon="indent"
+                        ></button
+                        ><button
+                          id="templateButton"
+                          title="使用写作模板"
+                          aria-label="写作模板"
+                          data-icon="template"
+                        ></button>
+                      </div>
+                      <div
+                        id="bodyEditor"
+                        class="body-editor"
+                        contenteditable="true"
+                        role="textbox"
+                        aria-label="日记正文"
+                        aria-multiline="true"
+                        data-placeholder="记录此刻的想法…"
+                        spellcheck="false"
+                      ></div>
+                      <section
+                        id="inlineAttachments"
+                        class="inline-attachments"
+                        aria-label="编辑附件"
+                      >
+                        <div class="inline-attachments-heading">
+                          <strong>附件</strong
+                          ><small>拖动缩略图调整顺序，完成编辑后更新右侧展示</small>
+                        </div>
+                        <div id="attachmentEditor" class="attachments"></div>
+                      </section>
+                      <div id="entryCover" class="entry-cover hidden">
+                        <div class="cover-orb"></div>
+                        <div class="cover-hill"></div>
+                        <span>把平凡的日子，过成喜欢的样子</span><small>示例插画</small>
+                      </div>
+                      <div class="entry-tags">
+                        <span data-icon="tag"></span
+                        ><input
+                          id="entryTags"
+                          aria-label="日记标签"
+                          placeholder="添加标签，用逗号分隔"
+                        />
+                      </div>
+                    </article>
+                  </div>
+                  <footer class="editor-footer">
+                    <span id="wordCount">0 字</span><span id="footerDate">只管记录，自动保存</span
+                    ><button id="saveButton">保存 <kbd>Ctrl S</kbd></button>
+                  </footer>
                 </div>
                 <div
                   class="panel-resizer media-resizer"
@@ -366,10 +400,6 @@
                   </div>
                 </aside>
               </div>
-              <footer class="editor-footer">
-                <span id="wordCount">0 字</span><span id="footerDate">只管记录，自动保存</span
-                ><button id="saveButton">保存 <kbd>Ctrl S</kbd></button>
-              </footer>
             </div>
           </section>
         </section>

@@ -1,3 +1,6 @@
+import { createAlbum } from './album.js';
+import { createRecollection } from './recollection.js';
+import { createEntryReader } from './entry-reader.js';
 import { createConflicts } from './conflicts.js';
 import { createPreferences } from './preferences.js';
 import { createAppearance } from './appearance.js';
@@ -7,6 +10,7 @@ import { createGallery } from './gallery.js';
 import { createComments } from './comments.js';
 import { createStickers } from './stickers.js';
 import { createContextMenu } from './context-menu.js';
+import { createReadingPosition } from './reading-position.js';
 import { createSearch } from './search.js';
 import { createInsights } from './insights.js';
 import { createOrganization } from './organization.js';
@@ -17,10 +21,26 @@ import { createExport } from './export.js';
 import { createBackups } from './backups.js';
 export function installOffline(c) {
   const { $, modal, closeModal, toast, command } = c;
+  const reader = createEntryReader(c);
+  const browsingContext = Object.create(c);
+  browsingContext.releaseEntryReader = reader.release;
+  browsingContext.mountEntryReader = reader.mount;
   const { apply: applyPreferences, preference, prefs, settings, lock } = createPreferences(c);
   const appearance = createAppearance(c);
   const layout = createLayout(c);
-  const gallery = createGallery(c);
+  const readingGallery = createGallery(c, {
+    defer: () => $('#editorPanel').classList.contains('inline-editing'),
+  });
+  const attachmentGallery = createGallery(c, { host: $('#attachmentEditor'), editing: () => true });
+  const gallery = {
+    render(entry) {
+      readingGallery.render(entry);
+      attachmentGallery.render(entry);
+    },
+  };
+  const album = createAlbum(browsingContext);
+  const recollection = createRecollection(browsingContext);
+  const readingPosition = createReadingPosition(c);
   const stickers = createStickers(c);
   const commentContext = Object.create(c);
   commentContext.stickers = stickers;
@@ -36,7 +56,11 @@ export function installOffline(c) {
   const { manage, render: renderOrganization } = createOrganization(c);
   const conflicts = createConflicts(c);
   const render = (view, root) =>
-    conflicts.render(view, root) || renderOrganization(view, root) || renderInsights(view, root);
+    album.render(view, root) ||
+    recollection.render(view, root) ||
+    conflicts.render(view, root) ||
+    renderOrganization(view, root) ||
+    renderInsights(view, root);
   const { templates } = createTemplates(c);
   const { toggle, markdown } = createEditorTools(c);
   const { recording, draw, speak } = createMediaTools(c);
@@ -54,6 +78,8 @@ export function installOffline(c) {
     return b;
   };
   const workbench = createWorkbench(c, {
+    beginEditing: () => gallery.render(c.current()),
+    completeEditing: () => gallery.render(c.current()),
     preferences: settings,
     appearance: appearance.settings,
     layout,
@@ -64,10 +90,22 @@ export function installOffline(c) {
     lock,
     stickers: stickers.manage,
   });
-  button('筛选', advancedSearch, $('.topbar-right'));
+  button('筛选', advancedSearch, $('.search-controls')).id = 'filterButton';
   const moreViews = document.createElement('details');
   moreViews.className = 'more-views';
   moreViews.innerHTML = '<summary>更多视图</summary>';
+  try {
+    moreViews.open = localStorage.getItem('shiye.more-views') === 'true';
+  } catch {
+    /* Optional storage. */
+  }
+  moreViews.addEventListener('toggle', () => {
+    try {
+      localStorage.setItem('shiye.more-views', String(moreViews.open));
+    } catch {
+      /* Optional storage. */
+    }
+  });
   $('#navigation').append(moreViews);
   for (const [name, view] of [
     ['往日此时', 'recall'],
@@ -115,7 +153,7 @@ export function installOffline(c) {
   color.title = '文字颜色';
   color.oninput = () => command('foreColor', color.value);
   $('#formatToolbar').append(color);
-  $('#attachments').addEventListener('dblclick', (e) => {
+  $('#attachmentEditor').addEventListener('dblclick', (e) => {
     const img = e.target.closest('img');
     if (img) {
       const id = img.getAttribute('src').split('/').pop();
@@ -123,11 +161,15 @@ export function installOffline(c) {
     }
   });
   const imageNote = document.createElement('small');
+  imageNote.className = 'gallery-edit-hint';
   imageNote.textContent = '双击图片可旋转或裁剪副本';
-  $('#attachments').after(imageNote);
+  $('#attachmentEditor').after(imageNote);
   return {
     render,
+    releaseEntryReader: reader.release,
     gallery,
+    readingPosition,
+    showList: layout.showList,
     comments,
     stickers,
     filter,

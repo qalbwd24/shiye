@@ -1,0 +1,223 @@
+/* A single mounted editor supplies body, media and comments in both recollection views. */
+#alternateView:has(> .recollection-workspace) {
+  overflow: hidden;
+  padding: 18px 24px 0;
+  display: flex;
+  min-height: 0;
+}
+.recollection-workspace {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.recollection-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.recollection-heading h2 {
+  margin: 0;
+  font-size: 23px;
+}
+.recollection-heading p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.recollection-mode {
+  display: flex;
+  flex-shrink: 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 3px;
+}
+.recollection-mode button {
+  padding: 7px 12px;
+  border-radius: 14px;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.recollection-mode button[aria-pressed='true'] {
+  color: var(--accent-ink);
+  background: var(--mint);
+}
+.recollection-range {
+  flex-shrink: 0;
+  max-height: 32%;
+  overflow: auto;
+  font-size: 12px;
+}
+.recollection-range summary {
+  cursor: pointer;
+  padding: 5px 0;
+  color: var(--muted);
+}
+.recollection-filters {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 9px 14px;
+  padding: 8px 0;
+}
+.recollection-filters label {
+  display: grid;
+  gap: 4px;
+}
+.recollection-filters select,
+.recollection-filters input[type='date'] {
+  max-width: 180px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: inherit;
+  background: var(--paper);
+}
+.recollection-filters .recollection-checkbox {
+  display: flex;
+  align-items: center;
+  padding: 7px 0;
+}
+.recollection-range > small {
+  color: var(--muted);
+}
+.recollection-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.recollection-controls span {
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 120px;
+  text-align: center;
+}
+.recollection-controls button {
+  padding: 7px 12px;
+}
+.recollection-reader-host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.recollection-reader-host > #editorPanel {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+}
+.recollection-list {
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  align-content: start;
+  align-items: start;
+  gap: 18px;
+  padding: 5px 4px 24px;
+}
+.recollection-card {
+  min-width: 0;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+}
+.recollection-card > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.recollection-card > div {
+  padding: 12px 5px 0;
+}
+.recollection-card small {
+  color: var(--muted);
+}
+.recollection-card h3 {
+  overflow-wrap: anywhere;
+  margin: 8px 0;
+}
+.recollection-card p {
+  color: var(--muted);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.recollection-empty {
+  flex: 1;
+  overflow: auto;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .recollection-reader-host,
+  .recollection-list {
+    animation: recollection-enter 200ms ease-out;
+  }
+  .recollection-mode button {
+    transition:
+      background 190ms,
+      color 190ms;
+  }
+}
+@keyframes recollection-enter {
+  from {
+    opacity: 0.35;
+    transform: translateX(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@media (max-width: 650px) {
+  #alternateView:has(> .recollection-workspace) {
+    padding: 12px 12px 0;
+  }
+  .recollection-heading {
+    align-items: start;
+  }
+  .recollection-heading h2 {
+    font-size: 19px;
+  }
+  .recollection-heading p {
+    display: none;
+  }
+  .recollection-mode button {
+    padding: 6px 9px;
+  }
+  .recollection-controls {
+    gap: 5px;
+  }
+  .recollection-controls button {
+    padding: 6px 9px;
+    font-size: 12px;
+  }
+  .recollection-controls span {
+    min-width: 110px;
+  }
+}
+
+.recollection-list-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 4px 0 12px;
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 12px;
+}

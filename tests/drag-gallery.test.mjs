@@ -162,16 +162,19 @@ test('gallery reorder and an upload during saving stay on the captured entry aft
       return { ...data, revision: data.revision + 1, history: [], updatedAt: '2026-09-14' };
     },
   });
-  const gallery = createGallery({
-    $: () => host,
-    escape: (text) => text,
-    toast() {},
-    get library() {
-      return library;
+  const gallery = createGallery(
+    {
+      $: () => host,
+      escape: (text) => text,
+      toast() {},
+      get library() {
+        return library;
+      },
+      markDirty: persistence.markDirty,
+      flush: persistence.flush,
     },
-    markDirty: persistence.markDirty,
-    flush: persistence.flush,
-  });
+    { editing: () => true },
+  );
   gallery.render(a);
   const item = { dataset: { mediaId: 'one' }, draggable: true };
   const control = {

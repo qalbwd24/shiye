@@ -21,10 +21,6 @@ import { api, uploadLegacyFile } from '../core/api.js';
 import { installOffline } from '../features/index.js';
 import { isHidden } from '../shared/insights.js';
 let offline;
-import { memoryDeck } from '../shared/memories.js';
-let memoryIds = [],
-  memoryIndex = 0,
-  memoryCategories = [];
 
 import { commands, chord, binding, conflicts, match } from '../shared/hotkeys.js';
 
@@ -85,7 +81,6 @@ function status(text, error = false) {
 async function refreshLibrary() {
   library = await api('/api/library');
   offline?.apply();
-  memoryCategories = library.settings?.preferences?.memoryCategories || [];
   renderSide();
 }
 function current() {
@@ -94,6 +89,7 @@ function current() {
 function renderSide() {
   const live = library.entries.filter((e) => !e.deleted && !e.draft && !isHidden(e));
   $('#allCount').textContent = live.length;
+  $('#allEntries').classList.toggle('active', view === 'all' && !category && !tag);
   const colors = ['#72b8b7', '#b8a4cc', '#d1b67f', '#8fadcd', '#c49c96'];
   $('#categories').innerHTML = sortedTaxonomy(library, 'category')
     .map((i) => i.name)
@@ -185,6 +181,7 @@ function ensureOption(select, value) {
 }
 function renderEditor() {
   const e = current();
+  offline?.readingPosition.select(e?.id || null);
   $('#editorWrap').classList.toggle('hidden', !e);
   $('#editorEmpty').classList.toggle('hidden', !!e);
   offline?.comments.render(e);
@@ -238,10 +235,24 @@ function countWords() {
   $('#wordCount').textContent =
     Array.from(textOf($('#bodyEditor').innerHTML).replace(/\s/g, '')).length + ' 字';
 }
+async function openPreviewEntry(id, active) {
+  await flush();
+  await offline?.readingMode();
+  if (
+    !active() ||
+    !library.entries.some(
+      (entry) => entry.id === id && !entry.deleted && !entry.draft && !isHidden(entry),
+    )
+  )
+    return false;
+  selected = id;
+  renderEditor();
+  return true;
+}
 async function selectEntry(id) {
   await flush();
+  await offline?.readingMode();
   selected = id;
-  offline?.readingMode();
   $('#journalView').classList.add('has-selected');
   renderList();
   renderEditor();
@@ -298,6 +309,7 @@ async function changeView(next) {
 }
 async function filterView({ category: cat = null, tag: t = null } = {}) {
   await flush();
+  await offline?.showList();
   view = 'all';
   category = cat;
   tag = t;
@@ -307,6 +319,7 @@ async function filterView({ category: cat = null, tag: t = null } = {}) {
   renderView();
 }
 function renderView() {
+  offline?.releaseEntryReader();
   const journal = ['all', 'trash', 'drafts', 'hidden'].includes(view);
   $('#journalView').classList.toggle('hidden', !journal);
   $('#alternateView').classList.toggle('hidden', journal);
@@ -333,6 +346,7 @@ function renderView() {
   } else renderAlternate();
 }
 function renderAlternate() {
+  offline?.releaseEntryReader();
   const root = $('#alternateView');
   if (offline?.render(view, root)) return;
   const live = library.entries.filter((e) => !e.deleted && !e.draft && !isHidden(e));
@@ -368,14 +382,6 @@ function renderAlternate() {
       calendarDate = new Date();
       renderAlternate();
     };
-  } else if (view === 'gallery') {
-    const items = live
-      .flatMap((e) =>
-        e.attachments.map((id) => ({ entry: e, media: library.media.find((m) => m.id === id) })),
-      )
-      .filter((x) => x.media);
-    root.innerHTML = `<div class="alt-heading"><div><h2>日子里的画面</h2><p>${items.length} 份媒体，连着 ${new Set(items.map((x) => x.entry.id)).size} 篇记忆</p></div><button class="secondary" id="galleryNew">新建图文日记</button></div><div class="view-cards">${items.map(({ entry: e, media: m }) => `<button class="gallery-card" data-open-entry="${e.id}">${m.type.startsWith('image/') ? `<img src="/media/${m.id}" alt="${escape(m.name)}">` : `<div class="media-placeholder">${icon(m.type.startsWith('video/') ? 'image' : 'book')} ${m.type.startsWith('video/') ? '视频' : '音频 / 附件'}</div>`}<div>${escape(e.title || '无标题日记')}<small>${dateText(e.date)}</small></div></button>`).join('')}</div>${!items.length ? '<div class="empty"><h2>第一张照片，从今天开始</h2><p>在日记中拖入图片、粘贴截图，或添加视频和音频。</p></div>' : ''}`;
-    $('#galleryNew').onclick = () => newEntry();
   } else if (view === 'stats') {
     const chars = live.reduce((n, e) => n + textOf(e.content).replace(/\s/g, '').length, 0),
       days = new Set(live.map((e) => localDate(e.date))).size;
@@ -386,43 +392,7 @@ function renderAlternate() {
       })
       .join('')}</div>`;
   } else {
-    const available = memoryDeck(live, memoryCategories, () => 0.5);
-    if (
-      !memoryIds.length ||
-      memoryIds.some((id) => !available.includes(id)) ||
-      available.some((id) => !memoryIds.includes(id))
-    ) {
-      memoryIds = memoryDeck(live, memoryCategories);
-      memoryIndex = 0;
-    }
-    const e = live.find((e) => e.id === memoryIds[memoryIndex]);
-    root.innerHTML = `<div class="alt-heading"><div><h2>和过去的自己，偶然相遇</h2><p>排除隐藏日记，每轮随机排序，逐页回看。</p></div><button id="memoryFilter" class="secondary">筛选分类</button></div><div class="memory-controls"><button id="previousMemory" class="secondary" ${memoryIndex === 0 ? 'disabled' : ''}>上一页</button><span>${memoryIds.length ? memoryIndex + 1 : 0} / ${memoryIds.length}</span><button id="anotherMemory" class="secondary" ${memoryIndex >= memoryIds.length - 1 ? 'disabled' : ''}>下一页</button><button id="shuffleMemory" class="secondary">重新洗牌</button></div>${e ? `<article class="memory-card"><small>${dateText(e.date)} · ${escape(e.category)}</small><h2>${escape(e.title || '无标题日记')}</h2><p>${escape(textOf(e.content).slice(0, 550))}</p><button class="primary" data-open-entry="${e.id}">打开这一页</button></article>` : '<div class="empty">这个范围里还没有可以回顾的日记。</div>'}`;
-    $('#anotherMemory').onclick = () => {
-      memoryIndex++;
-      renderAlternate();
-    };
-    $('#previousMemory').onclick = () => {
-      memoryIndex--;
-      renderAlternate();
-    };
-    $('#shuffleMemory').onclick = () => {
-      memoryIds = memoryDeck(live, memoryCategories);
-      memoryIndex = 0;
-      renderAlternate();
-    };
-    $('#memoryFilter').onclick = () => {
-      modal(
-        '回忆的分类',
-        `<p>不勾选时包括全部分类。隐藏日记不会进入随机回忆。</p>${library.categories.map((c) => `<label class="memory-category"><input type="checkbox" name="memoryCategory" value="${escape(c)}" ${memoryCategories.includes(c) ? 'checked' : ''}> ${escape(c)}</label>`).join('')}<button id="applyMemoryFilter" class="primary">应用筛选</button>`,
-      );
-      $('#applyMemoryFilter').onclick = async () => {
-        memoryCategories = $$('input[name="memoryCategory"]:checked').map((e) => e.value);
-        await offline.preference({ memoryCategories });
-        memoryIds = [];
-        closeModal();
-        renderAlternate();
-      };
-    };
+    root.innerHTML = '<p class="empty">请选择一个日记视图。</p>';
   }
 }
 function modal(title, html) {
@@ -615,25 +585,14 @@ function bind() {
     if (b) changeView(b.dataset.view).catch((e) => toast(e.message));
   };
   $('#trashButton').onclick = () => changeView('trash');
-  $('#categories').onclick = async (e) => {
+  $('#allEntries').onclick = () => filterView().catch((e) => toast(e.message));
+  $('#categories').onclick = (e) => {
     const b = e.target.closest('[data-category]');
-    if (!b) return;
-    await flush();
-    view = 'all';
-    category = b.dataset.category;
-    tag = null;
-    day = null;
-    renderView();
+    if (b) filterView({ category: b.dataset.category }).catch((e) => toast(e.message));
   };
-  $('#tagCloud').onclick = async (e) => {
+  $('#tagCloud').onclick = (e) => {
     const b = e.target.closest('[data-tag]');
-    if (!b) return;
-    await flush();
-    view = 'all';
-    tag = b.dataset.tag;
-    category = null;
-    day = null;
-    renderView();
+    if (b) filterView({ tag: b.dataset.tag }).catch((e) => toast(e.message));
   };
   $('#addCategory').onclick = () => {
     modal(
@@ -755,7 +714,7 @@ function bind() {
     upload([...e.target.files]).catch((e) => toast(e.message));
     e.target.value = '';
   };
-  $('#attachments').onclick = (e) => {
+  $('#attachmentEditor').onclick = (e) => {
     const b = e.target.closest('[data-remove-media]');
     if (b && current()) {
       current().attachments = current().attachments.filter((id) => id !== b.dataset.removeMedia);
@@ -819,7 +778,7 @@ function bind() {
       }
     }
   });
-  $('#focusButton').onclick = () => offline?.toggleWriting();
+  $('#focusButton').onclick = () => offline?.toggleWriting().catch((error) => toast(error.message));
   $('#entryDateline').onclick = () => $('#journalView').classList.remove('has-selected');
   $('#exportLibrary').textContent = '备份与导入';
   $('#exportLibrary').onclick = () => offline.backups();
@@ -955,6 +914,7 @@ offline = installOffline({
   download,
   legacyBackups: backups,
   selectEntry,
+  openPreviewEntry,
   newEntry,
   filterView,
   withLibraryMutation,

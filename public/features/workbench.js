@@ -198,25 +198,58 @@ export function createWorkbench(c, actions) {
     };
     preview(true);
   }
-  function writingMode(enabled) {
-    document.body.classList.toggle('writing-mode', enabled);
-    document.body.classList.remove('focus-mode');
+  let finishing = null;
+  function applyInline(enabled, target = $('#bodyEditor')) {
+    const top = target.getBoundingClientRect().top;
+    const scroller = [$('.writing-scroll'), $('#entryColumns')].find(
+      (pane) =>
+        pane.clientHeight > 0 && ['auto', 'scroll'].includes(getComputedStyle(pane).overflowY),
+    );
+    $('#editorPanel').classList.toggle('inline-editing', enabled);
+    document.body.classList.remove('writing-mode', 'focus-mode');
     $('#focusButton').classList.toggle('active', enabled);
-    $('#writingModeButton').textContent = enabled ? '返回阅读' : '进入写作';
+    $('#writingModeButton').hidden = !enabled;
+    $('#writingModeButton').textContent = '完成编辑';
     $('#writingModeButton').setAttribute('aria-pressed', String(enabled));
-    $('#writingModeButton').title = enabled
-      ? '返回阅读布局，继续查看图片与评论'
-      : '展开正文写作空间';
+    $('#writingModeButton').title = '保存并更新图片展示';
+    // The toolbar adds height above the body; keep the clicked text at its screen position.
+    if (scroller) scroller.scrollTop += target.getBoundingClientRect().top - top;
+  }
+  function beginInline(target = $('#bodyEditor')) {
+    if ($('#editorPanel').classList.contains('inline-editing')) return;
+    applyInline(true, target);
+    actions.beginEditing?.();
+  }
+  function finishInline() {
+    if (finishing) return finishing;
+    if (!$('#editorPanel').classList.contains('inline-editing')) return Promise.resolve();
+    $('#writingModeButton').disabled = true;
+    finishing = (async () => {
+      try {
+        await c.flush();
+        applyInline(false);
+        await actions.completeEditing?.();
+      } finally {
+        $('#writingModeButton').disabled = false;
+        finishing = null;
+      }
+    })();
+    return finishing;
   }
   function toggleWriting() {
-    const enabled = !document.body.classList.contains('writing-mode');
-    writingMode(enabled);
-    if (enabled) $('#bodyEditor').focus({ preventScroll: true });
+    if ($('#editorPanel').classList.contains('inline-editing')) return finishInline();
+    beginInline();
+    $('#bodyEditor').focus({ preventScroll: true });
+    return Promise.resolve();
   }
-  $('#writingModeButton').onclick = toggleWriting;
+  $('#writingModeButton').hidden = true;
+  $('#writingModeButton').onclick = () => finishInline().catch((error) => c.toast(error.message));
   for (const id of ['bodyEditor', 'entryTitle'])
-    $('#' + id).addEventListener('focusin', () => writingMode(true));
-  document.addEventListener('shiye:read-mode', () => writingMode(false));
+    $('#' + id).addEventListener('focusin', (event) => beginInline(event.currentTarget));
+  document.body.classList.remove('writing-mode', 'focus-mode');
+  document.addEventListener('shiye:read-mode', () =>
+    finishInline().catch((error) => c.toast(error.message)),
+  );
   let generation = 0;
   const sections = [
     ['profile', '个人资料', '你的头像、名字和喜欢的一句话'],
@@ -324,7 +357,7 @@ export function createWorkbench(c, actions) {
             `<label class="check-row"><input type="checkbox" data-layout-panel="${key}" ${state[key] ? '' : 'checked'}>${name}</label>`,
         )
         .join('')}</div>
-      <p>顶部的「导航」「列表」「媒体」可以单独收起或展开面板。拖动正文与媒体之间的分隔线可调整宽度；窄窗口自动上下排列。</p><div class="settings-save-row"><button class="secondary" id="layoutReset">恢复默认布局</button><button class="primary" id="layoutSave">保存布局</button></div><p id="layoutStatus" role="status"></p>`,
+      <p>页边的「导航」「列表」「图评」可以单独收起或展开面板。拖动正文与媒体之间的分隔线调整宽度，松手自动记住；空间不足时自动上下排列。点击正文可就地编辑，面板位置保持不变。</p><div class="settings-save-row"><button class="secondary" id="layoutReset">恢复默认布局</button><button class="primary" id="layoutSave">保存布局</button></div><p id="layoutStatus" role="status"></p>`,
     );
     $('#layoutMediaPosition').value = state.mediaPosition;
     for (const [id, value, output] of [
@@ -463,6 +496,6 @@ export function createWorkbench(c, actions) {
     profile: () => open('profile'),
     applyProfile,
     toggleWriting,
-    readingMode: () => writingMode(false),
+    readingMode: finishInline,
   };
 }

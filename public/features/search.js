@@ -4,6 +4,32 @@ import { dayKey } from '../shared/insights.js';
 export function createSearch(c) {
   const { $, escape: esc, modal, closeModal } = c;
   let searchFilter = {};
+  try {
+    const saved = JSON.parse(localStorage.getItem('shiye.search-filter.v1') || '{}');
+    if (saved && typeof saved === 'object')
+      for (const k of ['start', 'end', 'media', 'mood'])
+        if (typeof saved[k] === 'string' && saved[k].length <= 100) searchFilter[k] = saved[k];
+  } catch {
+    /* Optional device-local preferences. */
+  }
+  function rememberFilter() {
+    try {
+      localStorage.setItem('shiye.search-filter.v1', JSON.stringify(searchFilter));
+    } catch {
+      /* Optional storage. */
+    }
+    updateIndicator();
+  }
+  function updateIndicator() {
+    const active = Object.values(searchFilter).some(Boolean);
+    const button = $('#filterButton');
+    if (button) {
+      button.classList.toggle('active', active);
+      button.textContent = active ? '筛选 · 已启用' : '筛选';
+      button.setAttribute('aria-label', active ? '筛选日记，已有筛选条件' : '筛选日记');
+    }
+  }
+  queueMicrotask(updateIndicator);
   function advancedSearch() {
     modal(
       '筛选日记',
@@ -17,11 +43,13 @@ export function createSearch(c) {
         media: $('#filterMedia').value,
         mood: $('#filterMood').value,
       };
+      rememberFilter();
       closeModal();
       c.changeView('all');
     };
     $('#clearSearch').onclick = () => {
       searchFilter = {};
+      rememberFilter();
       closeModal();
       c.changeView('all');
     };

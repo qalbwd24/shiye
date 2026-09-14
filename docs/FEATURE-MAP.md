@@ -58,4 +58,32 @@
 
 ## 0.7 阅读、写作与媒体
 
-工作计划、模块所有权、操作方法见 [ITERATION-0.7.md](ITERATION-0.7.md)。新增 comments.js / routes/comments.mjs 管理评论；gallery.js 管理单张阅读和写作缩略图；drag-sort.js 提供复用排序；workbench.js 组织设置和阅读/写作模式；media-batch.js 管理上传前勾选；core/media-compression.js 处理静态图片；routes/media-compression.mjs 处理新视频暂存和转码。数据冲突继续独立于上传界面。
+工作计划、模块所有权、操作方法见 [ITERATION-0.7.md](ITERATION-0.7.md)。新增 comments.js / routes/comments.mjs 管理评论；gallery.js 管理单张阅读和附件缩略图；drag-sort.js 提供复用排序；workbench.js 组织设置；0.7.1 已用就地编辑取代原阅读／专业写作切换，具体入口见下表；media-batch.js 管理上传前勾选；core/media-compression.js 处理静态图片；routes/media-compression.mjs 处理新视频暂存和转码。数据冲突继续独立于上传界面。
+
+## 0.7.1 工作区与阅读连续性
+
+本表更新本轮交互入口；详细设计、状态保存边界和验收交接见 [ITERATION-0.7.1.md](ITERATION-0.7.1.md)。后端数据与媒体格式无变更。
+
+| 功能                                         | 前端位置（相对 public）                                           | 保存位置／职责                                                                       | 验证入口                                                           |
+| -------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| 固定视口、列表／正文／图评独立滚动           | styles/workbench.css、styles/layout.css、index.html               | 窗口布局与窄屏约束，保证图评栏首尾可达                                               | tests/workbench-layout.test.mjs、隔离浏览器尺寸复核                |
+| 自然比例单图、图上箭头／计数／圆点、横向拖动 | features/gallery.js、styles/gallery.css                           | 阅读切图与 190 ms 过渡；正文下方编辑附件，完成后同步右侧；减少动态效果时关闭切换动画 | tests/drag-gallery.test.mjs、tests/gallery-browser.mjs、实际浏览器 |
+| 页边活页标签、分类展开列表                   | index.html、features/layout.js、app/main.js、styles/workbench.css | 左侧导航／列表，右侧图评；“全部日记”属于“日记分类”组                                 | tests/workbench-layout.test.mjs、实际点击与窄屏复核                |
+| 就地编辑图评栏拖宽与开合偏好                 | features/layout.js、features/workbench.js、shared/appearance.js   | 复用 routes/preferences.mjs，保存 settings.preferences.layout；拖动松手后提交        | tests/workbench-layout.test.mjs、拖宽后刷新                        |
+| 最近图片位置                                 | features/gallery.js                                               | localStorage 的 shiye.gallery-position.v1；最近 200 篇，仅日记 ID 与媒体 ID          | tests/gallery-browser.mjs、切图后刷新                              |
+| 阅读滚动位置                                 | features/reading-position.js、features/index.js、app/main.js      | localStorage 的 shiye.reading-position.v1；最近 200 篇，仅日记 ID 与滚动偏移量       | 独立滚动、切换日记与刷新复核                                       |
+| 筛选及更多视图记忆                           | features/search.js、features/index.js                             | localStorage 的 shiye.search-filter.v1 与 shiye.more-views；不写入日记正文           | 刷新后筛选指示与展开状态复核                                       |
+
+源码中的 tests 路径相对于项目根。测试入口不等同于已完成每项真实客户端验收，最终结果由主任务记录在 validation/。
+
+### 回顾模块追加
+
+拾光回顾与往日此时由 `public/features/recollection.js` 统一接管，样式在 `public/styles/recollection.css`，随机资格、洗牌与有限历史在 `public/shared/memories.js`，周期匹配继续使用 `public/shared/recall.js`。`createRecollection(c).render(view, root)` 仅处理 `memories`／`recall`，装配应先于旧 insights 的 recall 分支。
+
+单篇通过根入口提供的 `releaseEntryReader()` 与 `mountEntryReader(container, entryId)` 移动唯一阅读器，复用现有图库和评论；列表卡片使用 `data-open-entry`。切篇、切模式及改范围先等待 `c.flush()` 成功。自动测试见 `tests/recollection.test.mjs`，覆盖轮内／轮间抽取、实时资格、有限 ID 保存和异步保存失败／视图替换；实际挂载效果由根 agent 在隔离浏览器验收。回顾切换在 flush 后执行 100 ms 旧页淡出与 200 ms 新页淡入，并检查动画取消后的容器资格；列表提供每批 80 篇的继续加载，不截断剩余日记。
+
+### 就地编辑与相册
+
+`features/workbench.js` 在 `#editorPanel` 上控制 `inline-editing`，正文和标题聚焦时显示工具，侧栏保持布局。正文下方 `#attachmentEditor` 提供附件缩略图；`features/gallery.js` 在编辑期间冻结同篇右侧展示，完成编辑先 `await flush()`，再同步最新附件。正文和附件仍自动保存，“完成编辑”不是事务提交。入口／样式由 `app/main.js`、`index.html`、workbench 与 gallery 相关模块配合。
+
+相册由 `features/album.js` 与 `styles/album.css` 接管 `gallery` 视图。它按媒体 ID 合并可见日记来源，每批最多 80 项，支持瀑布流／方格／列表、密度、排序与类型；偏好在 `shiye.album.v1`。纯逻辑测试见 `tests/album.test.mjs`。完整阅读器搬移由 `features/entry-reader.js` 与 `styles/entry-reader.css` 负责，供两种回顾复用。
