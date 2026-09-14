@@ -177,7 +177,7 @@
   pointer-events: none;
 }
 .body-editor p {
-  margin: 0 0 18px;
+  margin: 0;
 }
 .body-editor h2 {
   font-size: 20px;
