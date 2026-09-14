@@ -7,16 +7,15 @@ const require = createRequire(import.meta.url);
 const sharp = require(process.env.SHIYE_SHARP_MODULE || 'sharp');
 const root = new URL('../public/icons/', import.meta.url);
 const svg = await fs.readFile(new URL('shiye.svg', root));
-for (const size of [32, 192, 512]) {
-  await sharp(svg)
-    .resize(size, size)
+// Render the vector at the target density; do not enlarge a 256px raster for HD output.
+const render = (size) => sharp(svg, { density: (72 * size) / 256 }).resize(size, size);
+for (const size of [32, 64, 192, 512, 1024]) {
+  await render(size)
     .png()
     .toFile(fileURLToPath(new URL(`shiye-${size}.png`, root)));
 }
-const sizes = [16, 24, 32, 48, 64, 128, 256];
-const frames = await Promise.all(
-  sizes.map((size) => sharp(svg).resize(size, size).png().toBuffer()),
-);
+const sizes = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256];
+const frames = await Promise.all(sizes.map((size) => render(size).png().toBuffer()));
 const header = Buffer.alloc(6 + sizes.length * 16);
 header.writeUInt16LE(1, 2);
 header.writeUInt16LE(sizes.length, 4);
@@ -31,4 +30,6 @@ frames.forEach((frame, index) => {
   offset += frame.length;
 });
 await fs.writeFile(new URL('shiye.ico', root), Buffer.concat([header, ...frames]));
-console.log('Built PNG assets and seven-resolution Windows icon from public/icons/shiye.svg');
+// A new filename also avoids Windows reusing the previous shortcut icon cache.
+await fs.writeFile(new URL('shiye-hd.ico', root), Buffer.concat([header, ...frames]));
+console.log('Built native-resolution PNG assets and ten-resolution Windows icons from SVG');

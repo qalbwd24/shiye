@@ -12,8 +12,8 @@ $taskSource = $taskSource.Replace('diary-desktop-preview', $taskConfig.id)
 $taskGenerated = Join-Path $taskBuild 'Launcher.generated.cs'
 Set-Content -LiteralPath $taskGenerated -Value $taskSource -Encoding UTF8
 $taskOutput = Join-Path $taskRoot '拾页日记.exe'
-$taskIcon = Join-Path $taskRoot 'public\icons\shiye.ico'
-if (!(Test-Path -LiteralPath $taskIcon)) { throw '缺少应用图标 public\icons\shiye.ico' }
+$taskIcon = Join-Path $taskRoot 'public\icons\shiye-hd.ico'
+if (!(Test-Path -LiteralPath $taskIcon)) { throw '缺少应用图标 public\icons\shiye-hd.ico' }
 & $taskCompiler /nologo /target:winexe /reference:System.Windows.Forms.dll ("/win32icon:" + $taskIcon) ("/out:" + $taskOutput) $taskGenerated
 if ($LASTEXITCODE -ne 0) { throw '启动器编译失败' }
 Write-Output ('已生成：' + $taskOutput)
