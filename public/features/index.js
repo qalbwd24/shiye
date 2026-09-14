@@ -2,6 +2,10 @@ import { createConflicts } from './conflicts.js';
 import { createPreferences } from './preferences.js';
 import { createAppearance } from './appearance.js';
 import { createLayout } from './layout.js';
+import { createWorkbench } from './workbench.js';
+import { createGallery } from './gallery.js';
+import { createComments } from './comments.js';
+import { createStickers } from './stickers.js';
 import { createContextMenu } from './context-menu.js';
 import { createSearch } from './search.js';
 import { createInsights } from './insights.js';
@@ -16,10 +20,16 @@ export function installOffline(c) {
   const { apply: applyPreferences, preference, prefs, settings, lock } = createPreferences(c);
   const appearance = createAppearance(c);
   const layout = createLayout(c);
+  const gallery = createGallery(c);
+  const stickers = createStickers(c);
+  const commentContext = Object.create(c);
+  commentContext.stickers = stickers;
+  const comments = createComments(commentContext);
   const apply = () => {
     applyPreferences();
     appearance.apply();
     layout.apply();
+    workbench.applyProfile();
   };
   const { advancedSearch, filter } = createSearch(c);
   const { render: renderInsights } = createInsights(c, { prefs, preference });
@@ -43,14 +53,22 @@ export function installOffline(c) {
     parent.append(b);
     return b;
   };
-  button('功能设置', settings);
-  button('外观与背景', appearance.settings);
-  button('分类管理', manage);
-  button('冲突管理', conflicts.manage);
-  button('完整备份', backupsV2);
-  button('锁定', lock);
-  button('导出', exportMenu);
+  const workbench = createWorkbench(c, {
+    preferences: settings,
+    appearance: appearance.settings,
+    layout,
+    manage,
+    conflicts: conflicts.manage,
+    backups: backupsV2,
+    exportMenu,
+    lock,
+    stickers: stickers.manage,
+  });
   button('筛选', advancedSearch, $('.topbar-right'));
+  const moreViews = document.createElement('details');
+  moreViews.className = 'more-views';
+  moreViews.innerHTML = '<summary>更多视图</summary>';
+  $('#navigation').append(moreViews);
   for (const [name, view] of [
     ['往日此时', 'recall'],
     ['地点', 'places'],
@@ -61,7 +79,7 @@ export function installOffline(c) {
     b.className = 'nav-button';
     b.dataset.view = view;
     b.textContent = name;
-    $('#navigation').append(b);
+    moreViews.append(b);
   }
   for (const [name, fn] of [
     ['Markdown', markdown],
@@ -109,13 +127,18 @@ export function installOffline(c) {
   $('#attachments').after(imageNote);
   return {
     render,
+    gallery,
+    comments,
+    stickers,
     filter,
     apply,
     preference,
     prefs,
     templates,
     backups: backupsV2,
-    settings,
+    settings: workbench.settings,
+    toggleWriting: workbench.toggleWriting,
+    readingMode: workbench.readingMode,
     lock,
   };
 }

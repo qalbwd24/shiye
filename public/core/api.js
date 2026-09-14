@@ -38,26 +38,75 @@ export async function api(url, { method = 'GET', data, raw, headers = {} } = {})
   return result;
 }
 
-export function uploadMediaFile(file, onProgress = () => {}) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/media');
-    xhr.setRequestHeader('X-Diary-Client', 'desktop');
-    xhr.setRequestHeader('X-File-Name', encodeURIComponent(file.name));
-    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(e.loaded / e.total);
-    };
-    xhr.onerror = () => reject(Error('连接中断，请重试；已完成的文件不受影响'));
-    xhr.onload = () => {
-      try {
-        const result = JSON.parse(xhr.responseText);
-        if (xhr.status >= 200 && xhr.status < 300) resolve(result);
-        else reject(Error(result.error || '上传失败'));
-      } catch (e) {
-        reject(e);
+const videoJobs = new WeakMap();
+export async function uploadMediaFile(file, onProgress = () => {}, metadata = {}) {
+  const transcode =
+    file.type?.startsWith('video/') && ['balanced', 'high'].includes(metadata.quality);
+  const existing = transcode ? videoJobs.get(file)?.[metadata.quality] : null;
+  const result =
+    existing ||
+    (await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(
+        'POST',
+        transcode ? '/api/media-compression-upload?quality=' + metadata.quality : '/api/media',
+      );
+      xhr.setRequestHeader('X-Diary-Client', 'desktop');
+      xhr.setRequestHeader('X-File-Name', encodeURIComponent(file.name));
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      if (Number.isFinite(file.lastModified) && file.lastModified >= 0)
+        xhr.setRequestHeader('X-File-Last-Modified', String(file.lastModified));
+      for (const [field, header] of Object.entries({
+        originalSize: 'X-Original-Size',
+        sourceCapturedAtRaw: 'X-Source-Captured-At',
+        sourceCapturedOffset: 'X-Source-Captured-Offset',
+        sourceCapturedTag: 'X-Source-Captured-Tag',
+        compression: 'X-Media-Compression',
+      })) {
+        if (metadata[field] !== undefined && metadata[field] !== null && metadata[field] !== '')
+          xhr.setRequestHeader(header, encodeURIComponent(String(metadata[field])));
       }
-    };
-    xhr.send(file);
-  });
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress((e.loaded / e.total) * (transcode ? 0.25 : 1), '上传');
+      };
+      xhr.onerror = () => reject(Error('连接中断，请重试；已完成的文件不受影响'));
+      xhr.onload = () => {
+        try {
+          const result = JSON.parse(xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300) resolve(result);
+          else reject(Error(result.error || '上传失败'));
+        } catch (e) {
+          reject(e);
+        }
+      };
+      xhr.send(file);
+    }));
+  if (!transcode) return result;
+  videoJobs.set(file, { ...videoJobs.get(file), [metadata.quality]: result });
+  let status = result;
+  let failures = 0;
+  while (!['done', 'error'].includes(status.state)) {
+    onProgress(
+      0.25 + 0.75 * (Number(status.progress) || 0),
+      status.state === 'queued' ? '等待视频压缩' : '视频压缩',
+    );
+    await new Promise((resolve) => setTimeout(resolve, 750));
+    try {
+      status = await api('/api/media-compression/' + encodeURIComponent(result.id));
+      failures = 0;
+    } catch (error) {
+      if (/不存在|重启/.test(error.message)) {
+        videoJobs.delete(file);
+        throw error;
+      }
+      if (++failures >= 8)
+        throw Error('视频状态暂时无法读取。重试会继续查询同一任务；请保持此页面打开。');
+    }
+  }
+  if (status.state === 'error') {
+    videoJobs.delete(file);
+    throw Error(status.error || '视频压缩失败，可重试或选择保留原件');
+  }
+  onProgress(1, status.reason || '已完成');
+  return status.media;
 }

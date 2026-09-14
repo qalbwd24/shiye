@@ -72,6 +72,19 @@ export function addConflict(db, kind, left, right, reason) {
 export function remapEntryMedia(entry, map) {
   const result = structuredClone(entry);
   result.attachments = [...new Set((result.attachments || []).map((id) => map.get(id) || id))];
+  for (const field of ['content', 'markdownHtml', 'markdownSource'])
+    if (typeof result[field] === 'string')
+      result[field] = result[field].replace(
+        /\/media\/([a-zA-Z0-9-]+)(?=[/"'\s<>?#]|$)/g,
+        (url, id) => (map.has(id) ? '/media/' + map.get(id) : url),
+      );
+  if (Array.isArray(result.comments))
+    for (const comment of result.comments) {
+      if (Array.isArray(comment.attachments))
+        comment.attachments = [...new Set(comment.attachments.map((id) => map.get(id) || id))];
+      if (comment.authorAvatarId)
+        comment.authorAvatarId = map.get(comment.authorAvatarId) || comment.authorAvatarId;
+    }
   if (result.legacy?.mediaReferences)
     for (const r of result.legacy.mediaReferences)
       if (r.mediaId) r.mediaId = map.get(r.mediaId) || r.mediaId;
@@ -101,7 +114,6 @@ export function reconcileImport(db, incoming) {
   };
   const mediaMap = new Map();
   const mediaKeys = new Map(),
-    mediaNames = new Map(),
     entryKeys = new Map(),
     entryNames = new Map();
   const push = (map, key, item) => {
@@ -110,7 +122,6 @@ export function reconcileImport(db, incoming) {
   const mediaKey = (m) => (m.sha256 ? `${m.sha256}:${m.size}:${m.type}:${m.purpose || ''}` : null);
   const indexMedia = (m) => {
     push(mediaKeys, mediaKey(m), m);
-    push(mediaNames, m.name, m);
   };
   const indexEntry = (e) => {
     for (const key of identity(e)) push(entryKeys, key, e);
@@ -123,17 +134,13 @@ export function reconcileImport(db, incoming) {
     if (match) {
       mediaMap.set(media.id, match.id);
       report.mergedMedia++;
-      report.redundantMedia.push(media.id);
+      if (media.id !== match.id && !db.media.some((old) => old.id === media.id))
+        report.redundantMedia.push(media.id);
       continue;
     }
-    const named = (mediaNames.get(media.name) || []).filter((m) => m.purpose === media.purpose);
     db.media.push(media);
     indexMedia(media);
     report.media++;
-    for (const old of named) {
-      addConflict(db, 'media', old.id, media.id, 'same-name');
-      report.conflicts++;
-    }
   }
   const entryMap = new Map();
   for (const raw of incoming.entries || []) {
@@ -153,7 +160,8 @@ export function reconcileImport(db, incoming) {
     indexEntry(entry);
     report.entries++;
     entryMap.set(entry.id, entry.id);
-    for (const old of candidates) {
+    // Titles are display labels; only stable identifiers establish a version conflict.
+    for (const old of identified) {
       addConflict(
         db,
         'entry',

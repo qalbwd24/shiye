@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto';
-import { addConflict } from '../domain/import-reconciliation.mjs';
 import { LIMITS } from '../../../public/shared/limits.js';
 import { promises as fs, createReadStream } from 'node:fs';
 import path from 'node:path';
@@ -16,6 +15,24 @@ export function createRoutes({ dataDir, getDb, mutate, reply, fail }) {
         )
       )
         throw fail(415, '暂支持常见图片、MP4/WebM 视频和音频文件');
+      // Reject malformed percent-encoded metadata before creating any file.
+      const header = (key, fallback = '') => {
+        try {
+          const value = req.headers[key];
+          if (value !== undefined && typeof value !== 'string') throw Error('invalid header');
+          return decodeURIComponent(value || fallback);
+        } catch {
+          throw fail(400, '附件名称或元数据编码格式错误');
+        }
+      };
+      const name = header('x-file-name', '附件').slice(0, 250);
+      const modifiedHeader = header('x-file-last-modified');
+      const lastModified = modifiedHeader ? Number(modifiedHeader) : NaN;
+      const originalSize = Number(header('x-original-size'));
+      const captured = header('x-source-captured-at');
+      const capturedTag = header('x-source-captured-tag');
+      const offset = header('x-source-captured-offset');
+      const compression = header('x-media-compression');
       const id = randomUUID(),
         pending = path.join(dataDir, 'media', id + '.uploading'),
         out = await fs.open(pending, 'wx');
@@ -39,8 +56,33 @@ export function createRoutes({ dataDir, getDb, mutate, reply, fail }) {
         throw fail(400, '文件为空');
       }
       await fs.rename(pending, path.join(dataDir, 'media', id));
-      const name = decodeURIComponent(req.headers['x-file-name'] || '附件').slice(0, 250);
-      let item = { id, name, type: mime, size, sha256: hash.digest('hex') };
+      let item = {
+        id,
+        name,
+        type: mime,
+        size,
+        sha256: hash.digest('hex'),
+        importedAt: new Date().toISOString(),
+        ...(compression === 'image-canvas' &&
+        Number.isSafeInteger(originalSize) &&
+        originalSize >= size
+          ? { compression: { method: 'image-canvas', originalSize } }
+          : {}),
+        ...(/^\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}$/.test(captured)
+          ? {
+              sourceCapturedAtRaw: captured,
+              ...(['DateTimeOriginal', 'DateTime'].includes(capturedTag)
+                ? { sourceCapturedTag: capturedTag }
+                : {}),
+            }
+          : {}),
+        ...(/^[+-]\d{2}:\d{2}$/.test(offset) ? { sourceCapturedOffset: offset } : {}),
+        ...(Number.isSafeInteger(lastModified) &&
+        lastModified >= 0 &&
+        lastModified <= 8640000000000000
+          ? { lastModified }
+          : {}),
+      };
       await mutate((d) => {
         const duplicate = d.media.find(
           (m) => !m.purpose && m.sha256 === item.sha256 && m.size === size && m.type === mime,
@@ -49,8 +91,6 @@ export function createRoutes({ dataDir, getDb, mutate, reply, fail }) {
           item = duplicate;
           return;
         }
-        for (const old of d.media.filter((m) => !m.purpose && m.name === name))
-          addConflict(d, 'media', old.id, id, 'same-name');
         d.media.push(item);
       });
       if (item.id !== id) await fs.unlink(path.join(dataDir, 'media', id));

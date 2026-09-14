@@ -187,7 +187,11 @@ function renderEditor() {
   const e = current();
   $('#editorWrap').classList.toggle('hidden', !e);
   $('#editorEmpty').classList.toggle('hidden', !!e);
-  if (!e) return;
+  offline?.comments.render(e);
+  if (!e) {
+    renderAttachments();
+    return;
+  }
   $('#entryDateline').textContent =
     window.innerWidth < 650
       ? '‹ 返回列表'
@@ -228,32 +232,7 @@ function renderEditor() {
     $('#' + id).disabled = e.deleted;
 }
 function renderAttachments() {
-  const e = current();
-  if (!e) return;
-  $('#attachments').innerHTML = e.attachments
-    .map((id) => {
-      const m = library.media.find((a) => a.id === id);
-      if (!m) return `<p>缺少附件：${escape(id)}</p>`;
-      const src = '/media/' + encodeURIComponent(m.id);
-      const media = m.type.startsWith('image/')
-        ? `<img src="${src}" alt="${escape(m.name)}" loading="lazy">`
-        : m.type.startsWith('video/')
-          ? `<video src="${src}" controls preload="metadata"></video>`
-          : m.type.startsWith('audio/')
-            ? `<audio src="${src}" controls preload="metadata"></audio>`
-            : `<a href="${src}" download="${escape(m.name)}">下载附件</a>`;
-      return `<div class="media-item">${!e.deleted ? `<button class="media-remove" data-remove-media="${m.id}" aria-label="移除此附件引用">×</button>` : ''}${media}<small>${escape(m.name)}</small></div>`;
-    })
-    .join('');
-  if (e.legacy?.mediaReferences?.length) {
-    const missing = e.legacy.mediaReferences.filter(
-      (r) => r.status !== 'basename_candidate',
-    ).length;
-    $('#attachments').insertAdjacentHTML(
-      'beforeend',
-      `<p class="legacy-note">旧备份媒体：${missing} 项未匹配。已显示的附件按文件名匹配，仍需核对原图和排版。</p>`,
-    );
-  }
+  offline?.gallery.render(current());
 }
 function countWords() {
   $('#wordCount').textContent =
@@ -262,6 +241,7 @@ function countWords() {
 async function selectEntry(id) {
   await flush();
   selected = id;
+  offline?.readingMode();
   $('#journalView').classList.add('has-selected');
   renderList();
   renderEditor();
@@ -839,10 +819,7 @@ function bind() {
       }
     }
   });
-  $('#focusButton').onclick = () => {
-    document.body.classList.toggle('focus-mode');
-    $('#focusButton').classList.toggle('active');
-  };
+  $('#focusButton').onclick = () => offline?.toggleWriting();
   $('#entryDateline').onclick = () => $('#journalView').classList.remove('has-selected');
   $('#exportLibrary').textContent = '备份与导入';
   $('#exportLibrary').onclick = () => offline.backups();
@@ -902,7 +879,8 @@ function bind() {
         if (value) setShortcut(recordingShortcut, value);
         return;
       }
-      if ($('#modal').open) return;
+      if (document.querySelector('dialog[open]')) return;
+      if (e.altKey && e.target.closest?.('[data-sort-handle]') && e.key.startsWith('Arrow')) return;
       const editor = $('#bodyEditor').contains(e.target),
         typing = !!e.target.closest('input,textarea,select,[contenteditable="true"]');
       const action = match(e, shortcuts(), editor, typing);

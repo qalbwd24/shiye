@@ -1,11 +1,13 @@
 import { sortedTaxonomy } from '../shared/taxonomy.js';
+import { installDragSort } from '../core/drag-sort.js';
 /** Workspace UI only; sorting and mutation rules have independent modules. */
 export function createOrganization(c) {
   const { $, api, escape: esc, toast } = c;
   let kind = 'category',
     search = '',
     selected = null,
-    busy = false;
+    busy = false,
+    disposeSort = () => {};
   const label = () => (kind === 'category' ? '分类' : '标签');
   const manage = () => c.changeView('organization');
   async function mutate(action) {
@@ -27,12 +29,13 @@ export function createOrganization(c) {
   }
   function render(view, root) {
     if (view !== 'organization') return false;
+    disposeSort();
     const items = sortedTaxonomy(c.library, kind);
     if (selected && !items.some((i) => i.name === selected)) selected = null;
     root.innerHTML = `<section id="taxonomyWorkspace" class="taxonomy-workspace">
       <div class="alt-heading"><div><h2>分类与标签</h2><p>整理日记的归属，顺序同步到左侧导航。</p></div><button class="primary" id="taxNew">新建${label()}</button></div>
       <div class="filter-row"><select id="taxKind" aria-label="管理类型"><option value="category">分类</option><option value="tag">标签</option></select><input class="field" id="taxSearch" placeholder="搜索名称" aria-label="搜索分类或标签" value="${esc(search)}"><select id="taxSort" aria-label="排列方式"><option value="manual">手动顺序</option><option value="name">按名称</option><option value="count">按日记篇数</option></select></div>
-      <div class="taxonomy-columns"><div><p class="taxonomy-hint">篇数排除隐藏、草稿和回收站。↑ ↓ 可用鼠标或键盘操作，调整后保存为手动顺序。</p><div id="taxRows"></div></div><section class="taxonomy-detail" id="taxDetail" aria-label="管理详情"></section></div>
+      <div class="taxonomy-columns"><div><p class="taxonomy-hint">篇数排除隐藏、草稿和回收站。拖动 ⠿、点击 ↑ ↓ 或按 Alt 加方向键调整，自动保存为手动顺序。</p><div id="taxRows"></div></div><section class="taxonomy-detail" id="taxDetail" aria-label="管理详情"></section></div>
     </section>`;
     $('#taxKind').value = kind;
     $('#taxSort').value = c.library.settings?.preferences?.[kind + 'Sort'] || 'manual';
@@ -61,26 +64,33 @@ export function createOrganization(c) {
           .filter((i) => i.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()))
           .map((i) => {
             const index = items.indexOf(i);
-            return `<div class="taxonomy-row ${selected === i.name ? 'selected' : ''}"><button class="taxonomy-select" data-tax-index="${index}"><strong>${esc(i.name)}</strong><small>${i.count} 篇</small></button><button class="secondary" data-move="-1" data-index="${index}" aria-label="上移${esc(i.name)}" ${index === 0 ? 'disabled' : ''}>↑</button><button class="secondary" data-move="1" data-index="${index}" aria-label="下移${esc(i.name)}" ${index === items.length - 1 ? 'disabled' : ''}>↓</button></div>`;
+            return `<div class="taxonomy-row ${selected === i.name ? 'selected' : ''}" data-sort-name="${esc(i.name)}" draggable="true"><button class="gallery-drag-handle" data-sort-handle draggable="true" aria-label="拖动${esc(i.name)}调整顺序，或按 Alt 加方向键">⠿</button><button class="taxonomy-select" data-tax-index="${index}"><strong>${esc(i.name)}</strong><small>${i.count} 篇</small></button><button class="secondary" data-sort-step="-1" aria-label="上移${esc(i.name)}" ${index === 0 ? 'disabled' : ''}>↑</button><button class="secondary" data-sort-step="1" aria-label="下移${esc(i.name)}" ${index === items.length - 1 ? 'disabled' : ''}>↓</button></div>`;
           })
           .join('') || '<p class="empty">没有匹配的名称。</p>';
       $('#taxRows').onclick = (event) => {
-        const select = event.target.closest('[data-tax-index]'),
-          move = event.target.closest('[data-move]');
+        const select = event.target.closest('[data-tax-index]');
         if (select) {
           selected = items[Number(select.dataset.taxIndex)].name;
           rows();
           detail();
         }
-        if (move) {
-          const i = Number(move.dataset.index),
-            j = i + Number(move.dataset.move),
-            order = items.map((item) => item.name);
-          [order[i], order[j]] = [order[j], order[i]];
-          selected = items[i].name;
-          mutate(() => api('/api/taxonomy/order', { method: 'PUT', data: { kind, order } }));
-        }
       };
+      disposeSort();
+      disposeSort = installDragSort($('#taxRows'), {
+        itemSelector: '[data-sort-name]',
+        getId: (node) => node.dataset.sortName,
+        getOrder: () => items.map((item) => item.name),
+        label: label(),
+        onReorder: async (order, name) => {
+          selected = name;
+          await mutate(() => api('/api/taxonomy/order', { method: 'PUT', data: { kind, order } }));
+          Array.from($('#taxRows')?.querySelectorAll('[data-sort-name]') || [])
+            .find((node) => node.dataset.sortName === name)
+            ?.querySelector('[data-sort-handle]')
+            ?.focus();
+        },
+        onError: (error) => toast(error.message),
+      });
     }
     function detail(create = false) {
       const item = items.find((i) => i.name === selected);

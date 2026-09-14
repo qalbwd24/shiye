@@ -1,4 +1,7 @@
 import { createRoutes as conflictRoutes } from './routes/conflicts.mjs';
+import { createRoutes as commentRoutes } from './routes/comments.mjs';
+import { createRoutes as compressionRoutes } from './routes/media-compression.mjs';
+import { createRoutes as stickerRoutes } from './routes/stickers.mjs';
 import http from 'node:http';
 import { preserveLegacyMetadata } from './storage/legacy-metadata.mjs';
 import { ensureMediaHashes } from './storage/media-hashes.mjs';
@@ -33,6 +36,9 @@ export async function createDiaryServer({ dataDir = DEFAULT_DATA_DIR, seed = tru
     preferenceRoutes(context),
     taxonomyRoutes(context),
     conflictRoutes(context),
+    commentRoutes(context),
+    compressionRoutes(context),
+    stickerRoutes(context),
     templateRoutes(context),
     settingsRoutes(context),
     legacyRoutes(context),

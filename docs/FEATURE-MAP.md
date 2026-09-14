@@ -55,3 +55,7 @@
 | 旧元信息修复       | shared/legacy-content.js                       | storage/legacy-metadata.mjs、media-hashes.mjs          | feature-boundaries                          |
 
 上表替代旧表对应模块路径。旧转发模块保留以兼容引用，不再承担业务逻辑。
+
+## 0.7 阅读、写作与媒体
+
+工作计划、模块所有权、操作方法见 [ITERATION-0.7.md](ITERATION-0.7.md)。新增 comments.js / routes/comments.mjs 管理评论；gallery.js 管理单张阅读和写作缩略图；drag-sort.js 提供复用排序；workbench.js 组织设置和阅读/写作模式；media-batch.js 管理上传前勾选；core/media-compression.js 处理静态图片；routes/media-compression.mjs 处理新视频暂存和转码。数据冲突继续独立于上传界面。

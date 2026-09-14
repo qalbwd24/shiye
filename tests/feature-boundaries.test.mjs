@@ -206,7 +206,7 @@ test('overlapping legacy imports deduplicate media and identical entries, preser
   assert.equal(db.conflicts[0].status, 'resolved');
   assert.equal(db.imports.length, 3);
 });
-test('file uploads reuse identical bytes and same-name different bytes create a recoverable media decision', async (t) => {
+test('file uploads reuse identical bytes and same-name different bytes remain separate attachments', async (t) => {
   const { base, request, dir } = await fixture(t);
   const upload = async (bytes) =>
     (
@@ -228,12 +228,9 @@ test('file uploads reuse identical bytes and same-name different bytes create a 
   const entry = await (
     await request('/api/entries', 'POST', { ...sample, attachments: [two.id] })
   ).json();
-  let db = await (await request('/api/library')).json();
-  assert.equal(db.conflicts.length, 1);
-  await request('/api/conflicts/' + db.conflicts[0].id, 'PUT', { choice: 'left' });
-  db = await (await request('/api/library')).json();
+  const db = await (await request('/api/library')).json();
+  assert.equal((db.conflicts || []).length, 0);
   const result = db.entries.find((e) => e.id === entry.id);
-  assert.deepEqual(result.attachments, [one.id]);
-  assert.deepEqual(result.history[0].attachments, [two.id]);
+  assert.deepEqual(result.attachments, [two.id]);
   assert.equal((await readdir(path.join(dir, 'media'))).length, 2);
 });

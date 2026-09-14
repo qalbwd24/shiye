@@ -1,4 +1,9 @@
-import { reconcileImport, reconcileArchives } from '../domain/import-reconciliation.mjs';
+import { prepareStickers, reconcileStickers, prepareProfile } from '../domain/stickers.mjs';
+import {
+  reconcileImport,
+  reconcileArchives,
+  remapEntryMedia,
+} from '../domain/import-reconciliation.mjs';
 import { LIMITS } from '../../../public/shared/limits.js';
 import { normalizeAppearance, normalizeLayout } from '../../../public/shared/appearance.js';
 import { promises as fs, createReadStream } from 'node:fs';
@@ -209,6 +214,7 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
         files,
         busy: false,
         restoreAppearance: manifest.restoreAppearance === true,
+        restoreProfile: manifest.restoreProfile === true,
       });
       reply(res, 201, { id });
       return true;
@@ -247,18 +253,14 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
         for (const key of job.files.keys()) remap.set(key, randomUUID());
         const lib = job.lib,
           ids = new Set();
+        const mediaIdMap = new Map(lib.media.map((m) => [m.id, remap.get('media/' + m.id)]));
         const remapHistory = (e) => {
-          const result = structuredClone(e);
+          const result = remapEntryMedia(e, mediaIdMap);
           result.attachments = (e.attachments || []).map((id) => {
             const value = remap.get('media/' + id);
             if (!value) throw fail(400, '日记引用缺失附件');
             return value;
           });
-          if (result.legacy?.mediaReferences)
-            result.legacy.mediaReferences = result.legacy.mediaReferences.map((r) => ({
-              ...r,
-              mediaId: r.mediaId ? remap.get('media/' + r.mediaId) || null : null,
-            }));
           return result;
         };
         const entries = lib.entries.map((e) => {
@@ -292,7 +294,17 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
               : 'application/octet-stream',
           })),
           imports = lib.imports.map((m) => ({ ...m, id: remap.get('originals/' + m.id) }));
+        const stickers = prepareStickers(lib.stickers, lib.media, mediaIdMap, fail);
         const preferences = {};
+        if (job.restoreAppearance || job.restoreProfile) {
+          const profile = prepareProfile(
+            lib.settings?.preferences?.profile,
+            lib.media,
+            mediaIdMap,
+            fail,
+          );
+          if (profile !== undefined) preferences.profile = profile;
+        }
         if (job.restoreAppearance) {
           const source = lib.settings?.preferences || {};
           try {
@@ -318,6 +330,11 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
         await mutate((d) => {
           const result = reconcileImport(d, { entries, media });
           reconciliation = result.report;
+          reconcileStickers(d, stickers, result.mediaMap);
+          if (preferences.profile?.authorAvatarId)
+            preferences.profile.authorAvatarId =
+              result.mediaMap.get(preferences.profile.authorAvatarId) ||
+              preferences.profile.authorAvatarId;
           if (preferences.appearance)
             for (const bg of preferences.appearance.backgrounds)
               bg.id = result.mediaMap.get(bg.id) || bg.id;
@@ -340,7 +357,18 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
               )
             ) {
               d.conflicts ||= [];
-              d.conflicts.push({ ...old, id: randomUUID(), left, right });
+              d.conflicts.push({
+                ...old,
+                id: randomUUID(),
+                left,
+                right,
+                actions: (old.actions || []).map((action) => ({
+                  ...action,
+                  targets: (action.targets || [])
+                    .map((target) => ({ ...target, id: oldEntryMap.get(target.id) }))
+                    .filter((target) => target.id),
+                })),
+              });
             }
           }
           reconciliation.redundantOriginals = reconcileArchives(d, imports);

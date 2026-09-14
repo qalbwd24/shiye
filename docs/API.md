@@ -78,3 +78,11 @@
 - 普通媒体上传返回的 ID 可能是已有相同文件的 ID，客户端必须按 ID 去重，不得重复追加附件。
 
 规则详见 IMPORT-CONFLICTS.md。
+
+## 0.7 接口
+
+- POST /api/entries/:id/comments：body、attachments、authorName、authorAvatarId、replyTo、entryRevision。
+- PUT /api/entries/:id/comments/:commentId：body/attachments/deleted，entryRevision 和评论 revision 必填；返回最新 Entry。
+- POST /api/media-compression-upload?quality=balanced|high：视频原始请求体，X-File-Name、Content-Type、X-File-Last-Modified。202 返回任务id；GET /api/media-compression/:id 查询queued/processing/done/error及media。
+- 原 /api/media 支持 X-Original-Size、X-Media-Compression、X-Source-Captured-At/Offset/Tag；元信息独立于文件字节，非法编码在写盘前拒绝。
+- 旧媒体冲突选择携带 targets:[{id,revision}]；禁止隐式全库替换。撤销条件和负载见 routes/conflicts.mjs，必须保持后续编辑不被覆盖。

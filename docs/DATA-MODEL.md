@@ -66,3 +66,13 @@ Android `createTime` → 新 `date`；`recordTime` → 新 `createdAt`。分类�
 启动阶段可补齐旧日记的 hidden、mood、markdownSource/markdownHtml；只在缺失且能核对原始字段时修复。发生修复的日记提高 revision，保持正文、日期、分类标签、原字段和媒体关联不变。修复前在 data 下生成 before-legacy-metadata-v06-时间.json 快照，migrations.legacyMetadataV06 标记已执行。
 
 日期/分类/标题相同不等于重复，导入冲突依据见 IMPORT-CONFLICTS.md。syvault2 加密协议未变。不要把跨库重复识别当作已实现多设备同步。
+
+## 0.7 扩展
+
+entry.comments 可选数组：id、body（纯文本）、authorName、authorAvatarId、createdAt、updatedAt、revision、deleted、replyTo、replyPreview、attachments。作者和回复摘要在创建时保存快照；编辑不改变当时身份和时间。评论和回复图片、头像随加密全备份保存，恢复时与历史一起映射 media ID。普通日记 PUT 保留评论字段。
+
+媒体增加 importedAt（入库时间）、lastModified（源文件修改时间）、sourceCapturedAtRaw（EXIF日期原文）、sourceCapturedOffset、sourceCapturedTag。DateTimeOriginal 是原拍摄字段，DateTime 可能是编辑时间；没有时区不擅自转成 UTC。图片压缩副本不保留完整EXIF，以上字段单独保存；原件模式保留字节。compression 描述压缩方式和原大小。排序不改变任何媒体字段或文件字节。
+
+视频处理仅对新上传的暂存文件进行，成功只登记较小的结果；较大时保留原上传视频。旧库不自动转码。任务状态只驻留进程，关闭服务可能中断；客户端在原页面可继续查询同一任务，错误后保留File可重试。
+
+布局增加 sidebar、media、mediaPosition、mediaWidth、listWidth；专业写作临时布局不覆盖阅读布局设置。默认身份保存在settings.preferences.profile，包括authorName、motto、authorAvatarId和authorAvatarCrop；评论保存当时的身份及裁剪快照。顶层stickers数组保存收藏、分组和软删除状态，备份恢复重映射mediaId并去重。

@@ -1,0 +1,334 @@
+#entryComments {
+  margin-top: 20px;
+  padding: 20px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 16px;
+}
+.comments-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.comments-heading h3 {
+  font-size: 16px;
+  margin: 0 0 5px;
+}
+.comments-heading span {
+  font-weight: 400;
+  margin-left: 4px;
+}
+.comments-heading small,
+.comments-heading span,
+.comment-main small,
+.comment-main time,
+.comment-local-note,
+.comment-identity small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.self-comment {
+  display: flex;
+  gap: 10px;
+  padding: 18px 0;
+}
+.comment-avatar {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: 50%;
+}
+.comment-avatar img,
+.comment-avatar-fallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.comment-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 13%, var(--paper));
+}
+.comment-main {
+  flex: 1;
+  min-width: 0;
+}
+.comment-main header {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.comment-main header b {
+  font-weight: 600;
+}
+.comment-main header > small {
+  margin-left: auto;
+}
+.comment-self-tag {
+  color: var(--accent);
+  font-size: 10px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+.comment-main p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.75;
+  margin: 8px 0;
+}
+.comment-main footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+.comment-actions {
+  display: flex;
+  gap: 12px;
+}
+.comment-actions button {
+  color: var(--muted);
+  font-size: 11px;
+  padding: 3px 0;
+}
+.comment-actions button:hover {
+  color: var(--accent);
+}
+.comment-replies {
+  margin-left: 40px;
+  padding-left: 10px;
+  border-left: 1px solid var(--line);
+}
+.comment-replies summary {
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 8px 0;
+}
+.comment-replies .self-comment {
+  gap: 8px;
+}
+.comment-replies .comment-avatar {
+  flex-basis: 24px;
+}
+.comment-replies .comment-avatar img,
+.comment-replies .comment-avatar-fallback {
+  width: 24px;
+  height: 24px;
+}
+.comment-quote,
+.comment-replying {
+  margin: 10px 0;
+  border-left: 2px solid var(--line);
+  padding: 7px 10px;
+  background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+  border-radius: 0 6px 6px 0;
+  font-size: 11px;
+}
+.comment-quote b,
+.comment-replying b {
+  display: block;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.comment-quote span,
+.comment-replying span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.comment-replying {
+  position: relative;
+  padding-right: 30px;
+}
+.comment-replying button {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+}
+.comment-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.comment-photos > div {
+  position: relative;
+}
+.comment-photos button {
+  padding: 0;
+  display: block;
+}
+.comment-photos img {
+  width: 68px;
+  height: 68px;
+  object-fit: cover;
+  display: block;
+  border-radius: 8px;
+}
+.comment-photos .comment-photo-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  color: white;
+  background: #222b;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+}
+.comment-full-image {
+  width: 100%;
+  max-height: 75dvh;
+  object-fit: contain;
+}
+#modal:has(.comment-full-image) {
+  width: min(960px, 96vw);
+}
+.self-comment.is-deleted {
+  opacity: 0.65;
+}
+.comments-empty {
+  text-align: center;
+  padding: 24px 5px 30px;
+  color: var(--muted);
+}
+.comments-empty > span {
+  font-size: 30px;
+  color: var(--accent);
+}
+.comments-empty p {
+  margin: 6px 0;
+  font-size: 13px;
+}
+.comments-empty small {
+  font-size: 11px;
+}
+.comment-form {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.comment-form textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 80px;
+  padding: 12px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+  border: 1px solid transparent;
+  border-radius: 12px;
+  outline: none;
+}
+.comment-form textarea:focus {
+  border-color: var(--accent);
+  background: var(--paper);
+}
+.comment-identity {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  font-size: 12px;
+}
+.comment-identity > small {
+  margin-left: auto;
+}
+.comment-identity summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  font-size: 12px;
+}
+.comment-identity summary img,
+.comment-identity summary .comment-avatar-fallback {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.comment-identity summary small {
+  margin-left: auto;
+}
+.comment-identity label {
+  display: block;
+  font-size: 12px;
+  margin: 10px 0;
+}
+.comment-identity > small {
+  display: block;
+  margin-top: 10px;
+  line-height: 1.6;
+}
+.comment-compose-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+.comment-compose-tools button {
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.comment-compose-tools button[type='submit'] {
+  margin-left: auto;
+}
+.comment-local-note {
+  display: block;
+  margin-top: 10px;
+  font-size: 10px;
+}
+.comment-emoji {
+  padding: 10px 0;
+}
+.comment-emoji:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.comment-emoji button {
+  font-size: 22px;
+  padding: 2px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 520px) {
+  #entryComments {
+    padding: 16px 12px;
+  }
+  .comment-replies {
+    margin-left: 26px;
+  }
+}

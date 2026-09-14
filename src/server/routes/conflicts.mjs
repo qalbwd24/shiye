@@ -1,13 +1,65 @@
 import { remapEntryMedia } from '../domain/import-reconciliation.mjs';
+
+const snapshot = (entry) => {
+  const result = structuredClone(entry);
+  delete result.history;
+  return result;
+};
+const save = (entry, before) => {
+  entry.history = [before, ...(entry.history || [])].slice(0, 20);
+  entry.revision++;
+  entry.updatedAt = new Date().toISOString();
+};
+
 export function createRoutes({ mutate, body, reply, fail }) {
   return async (req, res, p) => {
     const match = p.match(/^\/api\/conflicts\/([a-f0-9-]+)$/);
     if (!match || req.method !== 'PUT') return false;
     const input = JSON.parse(await body(req));
-    if (!['both', 'left', 'right'].includes(input.choice)) throw fail(400, '请选择保留方式');
+    if (!['both', 'left', 'right', 'undo'].includes(input.choice))
+      throw fail(400, '请选择保留方式');
     const result = await mutate((db) => {
       const conflict = db.conflicts?.find((item) => item.id === match[1]);
-      if (!conflict || conflict.status !== 'open') throw fail(409, '此冲突已处理，请刷新');
+      if (!conflict) throw fail(409, '此冲突不存在，请刷新');
+      if (input.choice === 'undo') {
+        const action = conflict.actions?.at(-1);
+        if (
+          conflict.kind !== 'media' ||
+          conflict.status !== 'resolved' ||
+          !action?.targets?.length ||
+          action.undoneAt
+        )
+          throw fail(409, '此记录不能直接撤销，请打开对应日记的编辑历史恢复');
+        const restores = action.targets.map((target) => {
+          const entry = db.entries.find((e) => e.id === target.id);
+          const expected = input.targets?.find((e) => e.id === target.id);
+          const before = entry?.history?.find((h) => h.revision === target.beforeRevision);
+          if (
+            !entry ||
+            expected?.revision !== entry.revision ||
+            entry.revision !== target.afterRevision ||
+            !before
+          )
+            throw fail(409, '处理后日记已改变或历史已过期，请打开日记历史核对，不能覆盖后续编辑');
+          return { entry, before };
+        });
+        for (const { entry, before } of restores) {
+          const previous = snapshot(entry);
+          const restored = {
+            ...structuredClone(before),
+            revision: entry.revision,
+            history: entry.history,
+          };
+          save(restored, previous);
+          db.entries[db.entries.indexOf(entry)] = restored;
+        }
+        action.undoneAt = new Date().toISOString();
+        conflict.status = 'open';
+        delete conflict.choice;
+        delete conflict.resolvedAt;
+        return { updated: true, affected: restores.length };
+      }
+      if (conflict.status !== 'open') throw fail(409, '此冲突已处理，请刷新');
       const items = conflict.kind === 'entry' ? db.entries : db.media;
       const left = items.find((i) => i.id === conflict.left),
         right = items.find((i) => i.id === conflict.right);
@@ -20,48 +72,57 @@ export function createRoutes({ mutate, body, reply, fail }) {
       if (input.title !== undefined) {
         if (typeof input.title !== 'string' || !input.title.trim() || input.title.length > 500)
           throw fail(400, '新名称不正确');
-        const field = conflict.kind === 'entry' ? 'title' : 'name';
-        if (conflict.kind === 'entry') {
-          const old = structuredClone(right);
-          delete old.history;
-          right.history = [old, ...(right.history || [])].slice(0, 20);
-          right.revision++;
-          right.updatedAt = new Date().toISOString();
-        }
-        right[field] = input.title.trim();
+        if (conflict.kind === 'entry') save(right, snapshot(right));
+        right[conflict.kind === 'entry' ? 'title' : 'name'] = input.title.trim();
       }
+      const targets = [];
       if (input.choice !== 'both') {
         const keep = input.choice === 'left' ? left : right,
           discard = input.choice === 'left' ? right : left;
         if (conflict.kind === 'entry') {
-          const old = structuredClone(discard);
-          delete old.history;
-          discard.history = [old, ...(discard.history || [])].slice(0, 20);
+          const old = snapshot(discard);
           discard.deleted = true;
-          discard.revision++;
-          discard.updatedAt = new Date().toISOString();
+          save(discard, old);
         } else {
-          for (let i = 0; i < db.entries.length; i++) {
-            const entry = db.entries[i];
-            if (!(entry.attachments || []).includes(discard.id)) continue;
-            const old = structuredClone(entry);
-            delete old.history;
-            // Only current references change; history retains access to the rejected version.
+          // A filename never authorizes changing every diary in the library.
+          if (
+            !Array.isArray(input.targets) ||
+            !input.targets.length ||
+            new Set(input.targets.map((t) => t.id)).size !== input.targets.length
+          )
+            throw fail(400, '请明确选择要替换附件的日记，不能全库替换');
+          for (const target of input.targets) {
+            const entry = db.entries.find((e) => e.id === target.id);
+            if (
+              !entry ||
+              target.revision !== entry.revision ||
+              !(entry.attachments || []).includes(discard.id)
+            )
+              throw fail(409, '选中的日记或附件已变化，请重新核对');
+            if ((entry.attachments || []).includes(keep.id))
+              throw fail(409, '这篇日记已同时包含两份附件，请保留两份；不能将不同图片合并为一个');
+            const old = snapshot(entry);
             const mapped = remapEntryMedia(
               { ...entry, history: [] },
               new Map([[discard.id, keep.id]]),
             );
-            mapped.history = [old, ...(entry.history || [])].slice(0, 20);
-            mapped.revision++;
-            mapped.updatedAt = new Date().toISOString();
-            db.entries[i] = mapped;
+            mapped.history = entry.history || [];
+            save(mapped, old);
+            db.entries[db.entries.indexOf(entry)] = mapped;
+            targets.push({
+              id: entry.id,
+              beforeRevision: entry.revision,
+              afterRevision: mapped.revision,
+            });
           }
         }
       }
       conflict.status = 'resolved';
       conflict.choice = input.choice;
       conflict.resolvedAt = new Date().toISOString();
-      return { updated: true };
+      conflict.actions ||= [];
+      conflict.actions.push({ choice: input.choice, appliedAt: conflict.resolvedAt, targets });
+      return { updated: true, affected: targets.length };
     });
     reply(res, 200, result);
     return true;

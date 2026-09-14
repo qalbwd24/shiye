@@ -1,4 +1,9 @@
-import { reconcileImport, reconcileArchives } from '../domain/import-reconciliation.mjs';
+import { prepareStickers, reconcileStickers, prepareProfile } from '../domain/stickers.mjs';
+import {
+  reconcileImport,
+  reconcileArchives,
+  remapEntryMedia,
+} from '../domain/import-reconciliation.mjs';
 import { LIMITS } from '../../../public/shared/limits.js';
 import { promises as fs, createReadStream } from 'node:fs';
 import path from 'node:path';
@@ -117,6 +122,9 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
           ? m.type
           : 'application/octet-stream',
       }));
+      const mediaIdMap = new Map(
+        lib.media.map((media) => [media.id, remap.get('media' + media.id)]),
+      );
       const entries = lib.entries.map((e) => {
         if (
           typeof e.content !== 'string' ||
@@ -129,24 +137,20 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
           throw fail(400, '备份日记结构不正确');
         if (e.attachments.some((id) => !remap.has('media' + id)))
           throw fail(400, '备份日记缺少附件');
-        const m = structuredClone(e);
+        const m = remapEntryMedia(e, mediaIdMap);
         m.id = randomUUID();
         m.title = e.title;
         m.attachments = e.attachments.map((id) => remap.get('media' + id));
         m.revision = 1;
-        m.history = (e.history || []).map((h) => ({
-          ...h,
-          attachments: (h.attachments || []).map((id) => remap.get('media' + id)).filter(Boolean),
-        }));
-        if (m.legacy?.mediaReferences)
-          m.legacy.mediaReferences = m.legacy.mediaReferences.map((r) => ({
-            ...r,
-            mediaId: r.mediaId ? remap.get('media' + r.mediaId) || null : null,
-          }));
         m.restoredFrom = { id: e.id, history: e.history || [] };
         return m;
       });
       const imports = lib.imports.map((a) => ({ ...a, id: remap.get('originals' + a.id) }));
+      const stickers = prepareStickers(lib.stickers, lib.media, mediaIdMap, fail);
+      const profile =
+        bundle.restoreAppearance === true || bundle.restoreProfile === true
+          ? prepareProfile(lib.settings?.preferences?.profile, lib.media, mediaIdMap, fail)
+          : undefined;
       for (const f of writes)
         await fs.writeFile(path.join(dataDir, f.folder, f.id), f.data, { flag: 'wx' });
       let reconciliation;
@@ -157,6 +161,14 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
         ];
         const result = reconcileImport(d, { entries, media });
         reconciliation = result.report;
+        reconcileStickers(d, stickers, result.mediaMap);
+        if (profile !== undefined) {
+          if (profile.authorAvatarId)
+            profile.authorAvatarId =
+              result.mediaMap.get(profile.authorAvatarId) || profile.authorAvatarId;
+          d.settings.preferences ||= {};
+          d.settings.preferences.profile = profile;
+        }
         const entryIds = new Map(
           lib.entries.map((e, i) => [e.id, result.entryMap.get(entries[i].id)]),
         );
@@ -176,7 +188,18 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
             )
           ) {
             d.conflicts ||= [];
-            d.conflicts.push({ ...old, id: randomUUID(), left, right });
+            d.conflicts.push({
+              ...old,
+              id: randomUUID(),
+              left,
+              right,
+              actions: (old.actions || []).map((action) => ({
+                ...action,
+                targets: (action.targets || [])
+                  .map((target) => ({ ...target, id: entryIds.get(target.id) }))
+                  .filter((target) => target.id),
+              })),
+            });
           }
         }
         d.tags = [...new Set([...(d.tags || []), ...(lib.tags || [])])];

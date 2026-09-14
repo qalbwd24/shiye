@@ -55,15 +55,21 @@ export function normalizeAppearance(input) {
   };
 }
 export function normalizeLayout(value) {
+  const booleans = ['categories', 'tags', 'list', 'sidebar', 'media'];
   if (
     !value ||
     typeof value !== 'object' ||
     Array.isArray(value) ||
-    Object.keys(value).some(
-      (k) => !['categories', 'tags', 'list'].includes(k) || typeof value[k] !== 'boolean',
-    )
+    Object.keys(value).some((k) => {
+      if (booleans.includes(k)) return typeof value[k] !== 'boolean';
+      if (k === 'mediaPosition') return !['left', 'right', 'bottom'].includes(value[k]);
+      if (k === 'mediaWidth')
+        return !Number.isInteger(value[k]) || value[k] < 240 || value[k] > 680;
+      if (k === 'listWidth') return !Number.isInteger(value[k]) || value[k] < 220 || value[k] > 440;
+      return true;
+    })
   )
-    throw Error('折叠设置错误');
+    throw Error('布局设置错误');
   return { categories: false, tags: false, list: false, ...value };
 }
 export function imageType(bytes) {
