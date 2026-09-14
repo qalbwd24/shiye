@@ -1,0 +1,96 @@
+/* Searchable, keyboard-recordable command settings. */
+.sidebar {
+  overflow-y: auto;
+}
+.sidebar > * {
+  flex-shrink: 0;
+}
+.bottom-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#shortcutRows {
+  max-height: 43vh;
+  overflow-y: auto;
+  margin-top: 12px;
+}
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+}
+.shortcut-row > div {
+  flex: 1;
+  min-width: 0;
+}
+.shortcut-row strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+}
+.shortcut-row small {
+  display: block;
+  font-size: 11px;
+  color: #647579;
+  margin-top: 5px;
+}
+.shortcut-key {
+  border: 1px solid #cedbdd;
+  border-radius: 6px;
+  min-width: 100px;
+  padding: 8px;
+  font-size: 12px;
+  background: #f6faf9;
+}
+.shortcut-key.recording {
+  border-color: var(--accent);
+  background: var(--mint);
+  color: #007880;
+}
+#shortcutNotice {
+  color: #576b70;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.memory-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.memory-category {
+  display: block;
+  padding: 10px;
+}
+.secondary:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.memory-card p {
+  white-space: pre-wrap;
+  color: #596d73;
+}
+.stat-card small,
+.bar-row span,
+.bar-row small {
+  color: #5e7479;
+}
+@media (max-width: 850px) {
+  .sidebar-bottom {
+    display: block;
+    margin-top: auto;
+  }
+  .sidebar-bottom .local-status,
+  .sidebar-bottom .bottom-actions > button:not(#shortcutSettings) {
+    display: none;
+  }
+  #shortcutSettings {
+    font-size: 10px;
+    padding: 6px 0;
+  }
+  .bottom-actions {
+    justify-content: center;
+  }
+}

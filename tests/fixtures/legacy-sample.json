@@ -1,0 +1,16 @@
+{
+  "diaryList": [
+    {
+      "uuid": "ui-import-fixture",
+      "title": "旧格式导入验证",
+      "content": "# 合成日记\n用于界面验证，不是真实日记",
+      "createTime": 1726000000000,
+      "category": "ui-cat",
+      "tag": "ui-tag",
+      "unknownField": { "preserve": true }
+    }
+  ],
+  "categoryList": [{ "uuid": "ui-cat", "name": "导入验证" }],
+  "tagList": [{ "uuid": "ui-tag", "name": "合成样本" }],
+  "modelList": []
+}

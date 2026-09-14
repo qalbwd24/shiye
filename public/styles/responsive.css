@@ -1,0 +1,269 @@
+@media (min-width: 1600px) {
+  :root {
+    --sidebar: 240px;
+    --list: 360px;
+  }
+  .paper {
+    padding: 44px 55px;
+  }
+  .sidebar {
+    padding-top: 37px;
+  }
+  .topbar {
+    height: 126px;
+  }
+  .entry-card {
+    padding: 23px;
+  }
+  .entry-card h3 {
+    font-size: 14px;
+  }
+  .entry-card p {
+    font-size: 12px;
+  }
+  .body-editor {
+    font-size: 16px;
+  }
+  .entry-title {
+    font-size: 30px;
+  }
+}
+@media (max-width: 1100px) {
+  :root {
+    --sidebar: 180px;
+    --list: 270px;
+  }
+  .sidebar {
+    padding: 25px 12px 15px;
+  }
+  .brand {
+    font-size: 21px;
+    gap: 8px;
+  }
+  .brand small {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+  }
+  .paper {
+    padding: 27px 26px;
+  }
+  .topbar {
+    padding: 24px;
+  }
+  .topbar-right {
+    gap: 12px;
+  }
+  .search-box input {
+    width: 150px;
+  }
+  .entry-title {
+    font-size: 23px;
+  }
+  .drop-zone {
+    flex-wrap: wrap;
+  }
+  .entry-meta {
+    gap: 6px;
+  }
+  .entry-meta input {
+    width: 144px;
+  }
+  .demo-badge {
+    display: none;
+  }
+  #saveStatus {
+    margin-right: 0;
+  }
+  .editor-top {
+    padding: 0 18px;
+  }
+  .mood-row {
+    gap: 6px;
+  }
+  .section-label {
+    margin-top: 17px;
+  }
+}
+@media (max-width: 850px) {
+  :root {
+    --sidebar: 65px;
+    --list: 245px;
+  }
+  .sidebar {
+    padding: 22px 8px;
+  }
+  .brand {
+    padding: 0;
+    justify-content: center;
+  }
+  .brand > span:last-child,
+  .nav-button > .count,
+  .section-label,
+  #categories,
+  .tags-label,
+  .tag-cloud,
+  .sidebar-bottom,
+  .new-entry kbd {
+    display: none;
+  }
+  .new-entry {
+    font-size: 0;
+    padding: 12px;
+    margin: 25px 0 20px;
+  }
+  .new-entry svg {
+    width: 20px;
+  }
+  .nav-button {
+    font-size: 0;
+    padding: 13px;
+    gap: 0;
+  }
+  .nav-button svg {
+    width: 19px;
+  }
+  .topbar-right .avatar {
+    display: none;
+  }
+  .search-box input {
+    width: 140px;
+  }
+  .entry-title {
+    font-size: 22px;
+  }
+  .paper {
+    padding: 23px;
+  }
+  .editor-top > span {
+    display: none;
+  }
+  .editor-top {
+    justify-content: flex-end;
+  }
+  .format-toolbar {
+    gap: 2px;
+  }
+  .entry-meta input {
+    width: 136px;
+  }
+  .entry-meta select {
+    max-width: 85px;
+  }
+  .topbar {
+    height: 96px;
+  }
+  .eyebrow {
+    font-size: 9px;
+  }
+  h1 {
+    font-size: 22px;
+  }
+  .entry-panel {
+    width: 245px;
+  }
+  .entry-card {
+    padding: 17px 13px;
+  }
+  .entry-list {
+    padding: 0 10px 15px;
+  }
+}
+@media (max-width: 650px) {
+  #app {
+    min-height: 100dvh;
+    height: 100dvh;
+  }
+  .entry-panel {
+    width: 100%;
+    border-right: 0;
+  }
+  .editor-panel {
+    display: none;
+  }
+  .journal-view.has-selected .entry-panel {
+    display: none;
+  }
+  .journal-view.has-selected .editor-panel {
+    display: block;
+  }
+  .topbar {
+    padding: 18px 15px;
+    height: 91px;
+  }
+  .topbar-right {
+    gap: 2px;
+  }
+  .search-box {
+    padding: 8px;
+  }
+  .search-box input {
+    width: 90px;
+  }
+  .search-box kbd {
+    display: none;
+  }
+  .topbar h1 {
+    font-size: 19px;
+  }
+  .eyebrow {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .editor-top > span {
+    display: block;
+    cursor: pointer;
+    color: var(--accent);
+  }
+  .editor-top {
+    justify-content: space-between;
+  }
+  .paper {
+    padding: 23px 20px;
+  }
+  .entry-meta {
+    font-size: 9px;
+  }
+  .entry-title {
+    font-size: 23px;
+  }
+  .alternate-view {
+    padding: 20px 15px;
+  }
+  .calendar-day {
+    min-height: 65px;
+    padding: 8px 3px;
+  }
+  .calendar-day small {
+    max-width: 28px;
+  }
+  .weekday {
+    padding: 9px 0;
+  }
+  .stat-cards {
+    gap: 7px;
+  }
+  .stat-card {
+    padding: 14px;
+  }
+  .stat-card strong {
+    font-size: 26px;
+  }
+  .stat-card small {
+    font-size: 10px;
+  }
+  .drop-zone > span:nth-child(2) {
+    line-height: 1.8;
+  }
+  #footerDate {
+    display: none;
+  }
+  .location-field input {
+    max-width: 95px;
+  }
+  .attachments {
+    grid-template-columns: 1fr;
+  }
+  .format-toolbar button {
+    width: 26px;
+  }
+}

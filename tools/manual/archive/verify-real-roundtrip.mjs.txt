@@ -1,0 +1,16 @@
+// Historical real-data acceptance script. Read tools/manual/README.md first.
+import {createDiaryServer} from '../../server.mjs';
+import {createBackup,restoreBackup} from '../../public/shared/vault2.js';
+import {randomBytes,createHash} from 'node:crypto';
+import {promises as fs,openAsBlob,createReadStream} from 'node:fs';
+import path from 'node:path';
+const nativeFetch=globalThis.fetch,source='http://127.0.0.1:18767';
+globalThis.fetch=(url,options)=>nativeFetch(new URL(url,source),options);
+const api=base=>async(p,{method='GET',data,raw,headers={}}={})=>{const r=await nativeFetch(base+p,{method,headers:{'X-Diary-Client':'desktop',...(data?{'Content-Type':'application/json'}:{}),...headers},body:raw??(data?JSON.stringify(data):undefined)});const v=await r.json();if(!r.ok)throw Error(v.error);return v;};
+const pass=randomBytes(24).toString('base64'),start=Date.now();let last=0;
+const created=await createBackup(api(source),pass,(n,total)=>{if(n-last>256*1024*1024){last=n;console.log(JSON.stringify({stage:'compressed-encrypted-backup',MB:Math.round(n/1048576),totalMB:Math.round(total/1048576)}));}});console.log(JSON.stringify({stage:'backup-complete',size:created.size,seconds:(Date.now()-start)/1000}));
+const dir='F:/我的奋斗/真实恢复验收',server=await createDiaryServer({dataDir:dir,seed:false});await new Promise(r=>server.listen(0,'127.0.0.1',r));last=0;try{const result=await restoreBackup(api('http://127.0.0.1:'+server.address().port),await openAsBlob(created.path),pass,(n,total)=>{if(n-last>256*1024*1024){last=n;console.log(JSON.stringify({stage:'restore-validation',MB:Math.round(n/1048576),totalMB:Math.round(total/1048576)}));}});const a=await api(source)('/api/library'),b=JSON.parse(await fs.readFile(path.join(dir,'diary.json'),'utf8'));const raw=new Map(a.entries.map(e=>[e.id,e]));let equal=0;for(const e of b.entries){const old=raw.get(e.restoredFrom.id);if(old&&old.title===e.title&&old.content===e.content&&old.date===e.date&&old.category===e.category&&JSON.stringify(old.tags)===JSON.stringify(e.tags)&&e.attachments.length===old.attachments.length)equal++;}const report={...result,matchingEntries:equal,sourceEntries:a.entries.length,compressedBackupBytes:created.size,totalSeconds:(Date.now()-start)/1000,hashVerifiedByRestore:true};await fs.writeFile('F:/我的奋斗/真实恢复验收/大备份往返验证.json',JSON.stringify(report,null,2),'utf8');console.log(JSON.stringify(report));if(equal!==a.entries.length)throw Error('Entry comparison failed');
+// This encrypted file was created only for this test with a temporary, unsaved password.
+const expectedRoot=path.resolve('F:/我的奋斗/真实备份验收/backups')+path.sep;if(!path.resolve(created.path).startsWith(expectedRoot))throw Error('Unexpected test output path');await fs.unlink(created.path);
+}finally{server.closeAllConnections();await new Promise(r=>server.close(r));}
+

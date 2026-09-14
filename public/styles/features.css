@@ -1,0 +1,141 @@
+/* Functional additions; visual redesign remains separate. */
+.format-toolbar {
+  height: auto !important;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 0;
+}
+.format-toolbar button {
+  width: auto;
+  min-width: 28px;
+  padding: 5px 7px;
+  font-size: 12px;
+}
+.format-toolbar input[type='color'] {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  padding: 0;
+}
+.body-editor {
+  font-size: var(--writing-size, 16px);
+  line-height: var(--writing-line, 2);
+  font-family: var(--writing-font, sans-serif);
+}
+.body-editor a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.body-editor table {
+  border-collapse: collapse;
+}
+.body-editor td,
+.body-editor th {
+  border: 1px solid #ccd;
+  padding: 8px;
+}
+.filter-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 18px 0;
+}
+.filter-row select,
+.filter-row input {
+  padding: 8px;
+  border: 1px solid #cad8da;
+  border-radius: 6px;
+  background: var(--paper);
+}
+.filter-row input[type='checkbox'] {
+  padding: 0;
+}
+.check-row {
+  display: block;
+  padding: 10px 0;
+}
+textarea.field {
+  resize: vertical;
+  font: 14px/1.8 monospace;
+  box-sizing: border-box;
+}
+.heatmap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.heatmap button {
+  background: #71bbb7;
+  padding: 8px;
+  border-radius: 5px;
+  color: #123;
+}
+.heatmap small {
+  display: block;
+}
+.bar-row span {
+  width: 120px;
+  overflow-wrap: anywhere;
+}
+.bar-row small {
+  width: 50px;
+}
+.stat-cards {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.stat-card strong {
+  font-size: 29px;
+}
+.template-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.template-row .option-button {
+  flex: 1;
+}
+#drawing {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 55vh;
+  border: 0;
+  outline: 1px solid #bbc;
+  touch-action: none;
+  background: white;
+  margin: 12px auto;
+}
+#markdownPreview {
+  border-top: 1px solid var(--line);
+  padding: 20px 0;
+  overflow: auto;
+}
+#printArea {
+  display: none;
+}
+.bottom-actions {
+  padding-bottom: 15px;
+}
+.sidebar-bottom {
+  margin-top: 25px;
+}
+.sidebar {
+  padding-bottom: 15px;
+}
+#navigation .nav-button {
+  margin: 2px 0;
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+.section-label {
+  margin-top: 18px;
+}
+#modal:has(#drawing),
+#modal:has(#markdownSource) {
+  width: min(850px, 95vw);
+}
+#shortcutRows {
+  max-height: 30vh;
+}

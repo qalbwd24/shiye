@@ -1,0 +1,123 @@
+dialog {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 26px;
+  width: min(530px, 90vw);
+  color: var(--ink);
+  box-shadow: 0 30px 100px #1d464329;
+  max-height: 80vh;
+  overflow: auto;
+}
+dialog::backdrop {
+  background: #243c4359;
+  backdrop-filter: blur(3px);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.modal-header h2 {
+  font-size: 18px;
+  font-weight: 550;
+  margin: 0;
+}
+#modalBody p {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #819195;
+}
+#modalBody .field {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #dfe8e8;
+  border-radius: 7px;
+  margin: 10px 0 18px;
+  background: white;
+}
+#modalBody .option-button {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+#modalBody .option-button small {
+  display: block;
+  font-size: 11px;
+  color: #9aa7ac;
+  margin-top: 6px;
+}
+#modalBody .option-button:hover {
+  border-color: #a6d6d1;
+  background: #f5fbfa;
+}
+.danger {
+  color: #c27f70 !important;
+}
+.help-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+  color: #819095;
+  font-size: 12px;
+  padding: 15px;
+  background: #f7faf9;
+  border-radius: 8px;
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  justify-content: flex-end;
+}
+.secondary {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 17px;
+  color: #819095;
+}
+#toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translate(-50%, 20px);
+  opacity: 0;
+  pointer-events: none;
+  background: #354d50;
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 9px;
+  box-shadow: 0 8px 30px #354d5025;
+  font-size: 12px;
+  z-index: 10;
+  transition: 0.2s;
+  max-width: 85vw;
+}
+#toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.focus-mode .sidebar,
+.focus-mode .entry-panel {
+  display: none;
+}
+.focus-mode .topbar {
+  height: 85px;
+}
+.focus-mode .paper {
+  max-width: 820px;
+  padding-top: 45px;
+}
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-thumb {
+  background: #dce5e5;
+  border-radius: 8px;
+}

@@ -1,0 +1,190 @@
+.alternate-view {
+  padding: 32px 38px;
+  overflow: auto;
+  flex: 1;
+}
+.alt-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.alt-heading h2 {
+  font-size: 22px;
+  font-weight: 500;
+  margin: 0;
+}
+.alt-heading p {
+  font-size: 12px;
+  color: #9aa6aa;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.weekday {
+  padding: 15px;
+  text-align: center;
+  font-size: 11px;
+  color: #93a2a7;
+  background: #f7faf9;
+}
+.calendar-day {
+  min-height: 105px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 12px;
+  text-align: left;
+  align-self: stretch;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.calendar-day:hover {
+  background: #f0f9f7;
+}
+.calendar-day.outside {
+  color: #c9d0d2;
+  background: #fafcfc;
+}
+.calendar-day.today > strong {
+  background: var(--accent);
+  color: white;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  margin-top: -3px;
+}
+.calendar-day small {
+  font-size: 10px;
+  color: #88a4a2;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+.view-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+.gallery-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  text-align: left;
+  padding: 0;
+}
+.gallery-card img,
+.gallery-card video {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+.gallery-card > div {
+  padding: 13px;
+  font-size: 12px;
+}
+.gallery-card small {
+  display: block;
+  font-size: 10px;
+  color: #a0adb2;
+  margin-top: 6px;
+}
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 30px;
+}
+.stat-card {
+  background: #fff;
+  padding: 27px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.stat-card small {
+  color: #8fa0a5;
+  font-size: 12px;
+}
+.stat-card strong {
+  display: block;
+  font-size: 38px;
+  font-weight: 400;
+  color: #559c9c;
+  margin-top: 12px;
+}
+.stat-panel {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+.stat-panel h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 22px;
+}
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 12px;
+  margin: 16px 0;
+}
+.bar-row span {
+  width: 65px;
+  color: #819598;
+}
+.bar-track {
+  height: 7px;
+  background: #f0f5f4;
+  border-radius: 5px;
+  flex: 1;
+  overflow: hidden;
+}
+.bar-track > div {
+  height: 100%;
+  background: #8bc9c5;
+  border-radius: 5px;
+}
+.bar-row small {
+  width: 30px;
+  color: #9eadaf;
+}
+.memory-card {
+  background: white;
+  padding: 35px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  max-width: 660px;
+  margin: 24px auto;
+}
+.memory-card h2 {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.7;
+}
+.memory-card p {
+  font-size: 14px;
+  line-height: 2;
+  color: #839095;
+}
+.memory-card small {
+  color: #a1afb4;
+}
+.memory-card .primary {
+  margin-top: 20px;
+}

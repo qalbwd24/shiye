@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>拾页 · 桌面日记</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside class="sidebar">
+        <a class="brand" href="/" aria-label="拾页首页"
+          ><span class="brand-mark">页</span><span>拾页<small>把日子，收进书里</small></span></a
+        >
+        <button id="newEntry" class="primary new-entry">
+          <span data-icon="plus"></span> 写一篇日记 <kbd>N</kbd>
+        </button>
+        <nav id="navigation" aria-label="日记视图">
+          <button data-view="all" class="nav-button active">
+            <span data-icon="book"></span>全部日记 <span class="count" id="allCount">0</span>
+          </button>
+          <button data-view="calendar" class="nav-button">
+            <span data-icon="calendar"></span>日历
+          </button>
+          <button data-view="gallery" class="nav-button">
+            <span data-icon="image"></span>相册
+          </button>
+          <button data-view="memories" class="nav-button">
+            <span data-icon="sparkles"></span>拾光回顾
+          </button>
+          <button data-view="stats" class="nav-button">
+            <span data-icon="chart"></span>记录统计
+          </button>
+        </nav>
+        <div class="section-label">
+          我的分类
+          <button
+            id="addCategory"
+            class="icon-button"
+            aria-label="添加分类"
+            data-icon="plus"
+          ></button>
+        </div>
+        <div id="categories"></div>
+        <div class="section-label tags-label">常用标签</div>
+        <div id="tagCloud" class="tag-cloud"></div>
+        <div class="sidebar-bottom">
+          <button id="cloudStatus" class="local-status">
+            <span class="status-dot"></span><span>本地日记库<small>内容保存在这台电脑</small></span
+            ><span data-icon="chevron"></span>
+          </button>
+          <div class="bottom-actions">
+            <button id="exportLibrary" title="导出日记 JSON，附件原件保留在 data/media">
+              导出数据</button
+            ><button data-view="trash" id="trashButton">回收站</button
+            ><button
+              id="helpButton"
+              class="icon-button"
+              aria-label="使用帮助"
+              data-icon="help"
+            ></button>
+          </div>
+        </div>
+      </aside>
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">每一页，都是生活</span>
+            <h1 id="viewTitle">我的日记<span class="heading-dot">.</span></h1>
+          </div>
+          <div class="topbar-right">
+            <label class="search-box"
+              ><span data-icon="search"></span
+              ><input id="search" placeholder="搜索文字、标签、地点" aria-label="搜索日记" /><kbd
+                >/</kbd
+              ></label
+            ><button
+              id="focusButton"
+              class="icon-button"
+              title="专注写作"
+              aria-label="专注写作"
+              data-icon="expand"
+            ></button
+            ><span class="avatar">我</span>
+          </div>
+        </header>
+        <section id="journalView" class="journal-view">
+          <section class="entry-panel">
+            <div class="list-heading">
+              <span id="listSubtitle">最近的记录</span
+              ><button
+                id="sortButton"
+                title="切换时间排序"
+                class="icon-button"
+                aria-label="切换时间排序"
+                data-icon="sort"
+              ></button>
+            </div>
+            <div id="entryList" class="entry-list"></div>
+            <div class="list-footer">生活里的小事，也值得被记住。</div>
+          </section>
+          <section class="editor-panel" id="editorPanel">
+            <div id="editorEmpty" class="empty hidden">
+              <span data-icon="book"></span>
+              <h2>为今天，留下一页</h2>
+              <p>选择一篇日记，或从此刻开始记录。</p>
+              <button id="emptyNew" class="primary">写一篇日记</button>
+            </div>
+            <div id="editorWrap">
+              <div class="editor-top">
+                <span id="entryDateline"></span>
+                <div class="editor-actions">
+                  <span id="saveStatus" role="status">已保存到本地</span
+                  ><button
+                    id="pinButton"
+                    class="icon-button"
+                    title="置顶日记"
+                    aria-label="置顶日记"
+                    data-icon="pin"
+                  ></button
+                  ><button
+                    id="historyButton"
+                    class="icon-button"
+                    title="编辑历史"
+                    aria-label="编辑历史"
+                    data-icon="history"
+                  ></button
+                  ><button
+                    id="moreButton"
+                    class="icon-button"
+                    title="日记操作"
+                    aria-label="日记操作"
+                    data-icon="more"
+                  ></button>
+                </div>
+              </div>
+              <div class="editor-scroll">
+                <article class="paper">
+                  <div class="entry-meta">
+                    <select id="entryCategory" aria-label="日记分类"></select
+                    ><span class="meta-separator">·</span
+                    ><input id="entryDate" type="datetime-local" aria-label="日记日期时间" /><span
+                      id="demoBadge"
+                      class="demo-badge"
+                      >体验示例</span
+                    >
+                  </div>
+                  <input
+                    id="entryTitle"
+                    class="entry-title"
+                    placeholder="给今天起个名字…"
+                    aria-label="日记标题"
+                  />
+                  <div class="mood-row">
+                    <select id="entryWeather" aria-label="天气">
+                      <option value="">＋ 天气</option>
+                      <option>晴</option>
+                      <option>多云</option>
+                      <option>阴</option>
+                      <option>雨</option>
+                      <option>雷阵雨</option>
+                      <option>雪</option>
+                      <option>大风</option>
+                      <option>雾</option></select
+                    ><select id="entryMood" aria-label="心情">
+                      <option value="">＋ 心情</option>
+                      <option>平静</option>
+                      <option>开心</option>
+                      <option>充实</option>
+                      <option>期待</option>
+                      <option>疲惫</option>
+                      <option>难过</option></select
+                    ><label class="location-field"
+                      ><span data-icon="pin-location"></span
+                      ><input id="entryLocation" placeholder="添加地点" aria-label="地点"
+                    /></label>
+                  </div>
+                  <div id="formatToolbar" class="format-toolbar" aria-label="文字格式">
+                    <button data-command="bold" title="粗体" aria-label="粗体"><b>B</b></button
+                    ><button data-command="italic" title="斜体" aria-label="斜体"><i>I</i></button
+                    ><button data-command="strikeThrough" title="删除线" aria-label="删除线">
+                      <s>S</s></button
+                    ><span></span
+                    ><button
+                      data-command="insertUnorderedList"
+                      title="项目列表"
+                      aria-label="项目列表"
+                      data-icon="list"
+                    ></button
+                    ><button
+                      data-block="blockquote"
+                      title="引用"
+                      aria-label="引用"
+                      data-icon="quote"
+                    ></button
+                    ><button data-block="h2" title="小标题" aria-label="小标题">H₂</button
+                    ><button
+                      data-command="removeFormat"
+                      title="清除格式"
+                      aria-label="清除格式"
+                      data-icon="eraser"
+                    ></button
+                    ><span></span
+                    ><button
+                      id="insertDateTime"
+                      title="插入日期时间（按住 CapsLock＋T）"
+                      aria-label="插入日期时间"
+                      data-icon="clock"
+                    ></button
+                    ><button
+                      id="indentButton"
+                      title="空两格（Tab）"
+                      aria-label="空两格"
+                      data-icon="indent"
+                    ></button
+                    ><button
+                      id="templateButton"
+                      title="使用写作模板"
+                      aria-label="写作模板"
+                      data-icon="template"
+                    ></button>
+                  </div>
+                  <div
+                    id="bodyEditor"
+                    class="body-editor"
+                    contenteditable="true"
+                    role="textbox"
+                    aria-label="日记正文"
+                    aria-multiline="true"
+                    data-placeholder="记录此刻的想法…"
+                    spellcheck="false"
+                  ></div>
+                  <div id="entryCover" class="entry-cover hidden">
+                    <div class="cover-orb"></div>
+                    <div class="cover-hill"></div>
+                    <span>把平凡的日子，过成喜欢的样子</span><small>示例插画</small>
+                  </div>
+                  <div id="attachments" class="attachments"></div>
+                  <div class="drop-zone" id="dropZone">
+                    <span data-icon="image"></span
+                    ><span>拖入照片、视频或音频，也可以直接粘贴截图</span
+                    ><button id="chooseMedia">添加媒体</button>
+                  </div>
+                  <div class="entry-tags">
+                    <span data-icon="tag"></span
+                    ><input
+                      id="entryTags"
+                      aria-label="日记标签"
+                      placeholder="添加标签，用逗号分隔"
+                    />
+                  </div>
+                </article>
+              </div>
+              <footer class="editor-footer">
+                <span id="wordCount">0 字</span><span id="footerDate">只管记录，自动保存</span
+                ><button id="saveButton">保存 <kbd>Ctrl S</kbd></button>
+              </footer>
+            </div>
+          </section>
+        </section>
+        <section id="alternateView" class="alternate-view hidden"></section>
+      </main>
+    </div>
+    <input
+      type="file"
+      id="mediaInput"
+      accept="image/png,image/jpeg,image/webp,image/gif,image/avif,video/mp4,video/webm,video/quicktime,audio/*"
+      multiple
+      hidden
+    />
+    <dialog id="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle"></h2>
+        <button id="closeModal" class="icon-button" aria-label="关闭" data-icon="close"></button>
+      </div>
+      <div id="modalBody"></div>
+    </dialog>
+    <div id="toast" role="status"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

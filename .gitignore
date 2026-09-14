@@ -1,0 +1,17 @@
+# Local work library and all generated artifacts. Never publish diary content.
+data/
+var/
+node_modules/
+build/
+coverage/
+tests/ui-test-data/
+*.log
+*.partial
+*.syvault
+*.syvault2
+*.exe
+.env
+.env.*
+!.env.example
+# Historical real-data runs may include machine-specific paths.
+docs/archive/

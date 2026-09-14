@@ -1,0 +1,14 @@
+data/
+var/
+node_modules/
+build/
+coverage/
+tests/ui-test-data/
+public/vendor/
+resources/
+docs/archive/
+tools/manual/archive/
+package-lock.json
+*.exe
+*.syvault
+*.syvault2

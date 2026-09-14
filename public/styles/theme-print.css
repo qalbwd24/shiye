@@ -1,0 +1,82 @@
+[data-theme='dark'] {
+  --paper: #20292e;
+  --bg: #172126;
+  --ink: #e3ecee;
+  --muted: #a8b9bd;
+  --line: #3b4b50;
+  --mint: #244344;
+}
+[data-theme='dark'] body,
+[data-theme='dark'] .workspace,
+[data-theme='dark'] .sidebar,
+[data-theme='dark'] .editor-panel,
+[data-theme='dark'] .entry-panel,
+[data-theme='dark'] dialog,
+[data-theme='dark'] .stat-panel,
+[data-theme='dark'] .stat-card,
+[data-theme='dark'] .memory-card,
+[data-theme='dark'] .topbar {
+  background: var(--paper);
+  color: var(--ink);
+}
+[data-theme='dark'] .entry-card,
+[data-theme='dark'] #modalBody .field,
+[data-theme='dark'] input,
+[data-theme='dark'] select,
+[data-theme='dark'] textarea {
+  background: #243239;
+  color: var(--ink);
+}
+[data-theme='dark'] .entry-title,
+[data-theme='dark'] h1,
+[data-theme='dark'] h2,
+[data-theme='dark'] h3,
+[data-theme='dark'] .body-editor {
+  color: var(--ink);
+}
+@media (max-width: 850px) {
+  #navigation .nav-button:not(:has(svg)) {
+    font-size: 10px;
+    padding: 8px 0;
+  }
+  .bottom-actions > button {
+    display: block !important;
+    font-size: 9px;
+  }
+  .sidebar-bottom {
+    display: block;
+  }
+  .sidebar-bottom .bottom-actions {
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar {
+    overflow: auto;
+  }
+  .format-toolbar button {
+    font-size: 10px;
+  }
+  .stat-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media print {
+  body > *:not(#printArea) {
+    display: none !important;
+  }
+  #printArea {
+    display: block !important;
+    color: black;
+    background: white;
+  }
+  #printArea article {
+    break-after: page;
+  }
+  #printArea img {
+    max-width: 100%;
+  }
+  #printArea audio,
+  #printArea video {
+    display: none;
+  }
+}
