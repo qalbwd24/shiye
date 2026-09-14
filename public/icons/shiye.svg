@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="tile" x1="24" y1="16" x2="232" y2="244" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#79c9c2"/><stop offset="1" stop-color="#318a95"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="74" y1="47" x2="188" y2="208" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fffef6"/><stop offset="1" stop-color="#e6f1ea"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#tile)"/>
+  <path d="M42 50C80 15 146 10 197 30" fill="none" stroke="#fff" stroke-opacity=".13" stroke-width="3" stroke-linecap="round"/>
+  <g transform="rotate(-7 128 128)">
+    <rect x="60" y="51" width="144" height="166" rx="20" fill="#155d67" opacity=".17"/>
+    <rect x="52" y="41" width="144" height="168" rx="18" fill="#276e78"/>
+    <path d="M78 41H159L190 72V189Q190 201 178 201H78Z" fill="url(#paper)"/>
+    <path d="M159 41V61Q159 73 171 73H190Z" fill="#c4e1d8"/>
+    <path d="M157 42V61Q157 76 172 76H189" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="2"/>
+    <path d="M74 48V194" stroke="#94ccc3" stroke-width="3" stroke-linecap="round"/>
+    <path d="M56 73H68M56 107H68M56 141H68M56 175H68" stroke="#e2f3ea" stroke-width="7" stroke-linecap="round"/>
+    <path d="M100 107H158M100 128H151M100 149H132" stroke="#6eaaa6" stroke-width="7" stroke-linecap="round"/>
+    <path d="M151 163H174V205L162.5 197L151 205Z" fill="#d7b681"/>
+    <path d="M87 194H138" stroke="#bdd8ce" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

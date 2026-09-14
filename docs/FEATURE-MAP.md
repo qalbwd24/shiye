@@ -93,3 +93,5 @@
 正文初始缩进、原生换段和日期格式：public/features/editor-input.js，features/index.js 装配，main.js 调用；autoIndentParagraph 在 preferences.js 和 routes/preferences.mjs 管理。列表封面：features/entry-cards.js、styles/entry-cards.css；仅引用现有媒体。侧栏边界跟随继续由 layout.js 负责，相册随机种子由 album.js 独立管理。详见 [0.7.2 工作文档](ITERATION-0.7.2.md)。
 
 0.7.3 取消普通正文段落额外的 18px 段后间距，相邻段落按普通换行距离排列；不改变行距或手动输入的空行。段落样式在 public/styles/editor.css 的 .body-editor p 中统一管理，阅读与就地编辑共用。
+
+0.7.4 应用图标由 public/icons/shiye.svg 维护；tools/build-icons.mjs 生成各尺寸资源，tools/build-launcher.ps1 嵌入 Windows 启动器。它与个人头像模块独立，见 [图标维护](ICON.md)。
