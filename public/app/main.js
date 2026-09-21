@@ -1,3 +1,5 @@
+import { createBodyEditor } from '../editor/body-editor.js';
+import { getEditorDocument } from '../shared/editor-document.js';
 import { createPersistence } from '../editor/persistence.js';
 import { createMediaImport } from '../features/media-import.js';
 import { sortedTaxonomy } from '../shared/taxonomy.js';
@@ -55,7 +57,25 @@ const persistence = createPersistence({
 });
 const { markDirty, flush } = persistence;
 const editorCommands = createEditorCommands({ $, sanitize, current, markDirty });
-const { command } = editorCommands;
+const bodyEditor = createBodyEditor({
+  $,
+  sanitize,
+  escape,
+  modal,
+  closeModal,
+  toast,
+  current,
+  markDirty,
+  flush,
+  pause: persistence.pause,
+  get library() {
+    return library;
+  },
+  upload: (...args) => upload(...args),
+});
+function command(name, value) {
+  if (!bodyEditor.command(name, value)) editorCommands.command(name, value);
+}
 
 const returnNavigation = createReturnNavigation({
   prepare: async () => {
@@ -156,6 +176,7 @@ function status(text, error = false) {
   $('#saveStatus').classList.toggle('error', error);
 }
 async function refreshLibrary() {
+  await flush();
   library = await api('/api/library');
   offline?.apply();
   renderSide();
@@ -279,6 +300,7 @@ function renderEditor() {
   $('#editorEmpty').classList.toggle('hidden', !!e);
   offline?.comments.render(e);
   if (!e) {
+    bodyEditor.render({ content: '', deleted: true });
     renderAttachments();
     return;
   }
@@ -298,8 +320,7 @@ function renderEditor() {
   $('#entryTags').value = e.tags.join('，');
   ensureOption($('#entryWeather'), e.weather);
   ensureOption($('#entryMood'), e.mood);
-  $('#bodyEditor').innerHTML = sanitize(e.content);
-  $('#bodyEditor').contentEditable = e.deleted ? 'false' : 'true';
+  bodyEditor.render(e);
   $('#demoBadge').textContent = e.demo ? '体验示例' : e.legacy ? '旧格式导入' : '';
   $('#demoBadge').classList.toggle('hidden', !e.demo && !e.legacy);
   $('#pinButton').classList.toggle('active', e.pinned);
@@ -326,7 +347,7 @@ function renderAttachments() {
 }
 function countWords() {
   $('#wordCount').textContent =
-    Array.from(textOf($('#bodyEditor').innerHTML).replace(/\s/g, '')).length + ' 字';
+    Array.from(textOf(current()?.content || '').replace(/\s/g, '')).length + ' 字';
 }
 async function openPreviewEntry(id, active) {
   await flush();
@@ -378,7 +399,10 @@ async function newEntry(date = new Date(), initial = {}) {
     method: 'POST',
     data: {
       title: '',
-      content: offline.editorInput.initialContent(boundTemplate?.content || ''),
+      ...bodyEditor.newDocument(
+        boundTemplate?.content || '',
+        offline.prefs().autoIndentParagraph !== false,
+      ),
       date: date.toISOString(),
       category: chosenCategory,
       tags: initial.tags || [],
@@ -392,7 +416,7 @@ async function newEntry(date = new Date(), initial = {}) {
   selected = e.id;
   renderView();
   $('#journalView').classList.add('has-selected');
-  $('#bodyEditor').focus();
+  bodyEditor.focus();
 }
 async function changeView(next) {
   await flush();
@@ -516,7 +540,8 @@ function closeModal() {
 function insertDate() {
   offline.editorInput.insertDateTime();
 }
-function showHistory() {
+async function showHistory() {
+  await flush();
   const e = current();
   if (!e) return;
   modal(
@@ -748,15 +773,18 @@ function bind() {
     toast(ascending ? '时间从旧到新' : '时间从新到旧');
   };
   $('#bodyEditor').addEventListener('input', () => {
+    if (bodyEditor.isMarkdown) return;
     if (current()) {
       current().content = $('#bodyEditor').innerHTML;
       markDirty();
     }
   });
   $('#bodyEditor').addEventListener('compositionstart', () => {
+    if (bodyEditor.isMarkdown) return;
     persistence.pause();
   });
   $('#bodyEditor').addEventListener('compositionend', () => {
+    if (bodyEditor.isMarkdown) return;
     if (current()) {
       current().content = $('#bodyEditor').innerHTML;
       markDirty();
@@ -805,6 +833,7 @@ function bind() {
   $('#templateButton').onclick = () => offline.templates();
   document.addEventListener('selectionchange', editorCommands.captureSelection);
   $('#bodyEditor').onpaste = (e) => {
+    if (bodyEditor.isMarkdown) return;
     const files = [...e.clipboardData.files];
     if (files.length) {
       e.preventDefault();
@@ -882,6 +911,10 @@ function bind() {
           'attachments',
         ])
           if (key in old) entry[key] = structuredClone(old[key]);
+        const document = getEditorDocument(old);
+        entry.contentFormat = document.format;
+        entry.markdownSource = document.format === 'markdown' ? document.source : null;
+        entry.markdownHtml = document.format === 'markdown' ? entry.content : null;
         closeModal();
         renderEditor();
         markDirty(entry);
@@ -1015,6 +1048,7 @@ $('.bottom-actions').insertBefore(shortcutButton, $('#helpButton'));
 $('#exportLibrary').title = '旧格式导入、加密备份与原件归档';
 $('#modal').addEventListener('close', () => (recordingShortcut = null));
 offline = installOffline({
+  editor: bodyEditor,
   $,
   $$,
   api,

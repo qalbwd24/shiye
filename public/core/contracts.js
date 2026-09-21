@@ -27,6 +27,7 @@
  * @property {(html:string)=>string} textOf Extract visible text for searching/counting/export.
  * @property {(value:unknown)=>string} escape Escape text inserted into HTML templates.
  * @property {(command:string,value?:string)=>void} command Execute an editor operation.
+ * @property {object} editor Body editor adapter: isMarkdown, focus(), toggleSource(), registerExtension(id, extension). Do not read or write CodeMirror DOM as diary HTML.
  * @property {(files:File[],entry?:Entry)=>Promise<void>} upload Attach local media.
  * @property {(name:string,type:string,content:any,extension:string)=>void} download Save a generated browser file.
  * @property {()=>void} legacyBackups Open legacy import/backup UI.

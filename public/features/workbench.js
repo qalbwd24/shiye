@@ -239,7 +239,8 @@ export function createWorkbench(c, actions) {
   function toggleWriting() {
     if ($('#editorPanel').classList.contains('inline-editing')) return finishInline();
     beginInline();
-    $('#bodyEditor').focus({ preventScroll: true });
+    if (c.editor) c.editor.focus();
+    else $('#bodyEditor').focus({ preventScroll: true });
     return Promise.resolve();
   }
   $('#writingModeButton').hidden = true;

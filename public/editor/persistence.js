@@ -1,3 +1,5 @@
+import { getEditorDocument } from '../shared/editor-document.js';
+
 /** Serial autosave queue. UI and network dependencies are injected for independent testing. */
 export function createPersistence(c) {
   const { api, sanitize, status, toast } = c;
@@ -22,17 +24,23 @@ export function createPersistence(c) {
         const version = versions.get(id);
         saving++;
         try {
+          const { editorOriginalHtml: _original, history: _history, ...editable } = e;
+          // Metadata-only saves must not rewrite legacy HTML. Rendering still sanitizes it.
+          const content =
+            getEditorDocument(e).format === 'markdown' ? sanitize(e.content) : e.content;
           const saved = await api('/api/entries/' + id, {
             method: 'PUT',
             data: {
-              ...e,
-              content: sanitize(e.content),
-              markdownHtml: e.markdownHtml === e.content ? sanitize(e.content) : e.markdownHtml,
+              ...editable,
+              content,
+              markdownHtml: e.markdownHtml === e.content ? content : e.markdownHtml,
             },
           });
           e.revision = saved.revision;
           e.history = saved.history;
           e.updatedAt = saved.updatedAt;
+          if (saved.editorOriginalHtml !== undefined)
+            e.editorOriginalHtml = saved.editorOriginalHtml;
           if (versions.get(id) === version) dirty.delete(id);
           if (c.current()?.id === id) status(dirty.has(id) ? '正在保存…' : '已保存到本地');
         } catch (err) {

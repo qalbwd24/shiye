@@ -30,7 +30,9 @@ export function createMediaImport(c) {
   const targetReady = () =>
     c.current() &&
     !c.current().deleted &&
-    !$('#journalView').classList.contains('hidden') &&
+    (!$('#journalView').classList.contains('hidden') ||
+      ($('#editorPanel')?.classList.contains('embedded-entry-reader') &&
+        $('#editorPanel').getClientRects().length > 0)) &&
     !document.querySelector('dialog[open]');
   const hide = () => {
     depth = 0;

@@ -101,3 +101,14 @@
 `public/features/return-navigation.js` 管理单层来源、保存前置、重复点击和导航取消；`restoreBrowsePosition` 在短暂布局稳定期恢复滚动，用户开始操作即停止。`public/app/main.js` 对 `#alternateView` 的 `data-open-entry`、`data-day` 统一接入，组装应用筛选、月份、展开状态与滚动位置；`public/styles/return-navigation.css` 负责顶部按钮和窄屏换行。
 
 `features/index.js` 装配相册、回顾的 `captureNavigation()`／`restoreNavigation(snapshot)`。快照只保留偏好、ID 和分页，恢复后重新读取实时库，不复制或回写正文。来源属于当前页面生命周期，不是跨刷新历史栈；主动导航会清空。测试在 `tests/return-navigation.test.mjs`、`tests/album.test.mjs`、`tests/recollection.test.mjs`。
+
+### Markdown 编辑核心（0.8）
+
+- `editor/body-editor.js`：唯一 CodeMirror 实例、富文本兼容分支、源码开关、转换核对、附件插入、可信扩展注册。
+- `editor/live-preview.js` + `styles/markdown-editor.css`：选区感知的实时装饰，本地图片、日期非链接、单行颜色与下划线；组词期间只映射装饰。
+- `editor/markdown-transforms.js`：格式命令、旧 HTML 转换、普通段落缩进；`editor/markdown-renderer.js`：安全 HTML 投影。
+- `shared/editor-document.js` + `src/server/domain/entries.mjs`：正文格式选择和向后兼容校验；`domain/import-reconciliation.mjs`：备份重映射与内容指纹。
+- `tools/build-editor.mjs` + `editor-vendor-entry.mjs`：离线构建；运行资源、许可证在 public/vendor，原包在 resources/vendor。
+- 新测试为 editor-document、editor-document-api、markdown-transforms、markdown-live-preview；隔离 UI 验收见 validation/0.8-validation.md。
+
+外部模块通过 `c.command` 或 `c.editor` 接口操作正文；严禁把 `.cm-content.innerHTML` 当日记内容保存。增加可信编辑扩展可用 `registerExtension(id, extension)`，返回卸载函数；尚无第三方插件安装器及 Obsidian 运行时。

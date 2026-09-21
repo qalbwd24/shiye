@@ -1,4 +1,5 @@
 import { fail } from '../http.mjs';
+import { getEditorDocument } from '../../../public/shared/editor-document.js';
 export function validateEntry(v, db, previous = null) {
   if (
     !v ||
@@ -20,17 +21,39 @@ export function validateEntry(v, db, previous = null) {
     !v.attachments.every((a) => typeof a === 'string' && db.media.some((m) => m.id === a))
   )
     throw fail(400, '附件不存在');
-  const markdownSource =
-    typeof v.markdownSource === 'string' &&
-    v.markdownSource.length <= 2000000 &&
-    v.markdownHtml === v.content
-      ? v.markdownSource
-      : null;
+  if (
+    (v.contentFormat !== undefined && !['html', 'markdown'].includes(v.contentFormat)) ||
+    (typeof v.markdownSource === 'string' && v.markdownSource.length > 2000000) ||
+    (v.editorOriginalHtml !== undefined &&
+      v.editorOriginalHtml !== null &&
+      (typeof v.editorOriginalHtml !== 'string' || v.editorOriginalHtml.length > 2000000))
+  )
+    throw fail(400, '编辑器文档格式不正确');
+  // Older clients may save a title or taxonomy without sending editor metadata.
+  // Reuse a snapshot only if the exact HTML is unchanged; never revive stale Markdown.
+  const document = getEditorDocument(
+    v.markdownSource === undefined &&
+      v.markdownHtml === undefined &&
+      previous?.content === v.content
+      ? { ...previous, ...v }
+      : v,
+  );
+  const markdownSource = document.format === 'markdown' ? document.source : null;
+  const editorOriginalHtml =
+    typeof previous?.editorOriginalHtml === 'string'
+      ? previous.editorOriginalHtml
+      : previous && getEditorDocument(previous).format === 'html' && document.format === 'markdown'
+        ? previous.content
+        : typeof v.editorOriginalHtml === 'string'
+          ? v.editorOriginalHtml
+          : null;
   return {
     title: v.title,
     content: v.content,
+    contentFormat: document.format,
     markdownSource,
     markdownHtml: markdownSource !== null ? v.content : null,
+    ...(editorOriginalHtml !== null ? { editorOriginalHtml } : {}),
     date: v.date,
     category: String(v.category || '日常').slice(0, 100),
     tags: [...new Set(v.tags)],

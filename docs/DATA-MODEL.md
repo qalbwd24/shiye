@@ -76,3 +76,11 @@ entry.comments 可选数组：id、body（纯文本）、authorName、authorAvat
 视频处理仅对新上传的暂存文件进行，成功只登记较小的结果；较大时保留原上传视频。旧库不自动转码。任务状态只驻留进程，关闭服务可能中断；客户端在原页面可继续查询同一任务，错误后保留File可重试。
 
 布局增加 sidebar、media、mediaPosition、mediaWidth、listWidth；专业写作临时布局不覆盖阅读布局设置。默认身份保存在settings.preferences.profile，包括authorName、motto、authorAvatarId和authorAvatarCrop；评论保存当时的身份及裁剪快照。顶层stickers数组保存收藏、分组和软删除状态，备份恢复重映射mediaId并去重。
+
+## 0.8 编辑文档扩展
+
+Entry 增加可选 `contentFormat: markdown | html`。Markdown 日记以 `markdownSource` 为编辑源，`content` 与 `markdownHtml` 是相同的已清洗 HTML 投影，继续供统计、搜索、导出和旧客户端读取。缺省格式且存在匹配源码时按 Markdown 打开，否则按原 HTML 打开；显式 html 不自动转换。旧客户端直接改 HTML 导致快照不匹配时，回退为 HTML。
+
+`editorOriginalHtml` 只在第一次由 HTML 转 Markdown 时由服务端从 previous.content 保存，普通更新不能覆盖。仅前端核对确认后转换，不做全库启动迁移。普通保存省略原 HTML 和历史数组，避免重复上传大字段；历史仍由后端生成。历史恢复同步恢复格式和 Markdown 源码。
+
+HTML 投影只允许本地 `/media/<id>` 图片；编辑时发现已登记的本地图片引用，会关联到 attachments，避免完整备份遗漏。恢复备份重映射正文、Markdown 源码和原 HTML 中的媒体 ID。顶层 schema 和加密协议不变，旧格式原件和未知 legacy 字段继续保留。

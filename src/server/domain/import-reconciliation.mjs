@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { isHidden } from '../../../public/shared/entry-state.js';
+import { getEditorDocument } from '../../../public/shared/editor-document.js';
 
 const canonical = (value) =>
   Array.isArray(value)
@@ -32,6 +33,8 @@ export function entryFingerprint(entry) {
   ])
     delete value[key];
   value.hidden = isHidden(entry);
+  // Explicit editor metadata and its older inferred equivalent describe one document.
+  value.contentFormat = getEditorDocument(entry).format;
   for (const key of ['deleted', 'draft', 'pinned', 'demo']) value[key] = !!value[key];
   value.tags = [...new Set(value.tags || [])].sort();
   // Keep unknown legacy fields in the comparison; transport status alone does not change a diary.
@@ -72,10 +75,10 @@ export function addConflict(db, kind, left, right, reason) {
 export function remapEntryMedia(entry, map) {
   const result = structuredClone(entry);
   result.attachments = [...new Set((result.attachments || []).map((id) => map.get(id) || id))];
-  for (const field of ['content', 'markdownHtml', 'markdownSource'])
+  for (const field of ['content', 'markdownHtml', 'markdownSource', 'editorOriginalHtml'])
     if (typeof result[field] === 'string')
       result[field] = result[field].replace(
-        /\/media\/([a-zA-Z0-9-]+)(?=[/"'\s<>?#]|$)/g,
+        /\/media\/([a-zA-Z0-9-]+)(?=[/"'\s<>?#)\]]|$)/g,
         (url, id) => (map.has(id) ? '/media/' + map.get(id) : url),
       );
   if (Array.isArray(result.comments))

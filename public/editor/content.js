@@ -33,6 +33,7 @@ export function sanitize(html) {
     'A',
     'SPAN',
     'FONT',
+    'IMG',
   ]);
   function clean(node) {
     for (const child of [...node.childNodes]) {
@@ -51,8 +52,19 @@ export function sanitize(html) {
           continue;
         }
         const href = child.tagName === 'A' ? child.getAttribute('href') : null;
+        const src = child.tagName === 'IMG' ? child.getAttribute('src') : null;
+        const alt = child.tagName === 'IMG' ? child.getAttribute('alt') : null;
         const color = child.style.color || child.getAttribute('color');
         for (const a of [...child.attributes]) child.removeAttribute(a.name);
+        if (child.tagName === 'IMG') {
+          if (!src || !/^\/media\/[a-zA-Z0-9%._-]+$/.test(src)) {
+            child.replaceWith(doc.createTextNode(alt ? '[图片：' + alt + ']' : '[外部图片]'));
+            continue;
+          }
+          child.setAttribute('src', src);
+          child.setAttribute('alt', alt || '日记图片');
+          child.setAttribute('loading', 'lazy');
+        }
         if (href && /^(https?:|mailto:)/i.test(href)) {
           child.setAttribute('href', href);
           child.setAttribute('target', '_blank');

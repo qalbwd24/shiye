@@ -8,7 +8,10 @@ export function createExport(c) {
     return `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>日记导出</title><style>body{max-width:850px;margin:36px auto;font:18px/1.9 sans-serif}article{break-after:page}img,video{max-width:100%}blockquote{border-left:3px solid #888;padding-left:20px}table{border-collapse:collapse}td,th{border:1px solid #aaa;padding:8px}</style>${entries
       .map(
         (e) =>
-          `<article><h1>${esc(e.title || '无标题日记')}</h1><p>${esc(dayKey(e.date) + ' · ' + e.category + ' · ' + e.tags.join('、'))}</p>${sanitize(e.content)}${e.attachments
+          `<article><h1>${esc(e.title || '无标题日记')}</h1><p>${esc(dayKey(e.date) + ' · ' + e.category + ' · ' + e.tags.join('、'))}</p>${sanitize(e.content).replaceAll('src="/media/', 'src="' + location.origin + '/media/')}${e.attachments
+            .filter(
+              (id) => !sanitize(e.content).includes('src="/media/' + encodeURIComponent(id) + '"'),
+            )
             .map((id) => {
               const m = c.library.media.find((m) => m.id === id);
               return m?.type.startsWith('image/')

@@ -19,6 +19,7 @@ export function createEditorTools(c) {
     toast(field === 'hidden' ? '已更新隐藏状态' : '已更新草稿状态');
   }
   function markdown() {
+    if (c.editor) return c.editor.toggleSource();
     const e = c.current();
     if (!e) return;
     modal(
@@ -29,6 +30,7 @@ export function createEditorTools(c) {
       ($('#markdownPreview').innerHTML = sanitize(marked.parse($('#markdownSource').value)));
     $('#applyMarkdown').onclick = () => {
       e.markdownSource = $('#markdownSource').value;
+      e.contentFormat = 'markdown';
       e.content = sanitize(marked.parse(e.markdownSource));
       e.markdownHtml = e.content;
       closeModal();

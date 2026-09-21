@@ -91,6 +91,7 @@ export function createEditorInput(c) {
     enterIntent = pending = null;
   });
   listen(editor, 'keydown', (event) => {
+    if (c.editor?.isMarkdown) return;
     if (event.key === 'Enter' || event.code === 'Enter' || event.code === 'NumpadEnter') {
       enterIntent =
         !event.isComposing &&
@@ -121,6 +122,7 @@ export function createEditorInput(c) {
     });
   });
   listen(editor, 'beforeinput', (event) => {
+    if (c.editor?.isMarkdown) return;
     if (inserting) return;
     pending = null;
     const entry = c.current(),
@@ -144,6 +146,7 @@ export function createEditorInput(c) {
     editor,
     'input',
     (event) => {
+      if (c.editor?.isMarkdown) return;
       if (inserting) return;
       const intent = pending;
       pending = null;
