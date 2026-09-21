@@ -1,16 +1,59 @@
 /* Keep the editor typography tied to the existing diary writing preferences. */
+.editor-toolbox {
+  margin: 0 0 12px;
+}
+.editor-tools-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.editor-tools-toggle:hover,
+.editor-tools-toggle[aria-expanded='true'] {
+  color: var(--accent);
+  background: var(--mint);
+}
+.editor-tools-toggle > span {
+  display: inline-block;
+  font-size: 18px;
+  line-height: 1;
+}
+.editor-tools-toggle[aria-expanded='true'] > span {
+  transform: rotate(90deg);
+}
+.editor-tools-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+}
+.editor-toolbox[data-expanded='true'] .editor-tools-panel {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+}
+.editor-toolbox-content {
+  min-height: 0;
+  overflow: hidden;
+}
+.editor-toolbox .format-toolbar {
+  margin: 8px 0;
+}
+#editorPanel:not(.inline-editing) .editor-toolbox {
+  display: none;
+}
 .editor-document-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
   flex-wrap: wrap;
-  margin: 0 0 14px;
+  margin: 8px 0;
   font-size: 12px;
   color: var(--muted, #819398);
-}
-.editor-document-controls > span {
-  margin-right: auto;
 }
 .markdown-editor .md-heading span {
   text-decoration: none;
@@ -136,7 +179,12 @@
   vertical-align: middle;
   width: 100%;
   height: 1px;
-  background: var(--line);
+  background: color-mix(in srgb, currentColor 35%, transparent);
+}
+.markdown-editor .md-literal,
+.markdown-editor .md-literal * {
+  color: inherit;
+  text-decoration: none;
 }
 .markdown-editor .md-preview-image {
   display: inline-block;
@@ -147,6 +195,15 @@
   border-radius: 6px;
 }
 @media (prefers-reduced-motion: no-preference) {
+  .editor-tools-panel {
+    transition:
+      grid-template-rows 160ms ease,
+      opacity 160ms ease,
+      visibility 160ms;
+  }
+  .editor-tools-toggle > span {
+    transition: transform 160ms ease;
+  }
   .markdown-editor .cm-cursorLayer {
     transition: opacity 90ms ease;
   }

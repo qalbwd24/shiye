@@ -127,6 +127,17 @@ function editorSurface({ semantic = false, initial = '', prefix = '', suffix = '
   };
 }
 
+test('date command escapes brackets only in Markdown and keeps rich text insertion literal', () => {
+  const surface = editorSurface();
+  surface.input.insertDateTime();
+  assert.match(surface.commands[0][1], /^\[\d{4}\/\d{2}\/\d{2}  \d{2}:\d{2}:\d{2}\]$/);
+  surface.c.editor = { isMarkdown: true };
+  surface.input.insertDateTime();
+  assert.match(surface.commands[1][1], /^\\\[\d{4}\/\d{2}\/\d{2}  \d{2}:\d{2}:\d{2}\\\]$/);
+  assert.equal(surface.commands[1][0], 'insertText');
+  surface.input.dispose();
+});
+
 test('normal Enter in blank body keeps native paragraph action, indents once and autosaves its resulting content', () => {
   const surface = editorSurface();
   surface.editor.emit('keydown', { key: 'Enter' });

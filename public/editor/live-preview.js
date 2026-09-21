@@ -50,6 +50,29 @@ function inlineHTMLPresentation(text, offset, tree, add) {
   }
 }
 
+function literalTimestamps(text, offset, tree, add) {
+  // Escaping '[' prevents Link parsing, but ':34:' may still become an Emoji.
+  // Cover the whole timestamp so default highlighting cannot color its middle.
+  const pattern = /\\?\[\d{4}\/\d{2}\/\d{2}[ \t]+\d{2}:\d{2}:\d{2}\\?\]/g;
+  for (const match of text.matchAll(pattern)) {
+    const from = offset + match.index;
+    let literal = true;
+    for (let node = tree.resolve(from + 3, 1); node; node = node.parent) {
+      if (
+        /^(InlineCode|FencedCode|CodeBlock|HTMLBlock|CommentBlock|ProcessingInstructionBlock|Link|Image|Autolink|LinkReference)$/.test(
+          node.name,
+        )
+      ) {
+        // Bare Link nodes already receive md-literal; links and code retain
+        // their own presentation, including timestamps used as link labels.
+        literal = false;
+        break;
+      }
+    }
+    if (literal) add(from, from + match[0].length, 'md-literal');
+  }
+}
+
 // Resolve only application-owned media. Markdown never causes a third-party image request.
 export function previewMediaURL(value, resolveMedia) {
   if (!resolveMedia || typeof value !== 'string') return null;
@@ -159,7 +182,11 @@ export function buildLivePreviewDecorations(view, { resolveMedia } = {}) {
         const heading = /^(?:ATX|Setext)Heading([1-6])$/.exec(name);
         if (heading) line(from, `md-heading md-heading-${heading[1]}`);
         if (inlineClasses[name]) mark(from, to, inlineClasses[name]);
-        if (name === 'Link' && node.node.getChild('URL')) mark(from, to, 'md-link');
+        if (name === 'Link') {
+          // The Markdown parser also emits Link for bare brackets and unresolved
+          // references. Neutralize its default link highlighting without hiding text.
+          mark(from, to, node.node.getChild('URL') ? 'md-link' : 'md-literal');
+        }
         if (name === 'Blockquote' || name === 'FencedCode' || name === 'CodeBlock') {
           const className = name === 'Blockquote' ? 'md-quote-line' : 'md-code-line';
           let current = doc.lineAt(Math.max(from, visible.from));
@@ -180,7 +207,13 @@ export function buildLivePreviewDecorations(view, { resolveMedia } = {}) {
           return false;
         }
         if (name === 'CodeInfo') mark(from, to, 'md-code-info');
-        if (name === 'Escape') return false;
+        if (name === 'Escape') {
+          // Escape nodes contain the backslash and exactly one literal character.
+          // Code nodes do not contain Escape children, so code stays untouched.
+          mark(from, to, 'md-literal');
+          hide(from, from + 1);
+          return false;
+        }
         if (name === 'Image') {
           const text = doc.sliceString(from, to);
           const urlNode = node.node.getChild('URL');
@@ -215,6 +248,7 @@ export function buildLivePreviewDecorations(view, { resolveMedia } = {}) {
       const key = `inline-html:${current.from}`;
       if (!seen.has(key)) {
         seen.add(key);
+        literalTimestamps(current.text, current.from, tree, mark);
         inlineHTMLPresentation(
           current.text,
           current.from,

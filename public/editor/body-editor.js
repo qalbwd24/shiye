@@ -22,7 +22,12 @@ import {
 } from '../vendor/codemirror.js';
 import { getEditorDocument } from '../shared/editor-document.js';
 import { createLivePreview } from './live-preview.js';
-import { htmlToMarkdown, transformMarkdown, paragraphEnter } from './markdown-transforms.js';
+import {
+  htmlToMarkdown,
+  transformMarkdown,
+  paragraphEnter,
+  markdownStructureEnter,
+} from './markdown-transforms.js';
 import { renderMarkdown } from './markdown-renderer.js';
 
 /** Owns the editable document. Other features must use commands, not CodeMirror's DOM. */
@@ -30,7 +35,6 @@ export function createBodyEditor(c) {
   const host = c.$('#bodyEditor');
   const bar = document.createElement('div');
   bar.className = 'editor-document-controls';
-  const label = document.createElement('span');
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.className = 'secondary';
@@ -45,8 +49,8 @@ export function createBodyEditor(c) {
   media.className = 'secondary';
   media.textContent = '插入附件图片';
   media.id = 'insertMarkdownMedia';
-  bar.append(label, original, media, toggle);
-  host.before(bar);
+  bar.append(original, media, toggle);
+  c.$('#editorToolboxContent').append(bar);
   let view = null,
     entryId = null,
     sourceMode = false;
@@ -73,11 +77,6 @@ export function createBodyEditor(c) {
   };
   const previewExtension = () => (sourceMode ? [] : createLivePreview({ resolveMedia }));
   function controls() {
-    label.textContent = view
-      ? sourceMode
-        ? 'Markdown · 源码'
-        : 'Markdown · 实时预览'
-      : '原格式 · 富文本';
     toggle.textContent = view ? (sourceMode ? '实时预览' : '显示源码') : '转为 Markdown';
     toggle.disabled = !c.current() || c.current().deleted;
     toggle.setAttribute('aria-pressed', String(!!view && sourceMode));
@@ -166,12 +165,11 @@ export function createBodyEditor(c) {
                   run: (editor) => {
                     if (editor.composing || editor.state.facet(EditorState.readOnly)) return false;
                     const { from, to } = editor.state.selection.main;
-                    const edit = paragraphEnter(
-                      editor.state.doc.toString(),
-                      from,
-                      to,
-                      c.library.settings?.preferences?.autoIndentParagraph !== false,
-                    );
+                    const source = editor.state.doc.toString();
+                    const indent = c.library.settings?.preferences?.autoIndentParagraph !== false;
+                    const edit =
+                      markdownStructureEnter(source, from, to, indent) ||
+                      paragraphEnter(source, from, to, indent);
                     if (!edit) return false;
                     applyEdit(edit);
                     return true;

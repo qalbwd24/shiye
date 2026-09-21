@@ -326,7 +326,7 @@ function renderEditor() {
   $('#pinButton').classList.toggle('active', e.pinned);
   $('#entryCover').classList.toggle('hidden', !e.cover);
   $('#entryCover').classList.toggle('evening', e.cover === 'evening');
-  $('#footerDate').textContent = e.legacy ? '原始数据与加密原件已保留' : '只管记录，自动保存';
+  $('#footerDate').textContent = '';
   status(e.deleted ? '在回收站 · 可恢复' : '已保存到本地');
   countWords();
   renderAttachments();

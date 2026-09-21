@@ -285,52 +285,77 @@
                           ><input id="entryLocation" placeholder="添加地点" aria-label="地点"
                         /></label>
                       </div>
-                      <div id="formatToolbar" class="format-toolbar" aria-label="文字格式">
-                        <button data-command="bold" title="粗体" aria-label="粗体"><b>B</b></button
-                        ><button data-command="italic" title="斜体" aria-label="斜体">
-                          <i>I</i></button
-                        ><button data-command="strikeThrough" title="删除线" aria-label="删除线">
-                          <s>S</s></button
-                        ><span></span
-                        ><button
-                          data-command="insertUnorderedList"
-                          title="项目列表"
-                          aria-label="项目列表"
-                          data-icon="list"
-                        ></button
-                        ><button
-                          data-block="blockquote"
-                          title="引用"
-                          aria-label="引用"
-                          data-icon="quote"
-                        ></button
-                        ><button data-block="h2" title="小标题" aria-label="小标题">H₂</button
-                        ><button
-                          data-command="removeFormat"
-                          title="清除格式"
-                          aria-label="清除格式"
-                          data-icon="eraser"
-                        ></button
-                        ><span></span
-                        ><button
-                          id="insertDateTime"
-                          title="插入日期时间（按住 CapsLock＋T）"
-                          aria-label="插入日期时间"
-                          data-icon="clock"
-                        ></button
-                        ><button
-                          id="indentButton"
-                          title="空两格（Tab）"
-                          aria-label="空两格"
-                          data-icon="indent"
-                        ></button
-                        ><button
-                          id="templateButton"
-                          title="使用写作模板"
-                          aria-label="写作模板"
-                          data-icon="template"
-                        ></button>
-                      </div>
+                      <section id="editorToolbox" class="editor-toolbox" data-expanded="false">
+                        <button
+                          type="button"
+                          id="editorToolsToggle"
+                          class="editor-tools-toggle"
+                          aria-expanded="false"
+                          aria-controls="editorToolsPanel"
+                        >
+                          <span aria-hidden="true">›</span>编辑工具
+                        </button>
+                        <div
+                          id="editorToolsPanel"
+                          class="editor-tools-panel"
+                          inert
+                          aria-hidden="true"
+                        >
+                          <div id="editorToolboxContent" class="editor-toolbox-content">
+                            <div id="formatToolbar" class="format-toolbar" aria-label="文字格式">
+                              <button data-command="bold" title="粗体" aria-label="粗体">
+                                <b>B</b></button
+                              ><button data-command="italic" title="斜体" aria-label="斜体">
+                                <i>I</i></button
+                              ><button
+                                data-command="strikeThrough"
+                                title="删除线"
+                                aria-label="删除线"
+                              >
+                                <s>S</s></button
+                              ><span></span
+                              ><button
+                                data-command="insertUnorderedList"
+                                title="项目列表"
+                                aria-label="项目列表"
+                                data-icon="list"
+                              ></button
+                              ><button
+                                data-block="blockquote"
+                                title="引用"
+                                aria-label="引用"
+                                data-icon="quote"
+                              ></button
+                              ><button data-block="h2" title="小标题" aria-label="小标题">H₂</button
+                              ><button
+                                data-command="removeFormat"
+                                title="清除格式"
+                                aria-label="清除格式"
+                                data-icon="eraser"
+                              ></button
+                              ><span></span
+                              ><button
+                                id="insertDateTime"
+                                title="插入日期时间（按住 CapsLock＋T）"
+                                aria-label="插入日期时间"
+                                data-icon="clock"
+                              ></button
+                              ><button
+                                id="indentButton"
+                                title="空两格（Tab）"
+                                aria-label="空两格"
+                                data-icon="indent"
+                              ></button
+                              ><button
+                                id="templateButton"
+                                title="使用写作模板"
+                                aria-label="写作模板"
+                                data-icon="template"
+                              ></button>
+                            </div>
+                          </div>
+                        </div>
+                      </section>
                       <div
                         id="bodyEditor"
                         class="body-editor"
@@ -347,8 +372,7 @@
                         aria-label="编辑附件"
                       >
                         <div class="inline-attachments-heading">
-                          <strong>附件</strong
-                          ><small>拖动缩略图调整顺序，完成编辑后更新右侧展示</small>
+                          <strong>附件</strong>
                         </div>
                         <div id="attachmentEditor" class="attachments"></div>
                       </section>
@@ -368,7 +392,7 @@
                     </article>
                   </div>
                   <footer class="editor-footer">
-                    <span id="wordCount">0 字</span><span id="footerDate">只管记录，自动保存</span
+                    <span id="wordCount">0 字</span><span id="footerDate"></span
                     ><button id="saveButton">保存 <kbd>Ctrl S</kbd></button>
                   </footer>
                 </div>
@@ -385,7 +409,7 @@
                 ></div>
                 <aside class="entry-media-pane" id="entryMediaPane" aria-label="图片与评论">
                   <header id="mediaPaneHead" class="media-pane-head">
-                    <div><strong>图片与评论</strong><small>照片下方，继续对话</small></div>
+                    <div><strong>图片与评论</strong></div>
                     <button id="chooseMedia" class="secondary" title="勾选文件、选择压缩质量后添加">
                       ＋ 添加
                     </button>

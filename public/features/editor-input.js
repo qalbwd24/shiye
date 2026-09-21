@@ -193,7 +193,8 @@ export function createEditorInput(c) {
       return initialEditorContent(template, prefs);
     },
     insertDateTime() {
-      c.command('insertText', formatLocalDateTime());
+      const time = formatLocalDateTime();
+      c.command('insertText', c.editor?.isMarkdown ? time.replace(/[\[\]]/g, '\\$&') : time);
     },
     dispose() {
       reset();

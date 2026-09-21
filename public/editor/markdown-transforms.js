@@ -116,6 +116,8 @@ export function transformMarkdown(source, from, to, command, value) {
   switch (command) {
     case 'insertText':
       return edit(from, to, String(value ?? ''));
+    case 'insertHorizontalRule':
+      return blockMarkdownEdit(source, from, to, '---');
     case 'insertHTML': {
       const html = String(value ?? '');
       const insert = htmlToMarkdown(html);
@@ -191,6 +193,86 @@ export function transformMarkdown(source, from, to, command, value) {
   }
 }
 
+function openFenceBefore(source, start) {
+  let fence = null;
+  let quoted = false;
+  for (const row of source.slice(0, start).split('\n')) {
+    // Recognize quoted/list fences too, so example text remains untouched.
+    const unquoted = row.replace(/^(?: {0,3}>[ \t]?)+/, '');
+    const content = fence
+      ? quoted
+        ? unquoted
+        : row
+      : unquoted.replace(/^ {0,3}(?:[-+*]|\d+[.)])[ \t]+/, '');
+    const match = content.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+    if (!match) continue;
+    if (!fence) {
+      if (match[1][0] !== '`' || !match[2].includes('`')) {
+        fence = match[1];
+        quoted = unquoted !== row;
+      }
+    } else if (
+      match[1][0] === fence[0] &&
+      match[1].length >= fence.length &&
+      /^[ \t]*$/.test(match[2])
+    ) {
+      fence = null;
+    }
+  }
+  return fence;
+}
+
+/** Repair only the active line on Enter, never normalize stored or pasted Markdown. */
+export function markdownStructureEnter(source, from, to, enabled = true) {
+  if (from !== to || from < 0 || from > source.length) return null;
+  const start = source.lastIndexOf('\n', from - 1) + 1;
+  const newline = source.indexOf('\n', start);
+  const end = newline < 0 ? source.length : newline;
+  if (from !== end || openFenceBefore(source, start)) return null;
+  const original = source.slice(start, end);
+  const prefixed = original.startsWith(INDENT);
+  const line = prefixed ? original.slice(INDENT.length) : original;
+  // Only the diary's exact two-space prefix can be repaired; ASCII code indentation stays literal.
+  if (/^(?: {4}|\t|　)/.test(line)) return null;
+  const paragraph = enabled ? INDENT : '';
+  const thematic = /^ {0,3}(?:(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,})$/.test(line);
+  if (thematic) {
+    const previous =
+      source
+        .slice(0, Math.max(0, start - 1))
+        .split('\n')
+        .at(-1) || '';
+    // An existing unindented dash underline after prose is valid Setext syntax.
+    if (!prefixed && /^ {0,3}-+[ \t]*$/.test(line) && start && previous.trim()) return null;
+    const leading = start && previous.trim() ? '\n' : '';
+    return edit(start, end, `${leading}${line}\n\n${paragraph}`);
+  }
+  if (!prefixed) return null;
+  const fence = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+  if (fence && (fence[1][0] !== '`' || !fence[2].includes('`')))
+    return edit(start, end, `${line}\n`);
+  if (/^ {0,3}#{1,6}(?:[ \t]+|$)/.test(line)) return edit(start, end, `${line}\n${paragraph}`);
+  const quote = line.match(/^( {0,3}(?:>[ \t]?)+)(.*)$/);
+  if (quote) return edit(start, end, quote[2].trim() ? `${line}\n${quote[1]}` : paragraph);
+  const list = line.match(/^( {0,3})([-+*]|\d+[.)])([ \t]+)(.*)$/);
+  if (list) {
+    if (!list[4].trim()) return edit(start, end, paragraph);
+    const marker = /^\d/.test(list[2])
+      ? `${Number.parseInt(list[2], 10) + 1}${list[2].at(-1)}`
+      : list[2];
+    const task = /^\[[ xX]\][ \t]+/.test(list[4]) ? '[ ] ' : '';
+    // Ordered lists starting after 1 cannot interrupt prose without a blank line.
+    const previous =
+      source
+        .slice(0, Math.max(0, start - 1))
+        .split('\n')
+        .at(-1) || '';
+    const leading = start && previous.trim() ? '\n' : '';
+    return edit(start, end, `${leading}${line}\n${list[1]}${marker}${list[3]}${task}`);
+  }
+  return null;
+}
+
 /** Leave Markdown's structured Enter handling to CodeMirror; indent ordinary diary prose. */
 export function paragraphEnter(source, from, to, enabled = true) {
   if (!enabled || from !== to) return null;
@@ -198,15 +280,8 @@ export function paragraphEnter(source, from, to, enabled = true) {
   const start = before.lastIndexOf('\n') + 1;
   const end = source.indexOf('\n', from);
   const line = source.slice(start, end < 0 ? source.length : end);
-  let fence = null;
-  for (const row of source.slice(0, start).split('\n')) {
-    const match = row.match(/^ {0,3}(`{3,}|~{3,})/);
-    if (!match) continue;
-    if (!fence) fence = match[1];
-    else if (match[1][0] === fence[0] && match[1].length >= fence.length) fence = null;
-  }
   if (
-    fence ||
+    openFenceBefore(source, start) ||
     /^(?: {4}|\t| {0,3}(?:#{1,6}(?:\s|$)|>|[-+*]\s|\d+[.)]\s|`{3,}|~{3,}|<))/.test(line) ||
     /\|/.test(line) ||
     /^\s*(?:[-=*]_?\s*){3,}$/.test(line)

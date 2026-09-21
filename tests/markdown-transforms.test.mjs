@@ -1,9 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { marked } from '../public/vendor/marked.js';
 import {
   transformMarkdown,
   paragraphEnter,
   blockMarkdownEdit,
+  markdownStructureEnter,
 } from '../public/editor/markdown-transforms.js';
 
 const apply = (source, transaction) =>
@@ -99,4 +101,122 @@ test('plain paragraph Enter indents once, while semantic blocks and selections u
   assert.equal(paragraphEnter(fenced, fenced.length, fenced.length), null);
   const afterFence = '~~~js\ncode\n~~~\n正文';
   assert.equal(paragraphEnter(afterFence, afterFence.length, afterFence.length).insert, '\n　　');
+});
+
+test('structure Enter turns auto-indented thematic markers into separate blocks', () => {
+  for (const marker of ['---', '***', '___', '- - -', '* * *', '_ _ _']) {
+    const source = `　　前一段\n　　${marker}`;
+    const transaction = markdownStructureEnter(source, source.length, source.length);
+    const result = apply(source, transaction);
+    assert.equal(result, `　　前一段\n\n${marker}\n\n　　`, marker);
+    assert.deepEqual(transaction.selection, { anchor: result.length, head: result.length });
+    assert.equal(transaction.from, source.indexOf('\n') + 1);
+    assert.match(marked.parse(result), /<hr>/);
+    assert.doesNotMatch(marked.parse(result), /<h2>/);
+  }
+  for (const marker of ['---', '***', '___']) {
+    assert.equal(
+      apply(marker, markdownStructureEnter(marker, marker.length, marker.length)),
+      `${marker}\n\n　　`,
+    );
+    const source = `前段\n\n　　${marker}\n后段`;
+    const cursor = source.lastIndexOf('\n');
+    const transaction = markdownStructureEnter(source, cursor, cursor, false);
+    assert.equal(apply(source, transaction), `前段\n\n${marker}\n\n\n后段`);
+    assert.equal(transaction.selection.anchor, `前段\n\n${marker}\n\n`.length);
+  }
+  const setext = '已有标题\n---';
+  assert.equal(markdownStructureEnter(setext, setext.length, setext.length), null);
+  assert.match(marked.parse(setext), /<h2>已有标题<\/h2>/);
+});
+
+test('recovered noninitial ordered list parses as a list after prose', () => {
+  const source = '　　正文\n　　9. 项目';
+  const transaction = markdownStructureEnter(source, source.length, source.length);
+  const result = apply(source, transaction);
+  assert.equal(result, '　　正文\n\n9. 项目\n10. ');
+  assert.match(marked.parse(result), /<ol start="9">/);
+});
+
+test('structure Enter removes exactly the active automatic prefix and continues Markdown blocks', () => {
+  const samples = [
+    ['　　## 标题', '## 标题\n　　'],
+    ['　　- 项目', '- 项目\n- '],
+    ['　　9. 项目', '9. 项目\n10. '],
+    ['　　2) 项目', '2) 项目\n3) '],
+    ['　　- [x] 完成', '- [x] 完成\n- [ ] '],
+    ['　　> 引用', '> 引用\n> '],
+    ['　　>> 引用', '>> 引用\n>> '],
+    ['　　```js', '```js\n'],
+    ['　　~~~text', '~~~text\n'],
+    ['　　- ', '　　'],
+    ['　　> ', '　　'],
+  ];
+  for (const [line, expected] of samples) {
+    const source = `　　保持前文\n\n${line}\n原有后文`;
+    const cursor = source.lastIndexOf('\n');
+    const transaction = markdownStructureEnter(source, cursor, cursor);
+    assert.equal(apply(source, transaction), `　　保持前文\n\n${expected}\n原有后文`, line);
+    assert.equal(transaction.selection.anchor, `　　保持前文\n\n${expected}`.length);
+  }
+  const heading = '　　# 标题';
+  assert.equal(
+    apply(heading, markdownStructureEnter(heading, heading.length, heading.length, false)),
+    '# 标题\n',
+  );
+});
+
+test('structure Enter leaves prose, existing Markdown, selections, and mid-line Enter unchanged', () => {
+  for (const line of [
+    '　　中文正文',
+    '　　---正文',
+    '　　#标签',
+    '　　___text',
+    '　　**强调**',
+    '　　　---',
+    '# 标题',
+    '- 项目',
+    '> 引用',
+    '```js',
+  ])
+    assert.equal(markdownStructureEnter(line, line.length, line.length), null, line);
+  const source = '　　---\n　　# 标题';
+  assert.equal(markdownStructureEnter(source, 0, source.length), null);
+  assert.equal(markdownStructureEnter('　　# 标题后半', 5, 5), null);
+  assert.equal(paragraphEnter('　　中文正文', 6, 6).insert, '\n　　');
+});
+
+test('structure Enter does not rewrite fenced or indented code examples', () => {
+  for (const prefix of ['```md', '~~~md', '> ```md', '- ```md', '````md\n```']) {
+    const source = `${prefix}\n　　---`;
+    assert.equal(markdownStructureEnter(source, source.length, source.length), null, prefix);
+    assert.equal(paragraphEnter(source, source.length, source.length), null, prefix);
+  }
+  for (const line of ['   　　---', '   　　# 标题', '   　　- 项目', '\t　　---', '　　    ---'])
+    assert.equal(markdownStructureEnter(line, line.length, line.length), null, line);
+  const invalidClose = '```md\n```still code\n　　---';
+  assert.equal(
+    markdownStructureEnter(invalidClose, invalidClose.length, invalidClose.length),
+    null,
+  );
+  assert.equal(paragraphEnter(invalidClose, invalidClose.length, invalidClose.length), null);
+  for (const example of ['- ```', '> ```']) {
+    const source = `\`\`\`md\n${example}\n　　---`;
+    assert.equal(markdownStructureEnter(source, source.length, source.length), null);
+  }
+  const closed = '```md\nexample\n```\n\n　　---';
+  assert.equal(
+    apply(closed, markdownStructureEnter(closed, closed.length, closed.length)),
+    '```md\nexample\n```\n\n---\n\n　　',
+  );
+  const closing = '```md\nexample\n```';
+  assert.equal(markdownStructureEnter(closing, closing.length, closing.length), null);
+});
+
+test('explicit horizontal-rule command separates adjacent prose and replaces only the selection', () => {
+  assert.equal(
+    apply('前后', transformMarkdown('前后', 1, 1, 'insertHorizontalRule')),
+    '前\n\n---\n\n后',
+  );
+  assert.equal(apply('待替换', transformMarkdown('待替换', 0, 3, 'insertHorizontalRule')), '---');
 });

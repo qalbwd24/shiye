@@ -2,6 +2,7 @@ import { createAlbum } from './album.js';
 import { createRecollection } from './recollection.js';
 import { createEntryReader } from './entry-reader.js';
 import { createEditorInput } from './editor-input.js';
+import { createEditorToolbox } from './editor-toolbox.js';
 import { createConflicts } from './conflicts.js';
 import { createPreferences } from './preferences.js';
 import { createAppearance } from './appearance.js';
@@ -24,6 +25,7 @@ export function installOffline(c) {
   const { $, modal, closeModal, toast, command } = c;
   const reader = createEntryReader(c);
   const editorInput = createEditorInput(c);
+  createEditorToolbox(c);
   const browsingContext = Object.create(c);
   browsingContext.releaseEntryReader = reader.release;
   browsingContext.mountEntryReader = reader.mount;
@@ -64,7 +66,7 @@ export function installOffline(c) {
     renderOrganization(view, root) ||
     renderInsights(view, root);
   const { templates } = createTemplates(c);
-  const { toggle, markdown } = createEditorTools(c);
+  const { toggle } = createEditorTools(c);
   const { recording, draw, speak } = createMediaTools(c);
   const { exportMenu } = createExport(c);
   createContextMenu(c, { exportMenu });
@@ -122,7 +124,7 @@ export function installOffline(c) {
     moreViews.append(b);
   }
   for (const [name, fn] of [
-    ['Markdown', markdown],
+    ['分隔线', () => command('insertHorizontalRule')],
     ['模板库', templates],
     ['录音', recording],
     ['手绘', () => draw()],
@@ -162,10 +164,7 @@ export function installOffline(c) {
       draw(id);
     }
   });
-  const imageNote = document.createElement('small');
-  imageNote.className = 'gallery-edit-hint';
-  imageNote.textContent = '双击图片可旋转或裁剪副本';
-  $('#attachmentEditor').after(imageNote);
+  $('#attachmentEditor').title = '拖动调整顺序，双击旋转或裁剪副本';
   return {
     captureNavigation: () => ({
       album: album.captureNavigation(),

@@ -112,3 +112,7 @@
 - 新测试为 editor-document、editor-document-api、markdown-transforms、markdown-live-preview；隔离 UI 验收见 validation/0.8-validation.md。
 
 外部模块通过 `c.command` 或 `c.editor` 接口操作正文；严禁把 `.cm-content.innerHTML` 当日记内容保存。增加可信编辑扩展可用 `registerExtension(id, extension)`，返回卸载函数；尚无第三方插件安装器及 Obsidian 运行时。
+
+### 0.8.1 编辑工具收纳与语法修正
+
+`features/editor-toolbox.js` 独立控制工具面板折叠和本地记忆，`features/index.js` 装配。`markdown-transforms.js` 的 markdownStructureEnter 修复日记缩进与块标记，insertHorizontalRule 为明确插入命令；`features/editor-input.js` 转义新时间的方括号。`live-preview.js` 管理日期与转义字符的显示，不改存储。具体边界见 [0.8.1 工作交接](ITERATION-0.8.1.md)。
