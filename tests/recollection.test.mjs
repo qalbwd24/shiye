@@ -364,3 +364,90 @@ test('recollection list exposes every eligible diary through batches of 80 and p
   assert.equal(root.frame.more.hidden, true);
   assert.match(root.frame.list.innerHTML, /data-open-entry="id-160"/);
 });
+
+test('return restores recollection filters, session and loaded pages while rechecking live eligibility', async () => {
+  let library = {
+    entries: Array.from({ length: 161 }, (_, i) => entry('id-' + i)),
+    categories: ['学习'],
+    media: [],
+  };
+  const root = surface();
+  const feature = createRecollection({
+    get library() {
+      return library;
+    },
+    escape: String,
+    textOf: String,
+    toast: () => {},
+    flush: async () => {},
+    releaseEntryReader: () => {},
+    mountEntryReader: async () => {},
+  });
+  feature.restoreNavigation({ version: 1, preferences: { category: '学习', mode: 'list' } });
+  feature.render('memories', root);
+  root.frame.more.onclick();
+  const saved = feature.captureNavigation();
+  assert.equal(saved.limit, 160);
+  await root.frame.modes.find((button) => button.dataset.recollectionMode === 'single').onclick();
+  await root.frame.actions.find((button) => button.dataset.recollectionAction === 'next').onclick();
+  library = {
+    ...library,
+    entries: library.entries.map((item) =>
+      item.id === 'id-160' ? { ...item, hidden: true } : item,
+    ),
+  };
+  assert.equal(feature.restoreNavigation(saved), true);
+  saved.preferences.category = 'unrelated';
+  saved.session.history.push('not-shared');
+  feature.render('memories', root);
+  assert.equal([...root.frame.list.innerHTML.matchAll(/class="recollection-card"/g)].length, 160);
+  assert.doesNotMatch(root.frame.list.innerHTML, /data-open-entry="id-160"/);
+  const restored = feature.captureNavigation();
+  assert.equal(restored.preferences.category, '学习');
+  assert.equal(restored.session.history.includes('not-shared'), false);
+  assert.equal(restored.session.history.length, 1, 'return does not consume a new random draw');
+  restored.session.deck.length = 0;
+  assert.equal(feature.captureNavigation().session.deck.length, 160);
+  assert.equal(feature.restoreNavigation(null), false);
+});
+
+test('in-memory recollection return preserves large rounds, recall IDs and rejects body snapshots', () => {
+  const feature = createRecollection({ escape: String });
+  const deck = Array.from({ length: 6001 }, (_, i) => `entry-${i}`);
+  assert.equal(
+    feature.restoreNavigation({
+      version: 1,
+      preferences: { mode: 'single', recallDate: '2026-09-22', period: 12 },
+      session: {
+        deck,
+        index: 5500,
+        history: ['entry-5500'],
+        cursor: 0,
+        round: 3,
+        content: 'excluded',
+      },
+      recallId: 'entry-17',
+      limit: 240,
+      content: 'excluded',
+    }),
+    true,
+  );
+  const saved = feature.captureNavigation();
+  assert.equal(saved.session.deck.length, 6001);
+  assert.equal(saved.session.index, 5500);
+  assert.equal(saved.recallId, 'entry-17');
+  assert.equal(saved.limit, 240);
+  assert.equal(JSON.stringify(saved).includes('excluded'), false);
+  deck.length = 0;
+  assert.equal(feature.captureNavigation().session.deck.length, 6001);
+  feature.restoreNavigation({
+    version: 1,
+    session: { deck: [null, 'ok', { content: 'excluded' }], index: 100 },
+    recallId: {},
+    limit: NaN,
+  });
+  assert.deepEqual(feature.captureNavigation().session.deck, ['ok']);
+  assert.equal(feature.captureNavigation().session.index, 0);
+  assert.equal(feature.captureNavigation().recallId, '');
+  assert.equal(feature.captureNavigation().limit, 80);
+});

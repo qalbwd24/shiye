@@ -95,3 +95,9 @@
 0.7.3 取消普通正文段落额外的 18px 段后间距，相邻段落按普通换行距离排列；不改变行距或手动输入的空行。段落样式在 public/styles/editor.css 的 .body-editor p 中统一管理，阅读与就地编辑共用。
 
 0.7.4 应用图标由 public/icons/shiye.svg 维护；tools/build-icons.mjs 生成各尺寸资源，tools/build-launcher.ps1 嵌入 Windows 启动器。它与个人头像模块独立，见 [图标维护](ICON.md)。
+
+### 浏览来源返回（0.7.6）
+
+`public/features/return-navigation.js` 管理单层来源、保存前置、重复点击和导航取消；`restoreBrowsePosition` 在短暂布局稳定期恢复滚动，用户开始操作即停止。`public/app/main.js` 对 `#alternateView` 的 `data-open-entry`、`data-day` 统一接入，组装应用筛选、月份、展开状态与滚动位置；`public/styles/return-navigation.css` 负责顶部按钮和窄屏换行。
+
+`features/index.js` 装配相册、回顾的 `captureNavigation()`／`restoreNavigation(snapshot)`。快照只保留偏好、ID 和分页，恢复后重新读取实时库，不复制或回写正文。来源属于当前页面生命周期，不是跨刷新历史栈；主动导航会清空。测试在 `tests/return-navigation.test.mjs`、`tests/album.test.mjs`、`tests/recollection.test.mjs`。

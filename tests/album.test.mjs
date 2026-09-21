@@ -10,6 +10,7 @@ import {
   readAlbumRandomSeed,
   saveAlbumRandomSeed,
   nextAlbumRandomSeed,
+  createAlbum,
 } from '../public/features/album.js';
 const entry = (id, attachments, extra = {}) => ({
   id,
@@ -17,6 +18,87 @@ const entry = (id, attachments, extra = {}) => ({
   date: '2026-01-01',
   attachments,
   ...extra,
+});
+
+function albumSurface() {
+  const grid = {
+    innerHTML: '',
+    classList: { toggle() {} },
+    addEventListener() {},
+    removeEventListener() {},
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    insertAdjacentHTML(_position, html) {
+      this.innerHTML += html;
+    },
+  };
+  const nodes = new Map([
+    ['.album-workspace', { dataset: {} }],
+    ['[data-album-cards]', grid],
+    ...['summary', 'count', 'more', 'shuffle', 'new'].map((name) => [`[data-album-${name}]`, {}]),
+  ]);
+  const controls = ['layout', 'density', 'sort', 'type'].map((albumPref) => ({
+    dataset: { albumPref },
+  }));
+  return {
+    ownerDocument: { defaultView: {} },
+    querySelector: (selector) => nodes.get(selector),
+    querySelectorAll: () => controls,
+    grid,
+  };
+}
+
+test('album navigation restores loaded pages and random order against fresh media references', () => {
+  let library = {
+    media: Array.from({ length: 241 }, (_, index) => media(`media-${index}`)),
+    entries: [
+      entry(
+        'visible',
+        Array.from({ length: 241 }, (_, index) => `media-${index}`),
+      ),
+    ],
+  };
+  const feature = createAlbum({
+    get library() {
+      return library;
+    },
+    escape: String,
+    textOf: String,
+  });
+  feature.restoreNavigation({
+    version: 1,
+    preferences: { sort: 'random' },
+    randomSeed: 197,
+    limit: 80,
+  });
+  const root = albumSurface();
+  feature.render('gallery', root);
+  root.querySelector('[data-album-more]').onclick();
+  const saved = feature.captureNavigation();
+  assert.equal(saved.limit, 160);
+  const detached = feature.captureNavigation();
+  detached.preferences.sort = 'name';
+  assert.equal(feature.captureNavigation().preferences.sort, 'random');
+  root.querySelector('[data-album-shuffle]').onclick();
+  library = { ...library, entries: [entry('visible', library.entries[0].attachments.slice(1))] };
+  assert.equal(feature.restoreNavigation(saved), true);
+  saved.preferences.sort = 'name';
+  feature.render('gallery', root);
+  const actual = [...root.grid.innerHTML.matchAll(/data-album-media="([^"]+)"/g)].map((m) => m[1]);
+  const expected = albumItems(library, { sort: 'random', randomSeed: 197 })
+    .slice(0, 160)
+    .map((card) => card.id);
+  assert.deepEqual(actual, expected);
+  assert.equal(feature.captureNavigation().randomSeed, 197);
+  assert.equal(feature.restoreNavigation(null), false);
+  feature.restoreNavigation({
+    version: 1,
+    preferences: { content: 'excluded' },
+    limit: Infinity,
+    randomSeed: -1,
+  });
+  assert.equal(feature.captureNavigation().limit, 80);
+  assert.equal(JSON.stringify(feature.captureNavigation()).includes('excluded'), false);
 });
 
 test('random order stays stable across redraw, filtering, source changes and pagination', () => {

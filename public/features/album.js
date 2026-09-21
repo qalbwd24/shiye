@@ -150,6 +150,8 @@ export function createAlbum(c) {
   }
   let preferences = readAlbumPreferences(storage),
     randomSeed = readAlbumRandomSeed(storage),
+    navigationLimit = ALBUM_PAGE_SIZE,
+    restoredLimit = null,
     disconnect = () => {};
   if (randomSeed === null) {
     randomSeed = nextAlbumRandomSeed(null);
@@ -162,9 +164,11 @@ export function createAlbum(c) {
       return false;
     }
     disconnect();
-    let limit = ALBUM_PAGE_SIZE,
+    let limit = restoredLimit ?? ALBUM_PAGE_SIZE,
       presented = [],
       resizeObserver;
+    restoredLimit = null;
+    navigationLimit = limit;
     const doc = root.ownerDocument || document;
     root.innerHTML = `<section class="album-workspace" aria-label="相册"><header class="album-heading"><div><span class="album-eyebrow">拾起日常的片段</span><h2>日子里的画面</h2><p data-album-summary></p></div><button class="primary" data-album-new>新建图文日记</button></header><div class="album-controls" aria-label="相册显示选项"><label>排列<select data-album-pref="layout"><option value="masonry">自然比例瀑布流</option><option value="grid">整齐方格</option><option value="list">列表</option></select></label><label>密度<select data-album-pref="density"><option value="comfortable">舒适</option><option value="compact">紧凑</option></select></label><label>排序<select data-album-pref="sort"><option value="date-desc">日记日期 · 从新到旧</option><option value="date-asc">日记日期 · 从旧到新</option><option value="name">媒体名称</option><option value="random">随机排列</option></select></label><label>类型<select data-album-pref="type"><option value="all">全部媒体</option><option value="image">图片</option><option value="video">视频</option><option value="audio">音频</option></select></label><button class="secondary album-shuffle" data-album-shuffle hidden title="更换随机顺序；筛选和加载更多不会打乱">重新打乱相册</button></div><div class="album-cards" data-album-cards></div><footer class="album-footer"><p role="status" aria-live="polite" data-album-count></p><button class="secondary" data-album-more>再显示 80 项</button></footer></section>`;
     const workspace = root.querySelector('.album-workspace'),
@@ -226,6 +230,7 @@ export function createAlbum(c) {
       return `<article class="album-card" data-album-media="${esc(card.id)}"><button class="album-preview" data-open-entry="${esc(source.id)}" aria-label="打开${esc(source.title || '无标题日记')}，查看${esc(name)}">${preview}<span class="album-type-badge">${typeNames[card.type]}</span></button><div class="album-card-info"><h3><button data-open-entry="${esc(source.id)}">${esc(name)}</button></h3><p class="album-source-title">${esc(source.title || '无标题日记')}</p><time>${esc(date)}</time>${excerpt ? `<p class="album-excerpt">${esc(excerpt)}</p>` : ''}${sources}</div></article>`;
     }
     function draw(reset = false) {
+      navigationLimit = limit;
       const cards = albumItems(c.library, { ...preferences, randomSeed });
       const signature = (card) =>
         JSON.stringify([
@@ -307,5 +312,26 @@ export function createAlbum(c) {
     draw(true);
     return true;
   }
-  return { render };
+  function captureNavigation() {
+    return {
+      version: 1,
+      preferences: { ...preferences },
+      randomSeed,
+      limit: navigationLimit,
+    };
+  }
+  function restoreNavigation(snapshot) {
+    if (!snapshot || snapshot.version !== 1) return false;
+    preferences = normalizeAlbumPreferences(snapshot.preferences);
+    if (validSeed(snapshot.randomSeed)) randomSeed = snapshot.randomSeed;
+    restoredLimit =
+      Number.isSafeInteger(snapshot.limit) && snapshot.limit >= ALBUM_PAGE_SIZE
+        ? snapshot.limit
+        : ALBUM_PAGE_SIZE;
+    navigationLimit = restoredLimit;
+    saveAlbumPreferences(storage, preferences);
+    saveAlbumRandomSeed(storage, randomSeed);
+    return true;
+  }
+  return { render, captureNavigation, restoreNavigation };
 }

@@ -1,0 +1,25 @@
+.topbar:has(.return-to-browse:not([hidden])) {
+  flex-wrap: wrap;
+  height: auto;
+  min-height: 64px;
+  flex-shrink: 0;
+  gap: 8px 12px;
+}
+.return-to-browse {
+  flex-shrink: 0;
+  max-width: 100%;
+  min-height: 34px;
+  padding: 7px 12px;
+  color: var(--accent-ink, var(--accent-dark));
+  background: var(--mint);
+  border-color: transparent;
+}
+.return-to-browse:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 650px) {
+  .topbar:has(.return-to-browse:not([hidden])) .workspace-search {
+    flex-basis: 100%;
+  }
+}

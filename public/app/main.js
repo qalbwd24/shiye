@@ -3,6 +3,7 @@ import { createMediaImport } from '../features/media-import.js';
 import { sortedTaxonomy } from '../shared/taxonomy.js';
 import { createEditorCommands } from '../editor/commands.js';
 import { coverMarkup } from '../features/entry-cards.js';
+import { createReturnNavigation, restoreBrowsePosition } from '../features/return-navigation.js';
 import { createLegacyBackups } from '../features/legacy-backups.js';
 import { download } from '../core/downloads.js';
 import { LIMITS } from '../shared/limits.js';
@@ -35,6 +36,7 @@ let library = { entries: [], categories: [], media: [], imports: [] },
   query = '',
   calendarDate = new Date();
 let listLimit = LIMITS.pageEntries;
+let detailEntry = null;
 let recordingShortcut = null,
   shortcutQuery = '';
 const shortcuts = () => library.settings?.shortcuts || {};
@@ -54,6 +56,80 @@ const persistence = createPersistence({
 const { markDirty, flush } = persistence;
 const editorCommands = createEditorCommands({ $, sanitize, current, markDirty });
 const { command } = editorCommands;
+
+const returnNavigation = createReturnNavigation({
+  prepare: async () => {
+    await flush();
+    await offline?.readingMode();
+  },
+  capture() {
+    const root = $('#alternateView');
+    const labels = {
+      memories: '拾光回顾',
+      recall: '往日此时',
+      gallery: '相册',
+      calendar: '日历',
+      places: '地点',
+      stats: '记录统计',
+    };
+    return {
+      label: labels[view] || $('#viewTitle').textContent.replace(/\.$/, ''),
+      view,
+      category,
+      tag,
+      day,
+      query,
+      ascending,
+      selected,
+      listLimit,
+      calendarDate: new Date(calendarDate),
+      browsing: offline.captureNavigation(),
+      scrollTop: root.scrollTop,
+      listScrollTop: root.querySelector('.recollection-list')?.scrollTop || 0,
+      details: [...root.querySelectorAll('details')].map((element) => element.open),
+      entryId: document.activeElement?.closest('[data-open-entry]')?.dataset.openEntry,
+    };
+  },
+  restore(source) {
+    detailEntry = null;
+    ({ view, category, tag, day, query, ascending, selected, listLimit } = source);
+    calendarDate = new Date(source.calendarDate);
+    $('#search').value = query;
+    offline.restoreNavigation(source.browsing);
+    renderView();
+    const root = $('#alternateView');
+    root.querySelectorAll('details').forEach((element, index) => {
+      element.open = !!source.details[index];
+    });
+    const frame = root.firstElementChild;
+    restoreBrowsePosition(
+      root,
+      source,
+      () =>
+        view === source.view &&
+        !root.classList.contains('hidden') &&
+        root.firstElementChild === frame,
+    );
+    requestAnimationFrame(() => {
+      if (
+        view !== source.view ||
+        root.classList.contains('hidden') ||
+        root.firstElementChild !== frame
+      )
+        return;
+      const anchor = [...root.querySelectorAll('[data-open-entry]')].find(
+        (element) => element.dataset.openEntry === source.entryId,
+      );
+      anchor?.focus({ preventScroll: true });
+    });
+  },
+  update(source, busy) {
+    const button = $('#returnToBrowse');
+    button.hidden = !source;
+    button.disabled = busy;
+    button.textContent = source ? '← 返回' + source.label : '← 返回';
+  },
+});
 
 const mediaImport = createMediaImport({
   $,
@@ -270,6 +346,7 @@ async function selectEntry(id) {
   await flush();
   await offline?.readingMode();
   selected = id;
+  detailEntry = null;
   $('#journalView').classList.add('has-selected');
   renderList();
   renderEditor();
@@ -286,6 +363,8 @@ async function withLibraryMutation(action) {
 }
 async function newEntry(date = new Date(), initial = {}) {
   await flush();
+  returnNavigation.clear();
+  detailEntry = null;
   const chosenCategory = initial.category || category || '日常';
   if (offline?.prefs().nightYesterday && date.getHours() < 4) date.setDate(date.getDate() - 1);
   const boundTemplate = library.templates?.find((t) => !t.deleted && t.category === chosenCategory);
@@ -317,6 +396,8 @@ async function newEntry(date = new Date(), initial = {}) {
 }
 async function changeView(next) {
   await flush();
+  returnNavigation.clear();
+  detailEntry = null;
   view = next;
   listLimit = LIMITS.pageEntries;
   category = null;
@@ -326,6 +407,8 @@ async function changeView(next) {
 }
 async function filterView({ category: cat = null, tag: t = null } = {}) {
   await flush();
+  returnNavigation.clear();
+  detailEntry = null;
   await offline?.showList();
   view = 'all';
   category = cat;
@@ -357,7 +440,14 @@ function renderView() {
   $('#viewTitle').innerHTML = escape(titles[view]) + '<span class="heading-dot">.</span>';
   renderSide();
   if (journal) {
-    if (!filtered().some((e) => e.id === selected)) selected = filtered()[0]?.id || null;
+    const openedDetail =
+      view === 'all' &&
+      selected === detailEntry &&
+      library.entries.some(
+        (entry) => entry.id === detailEntry && !entry.deleted && !entry.draft && !isHidden(entry),
+      );
+    if (!openedDetail && !filtered().some((e) => e.id === selected))
+      selected = filtered()[0]?.id || null;
     renderList();
     renderEditor();
   } else renderAlternate();
@@ -594,6 +684,8 @@ function help() {
   );
 }
 function bind() {
+  $('#returnToBrowse').onclick = () =>
+    returnNavigation.back().catch((error) => toast(error.message));
   $('#newEntry').onclick = () => newEntry().catch((e) => toast(e.message));
   $('#emptyNew').onclick = $('#newEntry').onclick;
   $('#navigation').onclick = (e) => {
@@ -641,6 +733,8 @@ function bind() {
     if (b) selectEntry(b.dataset.entry).catch((e) => toast(e.message));
   };
   $('#search').oninput = (e) => {
+    returnNavigation.clear();
+    detailEntry = null;
     query = e.target.value.trim().toLowerCase();
     if (!['all', 'trash', 'drafts', 'hidden'].includes(view)) {
       view = 'all';
@@ -822,19 +916,35 @@ function bind() {
   $('#alternateView').onclick = async (e) => {
     const entry = e.target.closest('[data-open-entry]'),
       date = e.target.closest('[data-day]');
-    if (entry) {
-      view = 'all';
-      category = tag = day = null;
-      selected = entry.dataset.openEntry;
-      renderView();
-      $('#journalView').classList.add('has-selected');
-    }
-    if (date) {
-      view = 'all';
-      category = tag = null;
-      day = date.dataset.day;
-      selected = null;
-      renderView();
+    if (!entry && !date) return;
+    try {
+      await returnNavigation.open(() => {
+        if (
+          entry &&
+          !library.entries.some(
+            (item) =>
+              item.id === entry.dataset.openEntry &&
+              !item.deleted &&
+              !item.draft &&
+              !isHidden(item),
+          )
+        ) {
+          toast('这篇日记已不在当前可浏览范围内');
+          return false;
+        }
+        view = 'all';
+        category = tag = null;
+        day = entry ? null : date.dataset.day;
+        query = '';
+        $('#search').value = '';
+        selected = entry ? entry.dataset.openEntry : null;
+        detailEntry = selected;
+        renderView();
+        $('#journalView').classList.toggle('has-selected', !!entry);
+        return true;
+      });
+    } catch (error) {
+      toast(error.message);
     }
   };
   document.addEventListener(

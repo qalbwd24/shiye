@@ -51,6 +51,22 @@ export function normalizeRecollectionPreferences(raw = {}) {
   };
 }
 
+// Navigation snapshots stay in memory: preserve large rounds without the browser-storage cap.
+function copyNavigationSession(raw) {
+  const copy = normalizeRecollectionSession(raw);
+  copy.deck = Array.isArray(raw?.deck)
+    ? [
+        ...new Set(
+          raw.deck.filter((id) => typeof id === 'string' && id.length > 0 && id.length <= 200),
+        ),
+      ]
+    : [];
+  copy.index = Number.isInteger(raw?.index)
+    ? Math.max(-1, Math.min(raw.index, copy.deck.length - 1))
+    : -1;
+  return copy;
+}
+
 /** Shared by random and anniversary views; no IDs or listener ownership outside this module. */
 export function recollectionModeSelector(mode = 'single') {
   return (
@@ -87,6 +103,8 @@ export function createRecollection(c) {
   let recallId = typeof stored.recallId === 'string' ? stored.recallId.slice(0, 200) : '';
   let generation = 0;
   let busy = false;
+  let navigationLimit = RECOLLECTION_PAGE_SIZE;
+  let restoredLimit = null;
 
   function save() {
     try {
@@ -147,7 +165,9 @@ export function createRecollection(c) {
     busy = false;
     c.releaseEntryReader();
     const entries = eligible(view);
-    let listLimit = RECOLLECTION_PAGE_SIZE;
+    let listLimit = restoredLimit ?? RECOLLECTION_PAGE_SIZE;
+    restoredLimit = null;
+    navigationLimit = listLimit;
     let shownIds = entries.slice(0, listLimit).map((entry) => entry.id);
     const ids = entries.map((entry) => entry.id);
     let currentId;
@@ -385,6 +405,7 @@ export function createRecollection(c) {
         if (busy || !active()) return;
         const fresh = eligible(view);
         listLimit += RECOLLECTION_PAGE_SIZE;
+        navigationLimit = listLimit;
         const list = frame.querySelector('.recollection-list');
         const scrollTop = list.scrollTop;
         if (shownIds.every((id, index) => fresh[index]?.id === id)) {
@@ -417,5 +438,27 @@ export function createRecollection(c) {
     }
     return true;
   }
-  return { render };
+  function captureNavigation() {
+    return {
+      version: 1,
+      preferences: { ...preferences },
+      session: copyNavigationSession(session),
+      recallId,
+      limit: navigationLimit,
+    };
+  }
+  function restoreNavigation(snapshot) {
+    if (!snapshot || snapshot.version !== 1) return false;
+    preferences = normalizeRecollectionPreferences(snapshot.preferences);
+    session = copyNavigationSession(snapshot.session);
+    recallId = typeof snapshot.recallId === 'string' ? snapshot.recallId.slice(0, 200) : '';
+    restoredLimit =
+      Number.isSafeInteger(snapshot.limit) && snapshot.limit >= RECOLLECTION_PAGE_SIZE
+        ? snapshot.limit
+        : RECOLLECTION_PAGE_SIZE;
+    navigationLimit = restoredLimit;
+    save();
+    return true;
+  }
+  return { render, captureNavigation, restoreNavigation };
 }

@@ -167,6 +167,14 @@ export function installOffline(c) {
   imageNote.textContent = '双击图片可旋转或裁剪副本';
   $('#attachmentEditor').after(imageNote);
   return {
+    captureNavigation: () => ({
+      album: album.captureNavigation(),
+      recollection: recollection.captureNavigation(),
+    }),
+    restoreNavigation(snapshot) {
+      album.restoreNavigation(snapshot?.album);
+      recollection.restoreNavigation(snapshot?.recollection);
+    },
     editorInput,
     render,
     releaseEntryReader: reader.release,
