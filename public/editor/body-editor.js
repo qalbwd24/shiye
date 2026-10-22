@@ -29,6 +29,8 @@ import {
   markdownStructureEnter,
 } from './markdown-transforms.js';
 import { renderMarkdown } from './markdown-renderer.js';
+import { dateTimeEdit } from '../shared/date-time-edit.js';
+import { capturePastedFiles } from '../core/clipboard-files.js';
 
 /** Owns the editable document. Other features must use commands, not CodeMirror's DOM. */
 export function createBodyEditor(c) {
@@ -84,12 +86,20 @@ export function createBodyEditor(c) {
     media.hidden = !view;
     media.disabled = !c.current() || c.current().deleted;
   }
-  function changed() {
+  function syncDocument({ markDirty = true } = {}) {
     const entry = c.current();
-    if (!view || !entry || entry.id !== entryId || entry.deleted) return;
-    entry.markdownSource = view.state.doc.toString();
+    if (!view || !entry || entry.id !== entryId || entry.deleted) return false;
+    const source = view.state.doc.toString();
+    const content = renderMarkdown(source);
+    const changed =
+      entry.markdownSource !== source ||
+      entry.content !== content ||
+      entry.markdownHtml !== content ||
+      entry.contentFormat !== 'markdown';
+    if (!changed) return false;
+    entry.markdownSource = source;
     entry.contentFormat = 'markdown';
-    entry.content = entry.markdownHtml = renderMarkdown(entry.markdownSource);
+    entry.content = entry.markdownHtml = content;
     for (const match of entry.content.matchAll(/<img[^>]+src="\/media\/([^"]+)"/g)) {
       let id;
       try {
@@ -100,8 +110,13 @@ export function createBodyEditor(c) {
       if (c.library.media.some((item) => item.id === id) && !entry.attachments.includes(id))
         entry.attachments.push(id);
     }
-    c.markDirty(entry);
+    if (markDirty) c.markDirty(entry);
+    c.onContentChanged?.(entry);
     if (view.composing) c.pause();
+    return true;
+  }
+  function changed() {
+    syncDocument();
   }
   function render(entry) {
     const doc = getEditorDocument(entry);
@@ -138,6 +153,7 @@ export function createBodyEditor(c) {
         parent: host,
         state: EditorState.create({
           doc: doc.source,
+          selection: { anchor: doc.source.trim() ? 0 : doc.source.length },
           extensions: [
             markdown({ base: markdownLanguage }),
             history(),
@@ -160,6 +176,33 @@ export function createBodyEditor(c) {
             ...[...extensions.values()].map((item) => item.compartment.of(item.extension)),
             Prec.highest(
               keymap.of([
+                ...[false, true].map((backwards) => ({
+                  key: backwards ? 'Shift-Tab' : 'Tab',
+                  run: (editor) => {
+                    if (editor.composing || editor.state.facet(EditorState.readOnly)) return false;
+                    const { from, to } = editor.state.selection.main;
+                    if (!backwards && from === to) {
+                      const context = syntaxTree(editor.state).resolveInner(from, -1);
+                      let structural = false;
+                      for (let node = context; node; node = node.parent)
+                        if (/Code|List/.test(node.name)) structural = true;
+                      editor.dispatch(editor.state.replaceSelection(structural ? '  ' : '　　'));
+                      return true;
+                    }
+                    const changes = [];
+                    const first = editor.state.doc.lineAt(from);
+                    const last = editor.state.doc.lineAt(to > from ? to - 1 : to);
+                    for (let number = first.number; number <= last.number; number++) {
+                      const line = editor.state.doc.line(number);
+                      const prefix = /^(?:\u3000{1,2}| {1,4}|\t)/.exec(line.text)?.[0];
+                      if (!backwards) changes.push({ from: line.from, insert: '　　' });
+                      else if (prefix)
+                        changes.push({ from: line.from, to: line.from + prefix.length });
+                    }
+                    editor.dispatch({ changes, scrollIntoView: true });
+                    return true;
+                  },
+                })),
                 {
                   key: 'Enter',
                   run: (editor) => {
@@ -208,10 +251,11 @@ export function createBodyEditor(c) {
                 return false;
               },
               paste(event) {
-                if (!event.clipboardData?.files.length) return false;
+                const files = capturePastedFiles(event);
+                if (!files) return false;
                 event.preventDefault();
                 event.stopPropagation();
-                c.upload([...event.clipboardData.files]).catch((error) => c.toast(error.message));
+                c.upload(files).catch((error) => c.toast(error.message));
                 return true;
               },
               drop(event) {
@@ -249,6 +293,25 @@ export function createBodyEditor(c) {
     const edit = transformMarkdown(view.state.doc.toString(), from, to, name, value);
     if (edit) applyEdit(edit);
     else c.toast('此操作暂不适用于当前位置');
+    return true;
+  }
+  function insertDateTime(stamp) {
+    if (!view) return false;
+    if (!c.current() || c.current().deleted || view.composing) return true;
+    const { from, to } = view.state.selection.main;
+    let node = syntaxTree(view.state).resolveInner(from, -1);
+    let inline = false;
+    while (node) {
+      if (/Code|List|Blockquote|Heading|Table/.test(node.name)) inline = true;
+      node = node.parent;
+    }
+    view.focus();
+    applyEdit(
+      dateTimeEdit(view.state.doc.toString(), from, to, stamp.replace(/[\[\]]/g, '\\$&'), {
+        indent: c.library.settings?.preferences?.autoIndentParagraph === false ? '' : '　　',
+        inline,
+      }),
+    );
     return true;
   }
   async function convert() {
@@ -331,10 +394,79 @@ export function createBodyEditor(c) {
     if (view) view.focus();
     else host.focus();
   }
+  function atStart() {
+    if (view) {
+      const range = view.state.selection.main;
+      return (
+        !view.composing && range.empty && !/[\S\r\n]/u.test(view.state.sliceDoc(0, range.from))
+      );
+    }
+    const selection = host.ownerDocument.getSelection();
+    if (!selection?.isCollapsed || !selection.rangeCount || !host.contains(selection.anchorNode))
+      return false;
+    const prefix = selection.getRangeAt(0).cloneRange();
+    prefix.selectNodeContents(host);
+    prefix.setEnd(selection.anchorNode, selection.anchorOffset);
+    return !/[\S\r\n]/u.test(prefix.toString());
+  }
+  /**
+   * Pull the current CodeMirror document into the shared entry before an
+   * external lifecycle action (for example the native quick-window close).
+   * Composition/update listeners normally do this already, but a close can
+   * arrive in the same task as the final IME event.
+   */
+  function commit(options) {
+    if (!view || !c.current() || view.composing) return false;
+    return syncDocument(options);
+  }
+  /**
+   * A newly created quick entry starts with a draft-* client id. The first
+   * save replaces it with the server UUID while the editor remains mounted.
+   * Rebind the mounted editor before the next CodeMirror change is handled.
+   */
+  function syncIdentity(entry, oldId) {
+    if (!entry || entryId !== oldId) return false;
+    entryId = entry.id || null;
+    controls();
+    return true;
+  }
+  function capturePosition() {
+    if (view) {
+      const { anchor, head } = view.state.selection.main;
+      return { format: 'markdown', anchor, head };
+    }
+    const selection = host.ownerDocument.getSelection();
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    return {
+      format: 'html',
+      range: range && host.contains(range.commonAncestorContainer) ? range.cloneRange() : null,
+    };
+  }
+  function restorePosition(position) {
+    if (position?.format === 'markdown' && view) {
+      const clamp = (value) => Math.max(0, Math.min(view.state.doc.length, value));
+      view.dispatch({ selection: { anchor: clamp(position.anchor), head: clamp(position.head) } });
+    } else if (
+      position?.format === 'html' &&
+      !view &&
+      position.range &&
+      host.contains(position.range.commonAncestorContainer)
+    ) {
+      const selection = host.ownerDocument.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(position.range);
+    }
+  }
   return {
     render,
     command,
+    insertDateTime,
     focus,
+    atStart,
+    commit,
+    syncIdentity,
+    capturePosition,
+    restorePosition,
     toggleSource,
     get isMarkdown() {
       return !!view;

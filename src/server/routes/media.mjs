@@ -7,12 +7,14 @@ import { randomUUID } from 'node:crypto';
 export function createRoutes({ dataDir, getDb, mutate, reply, fail }) {
   return async (req, res, p) => {
     const db = getDb();
-    if (p === '/api/media' && req.method === 'POST') {
+    if (['/api/media', '/api/chat-journal/media'].includes(p) && req.method === 'POST') {
       const mime = (req.headers['content-type'] || '').split(';')[0];
       if (
-        !/^(image\/(png|jpeg|webp|gif|avif)|video\/(mp4|webm|quicktime)|audio\/(mpeg|mp4|ogg|wav|x-wav|webm))$/.test(
-          mime,
-        )
+        p === '/api/chat-journal/media'
+          ? !/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/i.test(mime)
+          : !/^(image\/(png|jpeg|webp|gif|avif)|video\/(mp4|webm|quicktime)|audio\/(mpeg|mp4|ogg|wav|x-wav|webm))$/.test(
+              mime,
+            )
       )
         throw fail(415, '暂支持常见图片、MP4/WebM 视频和音频文件');
       // Reject malformed percent-encoded metadata before creating any file.
@@ -115,6 +117,13 @@ export function createRoutes({ dataDir, getDb, mutate, reply, fail }) {
       }
       res.writeHead(status, {
         'Content-Type': item.type,
+        ...(!/^(image\/(png|jpeg|gif|webp|avif)|video\/(mp4|webm|quicktime)|audio\/(mpeg|mp4|ogg|wav|x-wav|webm))$/.test(
+          item.type,
+        )
+          ? {
+              'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(item.name)}`,
+            }
+          : {}),
         'Content-Length': end - start + 1,
         'Accept-Ranges': 'bytes',
         'Cache-Control': 'private, max-age=3600',

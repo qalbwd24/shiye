@@ -1,0 +1,668 @@
+{
+  "format": "shiye-unified-data",
+  "schemaVersion": 1,
+  "stage": "design-draft",
+  "categories": [
+    {
+      "id": "category-daily",
+      "name": "虚构日常",
+      "pickers": ["diary", "chat"],
+      "order": 0
+    },
+    {
+      "id": "category-chat-only",
+      "name": "虚构聊天专用",
+      "pickers": ["chat"],
+      "order": 1
+    }
+  ],
+  "conversations": [
+    {
+      "id": "conversation-notes",
+      "name": "虚构随记",
+      "kind": "journal",
+      "defaultCategoryId": "category-daily",
+      "idleSeconds": 18000
+    },
+    {
+      "id": "conversation-revisit",
+      "name": "朝花夕拾（虚构样本）",
+      "kind": "revisit",
+      "defaultCategoryId": null,
+      "idleSeconds": 18000
+    }
+  ],
+  "assets": [
+    {
+      "id": "asset-demo",
+      "fileName": "synthetic-not-a-real-image.png",
+      "mediaType": "image/png",
+      "size": 128,
+      "sha256": null,
+      "blobRef": "synthetic-blob-placeholder"
+    }
+  ],
+  "records": [
+    {
+      "id": "record-diary-2024",
+      "kind": "diary",
+      "title": "虚构长篇标题",
+      "categoryId": "category-daily",
+      "origin": {
+        "kind": "diary",
+        "conversationId": null,
+        "legacyKey": null
+      },
+      "visibility": {
+        "hidden": false,
+        "draft": false
+      },
+      "author": {
+        "subjectId": "self",
+        "displayName": null,
+        "avatarAssetId": null
+      },
+      "body": {
+        "format": "shiye-richdoc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "blockId": "block-diary-1"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "【纯虚构】2024年的一段长篇内容。"
+              }
+            ]
+          },
+          {
+            "type": "image",
+            "attrs": {
+              "blockId": "block-diary-image",
+              "assetId": "asset-demo",
+              "occurrenceId": "occurrence-diary-image",
+              "insertedAt": null,
+              "widthRatio": 0.65,
+              "align": "center",
+              "caption": "虚构图片位置",
+              "alt": "无实际图片文件的契约示例"
+            }
+          }
+        ]
+      },
+      "eventTime": {
+        "instant": "2024-10-16T13:00:00.000Z",
+        "local": "2024-10-16T21:00:00",
+        "timeZone": "Asia/Shanghai",
+        "precision": "second",
+        "source": "diary-date"
+      },
+      "createdAt": "2024-10-16T13:00:00.000Z",
+      "updatedAt": "2024-10-16T13:00:00.000Z",
+      "revision": 1,
+      "state": "active",
+      "withdrawnAt": null,
+      "sequence": null,
+      "replyTo": null,
+      "supersedesId": null,
+      "commentOn": null
+    },
+    {
+      "id": "record-message-2025",
+      "kind": "message",
+      "title": null,
+      "categoryId": "category-daily",
+      "origin": {
+        "kind": "chat",
+        "conversationId": "conversation-notes",
+        "legacyKey": "synthetic-install:synthetic-room:9007199254740993"
+      },
+      "visibility": {
+        "hidden": false,
+        "draft": false
+      },
+      "author": {
+        "subjectId": "self",
+        "displayName": null,
+        "avatarAssetId": null
+      },
+      "body": {
+        "format": "shiye-richdoc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "blockId": "block-message-25"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "【纯虚构】2025年的一条消息。"
+              }
+            ]
+          }
+        ]
+      },
+      "eventTime": {
+        "instant": "2025-10-16T13:00:10.000Z",
+        "local": "2025-10-16T21:00:10",
+        "timeZone": "Asia/Shanghai",
+        "precision": "second",
+        "source": "message-send"
+      },
+      "createdAt": "2025-10-16T13:00:10.000Z",
+      "updatedAt": "2025-10-16T13:00:10.000Z",
+      "revision": 1,
+      "state": "active",
+      "withdrawnAt": null,
+      "sequence": "1",
+      "replyTo": null,
+      "supersedesId": null,
+      "commentOn": null
+    },
+    {
+      "id": "record-withdrawn-2026",
+      "kind": "message",
+      "title": null,
+      "categoryId": "category-daily",
+      "origin": {
+        "kind": "chat",
+        "conversationId": "conversation-notes",
+        "legacyKey": null
+      },
+      "visibility": {
+        "hidden": false,
+        "draft": false
+      },
+      "author": {
+        "subjectId": "self",
+        "displayName": null,
+        "avatarAssetId": null
+      },
+      "body": null,
+      "eventTime": {
+        "instant": "2026-10-16T12:59:00.000Z",
+        "local": "2026-10-16T20:59:00",
+        "timeZone": "Asia/Shanghai",
+        "precision": "second",
+        "source": "message-send"
+      },
+      "createdAt": "2026-10-16T12:59:00.000Z",
+      "updatedAt": "2026-10-16T12:59:10.000Z",
+      "revision": 2,
+      "state": "withdrawn",
+      "withdrawnAt": "2026-10-16T12:59:10.000Z",
+      "sequence": "2",
+      "replyTo": null,
+      "supersedesId": null,
+      "commentOn": null
+    },
+    {
+      "id": "record-message-2026",
+      "kind": "message",
+      "title": null,
+      "categoryId": "category-daily",
+      "origin": {
+        "kind": "chat",
+        "conversationId": "conversation-notes",
+        "legacyKey": null
+      },
+      "visibility": {
+        "hidden": false,
+        "draft": false
+      },
+      "author": {
+        "subjectId": "self",
+        "displayName": null,
+        "avatarAssetId": null
+      },
+      "body": {
+        "format": "shiye-richdoc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "blockId": "block-message-26"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "【纯虚构】撤回后重新编辑并发出的消息。",
+                "marks": [
+                  {
+                    "type": "italic"
+                  },
+                  {
+                    "type": "highlight"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "image",
+            "attrs": {
+              "blockId": "block-message-image",
+              "assetId": "asset-demo",
+              "occurrenceId": "occurrence-message-image",
+              "insertedAt": "2026-10-16T13:00:18.000Z",
+              "widthRatio": 0.65,
+              "align": "center",
+              "caption": "虚构图片位置",
+              "alt": "无实际图片文件的契约示例"
+            }
+          }
+        ]
+      },
+      "eventTime": {
+        "instant": "2026-10-16T13:00:20.000Z",
+        "local": "2026-10-16T21:00:20",
+        "timeZone": "Asia/Shanghai",
+        "precision": "second",
+        "source": "message-send"
+      },
+      "createdAt": "2026-10-16T13:00:20.000Z",
+      "updatedAt": "2026-10-16T13:00:20.000Z",
+      "revision": 1,
+      "state": "active",
+      "withdrawnAt": null,
+      "sequence": "3",
+      "replyTo": null,
+      "supersedesId": "record-withdrawn-2026",
+      "commentOn": null
+    },
+    {
+      "id": "record-comment-group-2027",
+      "kind": "comment",
+      "title": null,
+      "categoryId": null,
+      "origin": {
+        "kind": "revisit",
+        "conversationId": "conversation-revisit",
+        "legacyKey": null
+      },
+      "visibility": {
+        "hidden": false,
+        "draft": false
+      },
+      "author": {
+        "subjectId": "self",
+        "displayName": null,
+        "avatarAssetId": null
+      },
+      "body": {
+        "format": "shiye-richdoc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "blockId": "block-comment-group"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "【纯虚构】对这三年同一组记录的一条评论，只保存一次。"
+              }
+            ]
+          }
+        ]
+      },
+      "eventTime": {
+        "instant": "2027-10-16T13:00:45.000Z",
+        "local": "2027-10-16T21:00:45",
+        "timeZone": "Asia/Shanghai",
+        "precision": "second",
+        "source": "comment-created"
+      },
+      "createdAt": "2027-10-16T13:00:45.000Z",
+      "updatedAt": "2027-10-16T13:00:45.000Z",
+      "revision": 1,
+      "state": "active",
+      "withdrawnAt": null,
+      "sequence": null,
+      "replyTo": null,
+      "supersedesId": null,
+      "commentOn": {
+        "contextId": "context-demo",
+        "mode": "group",
+        "targets": [
+          {
+            "pageId": "page-diary-2024",
+            "scope": "record",
+            "recordId": "record-diary-2024",
+            "blockId": null,
+            "occurrenceId": null,
+            "observedRevision": 1
+          },
+          {
+            "pageId": "page-chat-2025",
+            "scope": "record",
+            "recordId": "record-message-2025",
+            "blockId": null,
+            "occurrenceId": null,
+            "observedRevision": 1
+          },
+          {
+            "pageId": "page-chat-2026",
+            "scope": "record",
+            "recordId": "record-message-2026",
+            "blockId": null,
+            "occurrenceId": null,
+            "observedRevision": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "record-comment-single-2027",
+      "kind": "comment",
+      "title": null,
+      "categoryId": null,
+      "origin": {
+        "kind": "revisit",
+        "conversationId": "conversation-revisit",
+        "legacyKey": null
+      },
+      "visibility": {
+        "hidden": false,
+        "draft": false
+      },
+      "author": {
+        "subjectId": "self",
+        "displayName": null,
+        "avatarAssetId": null
+      },
+      "body": {
+        "format": "shiye-richdoc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "blockId": "block-comment-single"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "【纯虚构】引用2025年这一条，只回复这一条。"
+              }
+            ]
+          }
+        ]
+      },
+      "eventTime": {
+        "instant": "2027-10-16T13:00:50.000Z",
+        "local": "2027-10-16T21:00:50",
+        "timeZone": "Asia/Shanghai",
+        "precision": "second",
+        "source": "comment-created"
+      },
+      "createdAt": "2027-10-16T13:00:50.000Z",
+      "updatedAt": "2027-10-16T13:00:50.000Z",
+      "revision": 1,
+      "state": "active",
+      "withdrawnAt": null,
+      "sequence": null,
+      "replyTo": null,
+      "supersedesId": null,
+      "commentOn": {
+        "contextId": "context-demo",
+        "mode": "single",
+        "targets": [
+          {
+            "pageId": "page-chat-2025",
+            "scope": "record",
+            "recordId": "record-message-2025",
+            "blockId": null,
+            "occurrenceId": null,
+            "observedRevision": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "record-comment-page-2027",
+      "kind": "comment",
+      "title": null,
+      "categoryId": null,
+      "origin": {
+        "kind": "diary",
+        "conversationId": null,
+        "legacyKey": null
+      },
+      "visibility": {
+        "hidden": false,
+        "draft": false
+      },
+      "author": {
+        "subjectId": "self",
+        "displayName": null,
+        "avatarAssetId": null
+      },
+      "body": {
+        "format": "shiye-richdoc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "blockId": "block-comment-page"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "【纯虚构】对整篇长篇日记的总体评论。"
+              }
+            ]
+          }
+        ]
+      },
+      "eventTime": {
+        "instant": "2027-10-16T13:00:52.000Z",
+        "local": "2027-10-16T21:00:52",
+        "timeZone": "Asia/Shanghai",
+        "precision": "second",
+        "source": "comment-created"
+      },
+      "createdAt": "2027-10-16T13:00:52.000Z",
+      "updatedAt": "2027-10-16T13:00:52.000Z",
+      "revision": 1,
+      "state": "active",
+      "withdrawnAt": null,
+      "sequence": null,
+      "replyTo": null,
+      "supersedesId": null,
+      "commentOn": {
+        "contextId": null,
+        "mode": "single",
+        "targets": [
+          {
+            "pageId": "page-diary-2024",
+            "scope": "page",
+            "recordId": null,
+            "blockId": null,
+            "occurrenceId": null,
+            "observedRevision": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "record-comment-image-2027",
+      "kind": "comment",
+      "title": null,
+      "categoryId": null,
+      "origin": {
+        "kind": "revisit",
+        "conversationId": "conversation-revisit",
+        "legacyKey": null
+      },
+      "visibility": {
+        "hidden": false,
+        "draft": false
+      },
+      "author": {
+        "subjectId": "self",
+        "displayName": null,
+        "avatarAssetId": null
+      },
+      "body": {
+        "format": "shiye-richdoc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "blockId": "block-comment-image"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "【纯虚构】只评论2026年消息里这一次出现的图片。"
+              }
+            ]
+          }
+        ]
+      },
+      "eventTime": {
+        "instant": "2027-10-16T13:00:55.000Z",
+        "local": "2027-10-16T21:00:55",
+        "timeZone": "Asia/Shanghai",
+        "precision": "second",
+        "source": "comment-created"
+      },
+      "createdAt": "2027-10-16T13:00:55.000Z",
+      "updatedAt": "2027-10-16T13:00:55.000Z",
+      "revision": 1,
+      "state": "active",
+      "withdrawnAt": null,
+      "sequence": null,
+      "replyTo": null,
+      "supersedesId": null,
+      "commentOn": {
+        "contextId": "context-demo",
+        "mode": "single",
+        "targets": [
+          {
+            "pageId": "page-chat-2026",
+            "scope": "image",
+            "recordId": "record-message-2026",
+            "blockId": "block-message-image",
+            "occurrenceId": "occurrence-message-image",
+            "observedRevision": 1
+          }
+        ]
+      }
+    }
+  ],
+  "pages": [
+    {
+      "id": "page-diary-2024",
+      "kind": "diary",
+      "categoryId": "category-daily",
+      "conversationId": null,
+      "recordIds": ["record-diary-2024"],
+      "bodyPolicy": "document-editable",
+      "grouping": null
+    },
+    {
+      "id": "page-chat-2025",
+      "kind": "chat-segment",
+      "categoryId": "category-daily",
+      "conversationId": "conversation-notes",
+      "recordIds": ["record-message-2025"],
+      "bodyPolicy": "derived-read-only",
+      "grouping": {
+        "idleSeconds": 18000,
+        "firstAt": "2025-10-16T13:00:10.000Z",
+        "lastAt": "2025-10-16T13:00:10.000Z",
+        "state": "closed"
+      }
+    },
+    {
+      "id": "page-chat-2026",
+      "kind": "chat-segment",
+      "categoryId": "category-daily",
+      "conversationId": "conversation-notes",
+      "recordIds": ["record-withdrawn-2026", "record-message-2026"],
+      "bodyPolicy": "derived-read-only",
+      "grouping": {
+        "idleSeconds": 18000,
+        "firstAt": "2026-10-16T12:59:00.000Z",
+        "lastAt": "2026-10-16T13:00:20.000Z",
+        "state": "closed"
+      }
+    }
+  ],
+  "revisitRules": [
+    {
+      "id": "rule-yearly",
+      "conversationId": "conversation-revisit",
+      "revision": 1,
+      "interval": {
+        "kind": "calendar",
+        "unit": "year",
+        "step": 1
+      },
+      "timeZone": "Asia/Shanghai",
+      "groupWindowSeconds": 60,
+      "invalidDatePolicy": "skip",
+      "categoryIds": ["category-daily"],
+      "sourceConversationIds": [],
+      "recordKinds": ["diary", "message"]
+    }
+  ],
+  "revisitContexts": [
+    {
+      "id": "context-demo",
+      "conversationId": "conversation-revisit",
+      "ruleId": "rule-yearly",
+      "ruleRevision": 1,
+      "ruleSnapshot": {
+        "id": "rule-yearly",
+        "conversationId": "conversation-revisit",
+        "revision": 1,
+        "interval": {
+          "kind": "calendar",
+          "unit": "year",
+          "step": 1
+        },
+        "timeZone": "Asia/Shanghai",
+        "groupWindowSeconds": 60,
+        "invalidDatePolicy": "skip",
+        "categoryIds": ["category-daily"],
+        "sourceConversationIds": [],
+        "recordKinds": ["diary", "message"]
+      },
+      "groupKey": "synthetic-2027-10-16-2100",
+      "displayWindow": {
+        "from": "2027-10-16T13:00:00.000Z",
+        "to": "2027-10-16T13:01:00.000Z"
+      },
+      "seenAt": "2027-10-16T13:00:30.000Z",
+      "sources": [
+        {
+          "recordId": "record-diary-2024",
+          "blockId": null,
+          "observedRevision": 1
+        },
+        {
+          "recordId": "record-message-2025",
+          "blockId": null,
+          "observedRevision": 1
+        },
+        {
+          "recordId": "record-message-2026",
+          "blockId": null,
+          "observedRevision": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import { createEntryActions } from './entry-actions.js';
+import { sortedTaxonomy } from '../shared/taxonomy.js';
 
 /** Owns menu DOM, keyboard navigation and prompts; business writes stay in entry-actions. */
 export function createContextMenu(c, { exportMenu }) {
@@ -119,7 +120,14 @@ export function createContextMenu(c, { exportMenu }) {
         run: () =>
           prompt(
             '修改分类与标签',
-            `<label>分类<input class="field" id="actionCategory" list="actionCategories" value="${esc(entry.category)}" maxlength="60"></label><datalist id="actionCategories">${c.library.categories.map((v) => `<option value="${esc(v)}"></option>`).join('')}</datalist><label>标签（逗号分隔）<input id="actionValue" class="field" value="${esc(entry.tags.join('，'))}"></label>`,
+            `<label>分类<input class="field" id="actionCategory" list="actionCategories" value="${esc(entry.category)}" maxlength="60"></label><datalist id="actionCategories">${sortedTaxonomy(
+              c.library,
+              'category',
+            )
+              .map((item) => `<option value="${esc(item.name)}"></option>`)
+              .join(
+                '',
+              )}</datalist><label>标签（逗号分隔）<input id="actionValue" class="field" value="${esc(entry.tags.join('，'))}"></label>`,
             () =>
               actions.update(id, () => ({
                 category: $('#actionCategory').value.trim() || '未分类',

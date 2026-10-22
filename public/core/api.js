@@ -34,7 +34,12 @@ export async function api(url, { method = 'GET', data, raw, headers = {} } = {})
     body: raw ?? (data ? JSON.stringify(data) : undefined),
   });
   const result = await r.json();
-  if (!r.ok) throw Error(result.error || '请求失败');
+  if (!r.ok) {
+    const error = Error(result.error || '请求失败');
+    error.status = r.status;
+    error.details = result;
+    throw error;
+  }
   return result;
 }
 

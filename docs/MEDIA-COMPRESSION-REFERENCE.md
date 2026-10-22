@@ -4,7 +4,7 @@
 
 ## 原版证据位置
 
-以下路径以 `F:\我的奋斗\日记软件本地化\research\2026-09-10\android` 为根。`sources/` 是本地 JADX 输出；涉及反编译失败的分支仅作为有限证据。
+以下路径以 `F:\<个人目录>\日记软件本地化\research\2026-09-10\android` 为根。`sources/` 是本地 JADX 输出；涉及反编译失败的分支仅作为有限证据。
 
 | 项目                | 文件与行号                                                                    | 可确认内容                                                                                                                                                                          |
 | ------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -68,10 +68,10 @@ Canvas `toBlob` 将画布内容重新编码，支持 0–1 的质量参数，并
 
 只读确认 PATH 已有以下工具，版本输出均为 `9.0-full_build-www.gyan.dev`：
 
-- `C:\Users\微霖\AppData\Local\Microsoft\WinGet\Links\ffmpeg.exe`
-- `C:\Users\微霖\AppData\Local\Microsoft\WinGet\Links\ffprobe.exe`
+- `C:\Users\<用户名>\AppData\Local\Microsoft\WinGet\Links\ffmpeg.exe`
+- `C:\Users\<用户名>\AppData\Local\Microsoft\WinGet\Links\ffprobe.exe`
 
-链接实际指向 `C:\Users\微霖\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0-full_build\bin`。`ffmpeg -encoders` 确认具有 `libx264` 与 `aac`。本项目 resources 与 `F:\一本日记虚拟机` 的文件名扫描未发现另外的 ffmpeg/ffprobe；没有下载、复制或安装。此发现仅证明本机工具可用，不能推定别的 Windows 主机或交付包自带工具，也未执行真实视频编码验收。
+链接实际指向 `C:\Users\<用户名>\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0-full_build\bin`。`ffmpeg -encoders` 确认具有 `libx264` 与 `aac`。本项目 resources 与 `F:\一本日记虚拟机` 的文件名扫描未发现另外的 ffmpeg/ffprobe；没有下载、复制或安装。此发现仅证明本机工具可用，不能推定别的 Windows 主机或交付包自带工具，也未执行真实视频编码验收。
 
 视频若本轮实现，应作为独立可选功能，默认保留原件；不能用浏览器画布方案处理视频，也不能宣称沿用了原版转码参数。建议先只接受普通 SDR 输入，使用 H.264/AAC、最长边 1280、CRF 23、preset veryfast、AAC 128k、不提高源帧率；HDR、透明视频、未知色彩信息或不支持容器暂保留原件。上述为起步建议，实际大小与速度必须实测，不能保证固定压缩比。
 

@@ -1,17 +1,33 @@
 import { spawn } from 'node:child_process';
 import { randomUUID, createHash } from 'node:crypto';
-import { createReadStream, promises as fs } from 'node:fs';
+import { createReadStream, promises as fs, statSync } from 'node:fs';
 import path from 'node:path';
 import { LIMITS } from '../../../public/shared/limits.js';
 
 const qualities = { balanced: { edge: 1280, crf: 26 }, high: { edge: 1920, crf: 23 } };
-const executable =
-  'C:\\Users\\微霖\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\ffmpeg-9.0-full_build\\bin\\ffmpeg.exe';
+
+/** No machine-specific path is baked in: resolve from the PATH environment or an explicit override. */
+function locateOnPath(name) {
+  const extensions = process.platform === 'win32' ? ['.exe', ''] : [''];
+  for (const directory of String(process.env.PATH || '').split(path.delimiter)) {
+    if (!directory) continue;
+    for (const extension of extensions) {
+      const candidate = path.resolve(directory, name + extension);
+      try {
+        if (statSync(candidate).isFile()) return candidate;
+      } catch {
+        /* keep scanning the remaining PATH entries */
+      }
+    }
+  }
+  return null;
+}
 
 /** External GPL runtime: never shipped inside a source package; no shell invocation. */
 export async function resolveVideoRuntime() {
-  const ffmpeg = process.env.SHIYE_FFMPEG_PATH || executable;
-  const ffprobe = process.env.SHIYE_FFPROBE_PATH || path.join(path.dirname(ffmpeg), 'ffprobe.exe');
+  const ffmpeg = process.env.SHIYE_FFMPEG_PATH || locateOnPath('ffmpeg');
+  const ffprobe = process.env.SHIYE_FFPROBE_PATH || locateOnPath('ffprobe');
+  if (!ffmpeg || !ffprobe) throw Error('本机视频压缩工具不可用，请选择原件上传');
   if (!path.isAbsolute(ffmpeg) || !path.isAbsolute(ffprobe))
     throw Error('视频工具配置必须使用绝对路径');
   try {
@@ -126,7 +142,8 @@ export function createRoutes({ dataDir, getDb, mutate, reply, fail }) {
 
   async function processJob(job) {
     const encoded = path.join(staging, job.id + '.encoded.mp4');
-    let committedFile = null;
+    let committedFile = null,
+      finalState = 'done';
     try {
       job.state = 'processing';
       const existing = getDb().media.find(
@@ -135,8 +152,6 @@ export function createRoutes({ dataDir, getDb, mutate, reply, fail }) {
       );
       if (existing) {
         job.media = existing;
-        job.state = 'done';
-        job.progress = 1;
         return;
       }
       const runtime = await resolveVideoRuntime();
@@ -231,16 +246,18 @@ export function createRoutes({ dataDir, getDb, mutate, reply, fail }) {
       if (item.id !== id) await cleanup(target);
       committedFile = null;
       job.media = item;
-      job.progress = 1;
-      job.state = 'done';
       if (!smaller) job.reason = '压缩结果未变小，已保存原件';
     } catch (error) {
       if (committedFile) await cleanup(committedFile);
-      job.state = 'error';
+      finalState = 'error';
       job.error = error.message || '视频处理失败，请重试或选择原件';
     } finally {
       await cleanup(job.source);
       await cleanup(encoded);
+      // A terminal status promises that staging work has finished as well.
+      // In particular, the duplicate fast path still owns an uploaded file.
+      if (finalState === 'done') job.progress = 1;
+      job.state = finalState;
     }
   }
 

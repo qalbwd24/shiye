@@ -1,19 +1,28 @@
 import { statistics } from '../shared/statistics.js';
+import { sortedTaxonomy } from '../shared/taxonomy.js';
+import { dateParts } from '../shared/time-zone.js';
 export function createStatistics(c, { chart, cards }) {
   const { $, escape: esc, textOf } = c;
   let statsOptions = {
-    year: String(new Date().getFullYear()),
+    year: dateParts(new Date()).year,
     category: '',
     includeDemo: false,
     includeHidden: false,
   };
   function render(view, root) {
     if (view === 'stats') {
-      const years = [...new Set(c.library.entries.map((e) => new Date(e.date).getFullYear()))].sort(
+      const years = [...new Set(c.library.entries.map((e) => Number(dateParts(e.date).year)))].sort(
           (a, b) => b - a,
         ),
         s = statistics(c.library.entries, c.library.media, textOf, statsOptions);
-      root.innerHTML = `<h2>记录统计</h2><div class="filter-row"><select id="statYear" aria-label="统计年份"><option value="">全部年份</option>${years.map((y) => `<option>${y}</option>`).join('')}</select><select id="statCategory" aria-label="统计分类"><option value="">全部分类</option>${c.library.categories.map((v) => `<option>${esc(v)}</option>`).join('')}</select><label><input type="checkbox" id="statDemo" ${statsOptions.includeDemo ? 'checked' : ''}>包含示例</label><label><input type="checkbox" id="statHidden" ${statsOptions.includeHidden ? 'checked' : ''}>包含隐藏日记</label></div><div class="stat-cards">${[
+      root.innerHTML = `<h2>记录统计</h2><div class="filter-row"><select id="statYear" aria-label="统计年份"><option value="">全部年份</option>${years.map((y) => `<option>${y}</option>`).join('')}</select><select id="statCategory" aria-label="统计分类"><option value="">全部分类</option>${sortedTaxonomy(
+        c.library,
+        'category',
+      )
+        .map((item) => `<option>${esc(item.name)}</option>`)
+        .join(
+          '',
+        )}</select><label><input type="checkbox" id="statDemo" ${statsOptions.includeDemo ? 'checked' : ''}>包含示例</label><label><input type="checkbox" id="statHidden" ${statsOptions.includeHidden ? 'checked' : ''}>包含隐藏日记</label></div><div class="stat-cards">${[
         ['日记', s.count, '篇'],
         ['文字', s.chars, '字'],
         ['记录日期', s.dayCount, '天'],

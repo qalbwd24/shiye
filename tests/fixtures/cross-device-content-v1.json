@@ -1,0 +1,104 @@
+{
+  "fixtureVersion": 1,
+  "timeZone": "Asia/Shanghai",
+  "entry": {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "revision": 7,
+    "title": "虚构跨端样本",
+    "category": "合成分类",
+    "tags": ["合成标签"],
+    "date": "2025-10-18T01:00:00.000Z",
+    "updatedAt": "2025-10-18T06:00:00.000Z",
+    "contentEditedAt": "2025-10-18T05:00:00.000Z",
+    "contentFormat": "richdoc",
+    "attachments": ["fixture-image"],
+    "body": {
+      "format": "shiye-richdoc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "attrs": { "blockId": "stamp-1" },
+          "content": [{ "type": "text", "text": "[2025/10/18 08:30:00]" }]
+        },
+        {
+          "type": "paragraph",
+          "attrs": { "blockId": "prose-1" },
+          "content": [
+            { "type": "text", "text": "　　第一段  内部空格", "marks": [{ "type": "bold" }] }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "attrs": { "blockId": "prose-2" },
+          "content": [{ "type": "text", "text": "\t第二段", "marks": [{ "type": "highlight" }] }]
+        },
+        {
+          "type": "image",
+          "attrs": {
+            "blockId": "image-1",
+            "assetId": "fixture-image",
+            "occurrenceId": "appearance-1",
+            "insertedAt": "2025-10-18T00:31:00.000Z",
+            "widthRatio": 0.5,
+            "align": "center",
+            "caption": "虚构图片第一次出现",
+            "alt": "合成图"
+          }
+        },
+        {
+          "type": "paragraph",
+          "attrs": { "blockId": "stamp-2" },
+          "content": [{ "type": "text", "text": "[2025/10/18 09:00:00]" }]
+        },
+        {
+          "type": "paragraph",
+          "attrs": { "blockId": "prose-3" },
+          "content": [{ "type": "text", "text": "第三段" }]
+        },
+        {
+          "type": "image",
+          "attrs": {
+            "blockId": "image-2",
+            "assetId": "fixture-image",
+            "occurrenceId": "appearance-2",
+            "insertedAt": null,
+            "widthRatio": 1,
+            "align": "left",
+            "caption": "旧图时间未知",
+            "alt": "同一个资源，另一处出现"
+          }
+        },
+        {
+          "type": "codeBlock",
+          "attrs": { "blockId": "code-1", "language": "text" },
+          "content": [{ "type": "text", "text": "    code\n\tindent stays" }]
+        }
+      ]
+    }
+  },
+  "media": [
+    {
+      "id": "fixture-image",
+      "name": "合成图片.png",
+      "type": "image/png",
+      "size": 100,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "expected": {
+    "firstManualInstant": "2025-10-18T00:30:00.000Z",
+    "secondParagraphInstant": "2025-10-18T00:30:02.000Z",
+    "knownMediaInstant": "2025-10-18T00:31:00.000Z",
+    "unknownMediaFallbackInstant": "2025-10-18T05:00:00.000Z",
+    "paragraphMarkdown": ["**第一段  内部空格**", "==第二段=="],
+    "occurrenceIds": ["appearance-1", "appearance-2"]
+  },
+  "chat": {
+    "sourceId": "22222222-2222-4222-8222-222222222222",
+    "roomId": "-20",
+    "messageId": "9007199254740993",
+    "sentAt": "2025-10-18T00:32:00.123Z"
+  },
+  "notes": "Entirely synthetic. Media metadata validates references; no actual image bytes are provided. Never import this fixture into a personal library."
+}

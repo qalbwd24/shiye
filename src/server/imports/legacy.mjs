@@ -4,6 +4,7 @@ import { createDecipheriv, createHash, randomUUID } from 'node:crypto';
 import { inflateRawSync } from 'node:zlib';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { oneDiarySource } from './one-diary-source.mjs';
 
 import { LEGACY_READER } from '../config.mjs';
 export const sha = (b) => createHash('sha256').update(b).digest('hex');
@@ -126,6 +127,7 @@ function dateOf(value) {
   return v && Number.isFinite(d.valueOf()) ? d.toISOString() : null;
 }
 export async function decodeLegacy(raw, name = 'backup', options = {}) {
+  if (options.sourcePolicy !== undefined) oneDiarySource(options, {});
   let kind,
     tables,
     encoding = {},
@@ -295,6 +297,7 @@ export async function decodeLegacy(raw, name = 'backup', options = {}) {
       demo: false,
       legacy: {
         original: e,
+        ...(options.sourcePolicy ? { source: oneDiarySource(options, e) } : {}),
         index,
         kind,
         mediaReferences: references,
@@ -335,6 +338,13 @@ export async function decodeLegacy(raw, name = 'backup', options = {}) {
     },
     report: {
       entries: entries.length,
+      ...(options.sourcePolicy
+        ? {
+            sourcePolicy: options.sourcePolicy,
+            unidentifiedEntries: entries.filter((entry) => entry.legacy.source.recordId === null)
+              .length,
+          }
+        : {}),
       media: media.length,
       unresolved,
       candidateMatches: candidates,

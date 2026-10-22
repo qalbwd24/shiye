@@ -1,9 +1,16 @@
 export const dayKey = (value) => {
-  const d = new Date(value);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // Date-only values already identify a civil day. Parsing as UTC moves them
+  // to the preceding day in time zones west of UTC.
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  return zonedDay(value);
 };
 export const ordinal = (value) => {
-  const d = new Date(value);
-  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000;
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split('-').map(Number);
+    return Date.UTC(year, month - 1, day) / 86400000;
+  }
+  const [year, month, day] = zonedDay(value).split('-').map(Number);
+  return Date.UTC(year, month - 1, day) / 86400000;
 };
 export const isHidden = (e) => (e.hidden === undefined ? !!e.legacy?.isHidden : !!e.hidden);
+import { zonedDay } from './time-zone.js';

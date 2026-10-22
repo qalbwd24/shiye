@@ -1,6 +1,13 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { isHidden } from '../../../public/shared/entry-state.js';
 import { getEditorDocument } from '../../../public/shared/editor-document.js';
+import {
+  renderRichDocument,
+  validateRenderableRichDocument,
+} from '../../../public/shared/rich-document-renderer.js';
+import { richMediaReferences } from '../../../public/shared/rich-document.js';
+import { fail } from '../http.mjs';
+import { oneDiaryCandidates } from '../imports/one-diary-source.mjs';
 
 const canonical = (value) =>
   Array.isArray(value)
@@ -73,21 +80,49 @@ export function addConflict(db, kind, left, right, reason) {
   return record;
 }
 export function remapEntryMedia(entry, map) {
+  if (entry.contentFormat === 'richdoc') {
+    try {
+      validateRenderableRichDocument(entry.body);
+      if (richMediaReferences(entry.body).some((ref) => !entry.attachments?.includes(ref.assetId)))
+        throw new Error('media');
+    } catch {
+      throw fail(400, '备份富文档结构或图片关联/视频关联不完整');
+    }
+  }
   const result = structuredClone(entry);
+  // Callers may supply shared object aliases; each historical body must remap independently.
+  if (result.body) result.body = structuredClone(result.body);
   result.attachments = [...new Set((result.attachments || []).map((id) => map.get(id) || id))];
+  // Remap the authoritative tree as well as HTML, including history snapshots below.
+  const remapBody = (node) => {
+    if (['image', 'video'].includes(node?.type) && typeof node.attrs?.assetId === 'string')
+      node.attrs.assetId = map.get(node.attrs.assetId) || node.attrs.assetId;
+    if (Array.isArray(node?.content)) node.content.forEach(remapBody);
+  };
+  if (result.body?.format === 'shiye-richdoc' && Array.isArray(result.body.content))
+    result.body.content.forEach(remapBody);
   for (const field of ['content', 'markdownHtml', 'markdownSource', 'editorOriginalHtml'])
     if (typeof result[field] === 'string')
       result[field] = result[field].replace(
         /\/media\/([a-zA-Z0-9-]+)(?=[/"'\s<>?#)\]]|$)/g,
         (url, id) => (map.has(id) ? '/media/' + map.get(id) : url),
       );
+  // Render after textual remapping: generated URLs must not be remapped a second time.
+  if (result.contentFormat === 'richdoc') result.content = renderRichDocument(result.body);
   if (Array.isArray(result.comments))
     for (const comment of result.comments) {
+      if (Array.isArray(comment.mediaOccurrences))
+        for (const occurrence of comment.mediaOccurrences)
+          if (typeof occurrence.assetId === 'string')
+            occurrence.assetId = map.get(occurrence.assetId) || occurrence.assetId;
       if (Array.isArray(comment.attachments))
         comment.attachments = [...new Set(comment.attachments.map((id) => map.get(id) || id))];
       if (comment.authorAvatarId)
         comment.authorAvatarId = map.get(comment.authorAvatarId) || comment.authorAvatarId;
     }
+  if (result.chatJournal?.messages)
+    for (const message of result.chatJournal.messages)
+      message.attachments = (message.attachments || []).map((id) => map.get(id) || id);
   if (result.legacy?.mediaReferences)
     for (const r of result.legacy.mediaReferences)
       if (r.mediaId) r.mediaId = map.get(r.mediaId) || r.mediaId;
@@ -146,15 +181,37 @@ export function reconcileImport(db, incoming) {
     report.media++;
   }
   const entryMap = new Map();
+  const validateRichMedia = (entry) => {
+    if (entry.contentFormat === 'richdoc') {
+      for (const ref of richMediaReferences(entry.body)) {
+        const resource = db.media.find((item) => item.id === ref.assetId);
+        if (
+          !resource ||
+          !String(resource.type || resource.mimeType || resource.mime || '').startsWith(
+            ref.type + '/',
+          )
+        )
+          throw fail(400, '备份富文档引用未登记或类型不符的图片/视频');
+      }
+    }
+    for (const snapshot of entry.history || []) validateRichMedia(snapshot);
+  };
   for (const raw of incoming.entries || []) {
     const entry = remapEntryMedia(raw, mediaMap);
-    const identified = [
+    validateRichMedia(entry);
+    const explicit = oneDiaryCandidates(db.entries, entry);
+    const identified = explicit || [
       ...new Set([...identity(entry)].flatMap((key) => entryKeys.get(key) || [])),
     ];
-    const candidates = identified.length ? identified : entryNames.get(entry.title) || [];
+    const candidates =
+      explicit || (identified.length ? identified : entryNames.get(entry.title) || []);
     const signature = entryFingerprint(entry);
     const match = candidates.find((old) => entryFingerprint(old) === signature);
     if (match) {
+      // Bind a matching pre-provenance legacy record once. Without this, two
+      // explicitly different export lineages could both claim its bare UUID.
+      if (explicit && !match.legacy?.source)
+        match.legacy = { ...match.legacy, source: structuredClone(entry.legacy.source) };
       entryMap.set(entry.id, match.id);
       report.mergedEntries++;
       continue;
@@ -174,6 +231,12 @@ export function reconcileImport(db, incoming) {
       );
       report.conflicts++;
     }
+  }
+  if (incoming.chatJournal?.rooms) {
+    db.chatJournal ||= { version: 1, rooms: [] };
+    for (const room of incoming.chatJournal.rooms)
+      if (!db.chatJournal.rooms.some((r) => r.sourceId === room.sourceId && r.id === room.id))
+        db.chatJournal.rooms.push(structuredClone(room));
   }
   return { report, mediaMap, entryMap };
 }

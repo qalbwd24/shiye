@@ -1,5 +1,6 @@
 import { recall } from '../shared/recall.js';
 import { dayKey } from '../shared/entry-state.js';
+import { sortedTaxonomy } from '../shared/taxonomy.js';
 import {
   recollectionEntries,
   normalizeRecollectionSession,
@@ -181,9 +182,10 @@ export function createRecollection(c) {
     }
     save();
     const currentIndex = ids.indexOf(currentId);
-    const categoryOptions = [
-      ...new Set([preferences.category, ...(c.library.categories || [])]),
-    ].filter(Boolean);
+    const categoryOptions = sortedTaxonomy(c.library, 'category').map((item) => item.name);
+    // Keep a stale filter visible without moving the current choice ahead of saved ordering.
+    const missingCategory = preferences.category && !categoryOptions.includes(preferences.category);
+    if (missingCategory) categoryOptions.push(preferences.category);
     const scope = preferences.category || '全部分类';
     const description =
       view === 'memories'
@@ -231,8 +233,10 @@ export function createRecollection(c) {
             esc(name) +
             '"' +
             (name === preferences.category ? ' selected' : '') +
+            (missingCategory && name === preferences.category ? ' disabled' : '') +
             '>' +
             esc(name) +
+            (missingCategory && name === preferences.category ? '（已不存在）' : '') +
             '</option>',
         )
         .join('') +

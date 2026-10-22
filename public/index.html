@@ -1,9 +1,33 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme-preference="system">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>拾页 · 桌面日记</title>
+    <meta name="color-scheme" content="light dark" />
+    <style>
+      :root {
+        --startup-background: #f6f8f9;
+        background: var(--startup-background);
+        color-scheme: light;
+      }
+      :root[data-theme='dark'],
+      :root[data-theme-preference='dark']:not([data-theme]) {
+        --startup-background: #20292e;
+        color-scheme: dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root[data-theme-preference='system']:not([data-theme]) {
+          --startup-background: #20292e;
+          color-scheme: dark;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--startup-background);
+      }
+    </style>
+    <script src="/theme-start.js"></script>
+    <title>拾页 · 主页</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/shiye-32.png?v=0.7.5" />
     <link rel="icon" type="image/png" sizes="64x64" href="/icons/shiye-64.png?v=0.7.5" />
     <link rel="icon" type="image/svg+xml" sizes="any" href="/icons/shiye.svg?v=0.7.5" />
@@ -121,14 +145,14 @@
           </nav>
         </div>
         <div class="sidebar-bottom">
+          <button id="cloudStatus" class="local-status">
+            <span class="status-dot"></span><span>云同步<small>连接自己的服务器</small></span
+            ><span data-icon="chevron"></span>
+          </button>
           <button id="settingsButton" class="settings-entry">
             <span aria-hidden="true">⚙</span> 设置<span class="settings-caption"
               >按你的习惯记录</span
             >
-          </button>
-          <button id="cloudStatus" class="local-status">
-            <span class="status-dot"></span><span>本地日记库<small>内容保存在这台电脑</small></span
-            ><span data-icon="chevron"></span>
           </button>
           <div class="bottom-actions">
             <button id="exportLibrary" title="导出日记 JSON，附件原件保留在 data/media">

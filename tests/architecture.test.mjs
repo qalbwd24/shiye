@@ -4,7 +4,13 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fixture } from './helpers.mjs';
 import { inspectModules } from '../tools/check-files.mjs';
-import { PUBLIC_ROOT, DEFAULT_DATA_DIR, runtimeConfig, VERSION } from '../src/server/config.mjs';
+import {
+  PUBLIC_ROOT,
+  DEFAULT_DATA_DIR,
+  runtimeConfig,
+  parseDeploymentConfig,
+  VERSION,
+} from '../src/server/config.mjs';
 import { createLibraryStore } from '../src/server/storage/library-store.mjs';
 
 test('module dependencies resolve and browser modules stay inside public', () => {
@@ -66,4 +72,27 @@ test('runtime configuration rejects invalid ports and supports explicit isolated
   assert.equal(value.port, 18768);
   assert.equal(value.host, '127.0.0.1');
   assert.equal(value.dataDir, path.resolve('var/test-only'));
+});
+
+test('deployment retains an explicit existing library and environment overrides remain isolated', () => {
+  const deployment = parseDeploymentConfig({
+    mode: 'production',
+    dataDir: path.resolve('tmp/production-library'),
+    stateDirectory: path.resolve('tmp/production-state'),
+  });
+  assert.equal(runtimeConfig({}, deployment).dataDir, deployment.dataDir);
+  assert.equal(
+    runtimeConfig({ DIARY_DATA_DIR: 'tmp/isolated-library' }, deployment).dataDir,
+    path.resolve('tmp/isolated-library'),
+  );
+});
+
+test('deployment rejects ambiguous or relative locations instead of creating a blank library', () => {
+  for (const value of [
+    undefined,
+    {},
+    { mode: 'development' },
+    { mode: 'production', dataDir: 'relative', stateDirectory: path.resolve('tmp/state') },
+  ])
+    assert.throws(() => parseDeploymentConfig(value));
 });

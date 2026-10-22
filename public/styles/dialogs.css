@@ -28,6 +28,22 @@ dialog::backdrop {
   line-height: 1.9;
   color: #819195;
 }
+
+#modalBody #syncMessage {
+  min-height: 1.5em;
+  color: var(--muted, #76868b);
+}
+
+#modalBody #syncMessage.error {
+  color: #b45d54;
+}
+#modalBody .sync-warning {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff7ea;
+  color: #9a6a3b;
+  line-height: 1.65;
+}
 #modalBody .field {
   width: 100%;
   padding: 12px;
@@ -52,9 +68,10 @@ dialog::backdrop {
   color: #9aa7ac;
   margin-top: 6px;
 }
-#modalBody .option-button:hover {
-  border-color: #a6d6d1;
-  background: #f5fbfa;
+#modalBody .option-button:enabled:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 .danger {
   color: #c27f70 !important;

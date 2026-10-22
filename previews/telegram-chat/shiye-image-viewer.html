@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' https://shiye-image.local; style-src 'unsafe-inline'; script-src 'self'; connect-src 'none'; object-src 'none'"
+    />
+    <title>拾页 · 图片</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #172024;
+        color: #e3ecee;
+        font:
+          14px 'Microsoft YaHei UI',
+          sans-serif;
+        overflow: hidden;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 52px;
+        flex-wrap: wrap;
+        padding: 8px 16px;
+        background: #222d32;
+      }
+      button {
+        border: 1px solid #56707655;
+        border-radius: 7px;
+        padding: 6px 12px;
+        color: inherit;
+        background: #314247;
+        cursor: pointer;
+      }
+      button:hover,
+      button:focus-visible {
+        background: #415b60;
+        outline-color: #91c4c4;
+      }
+      #percent {
+        min-width: 58px;
+        text-align: center;
+      }
+      #stage {
+        position: absolute;
+        inset: var(--toolbar-height, 52px) 0 28px;
+        overflow: hidden;
+        touch-action: none;
+        cursor: grab;
+      }
+      #stage.dragging {
+        cursor: grabbing;
+      }
+      img {
+        position: absolute;
+        left: 0;
+        top: 0;
+        max-width: none;
+        transform-origin: 0 0;
+        user-select: none;
+        -webkit-user-drag: none;
+        will-change: transform;
+      }
+      footer {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        height: 28px;
+        padding: 5px 16px;
+        color: #a8b9bd;
+        font-size: 12px;
+      }
+      #menu {
+        position: fixed;
+        padding: 6px;
+        margin: 0;
+        background: #26363b;
+        border: 1px solid #567076;
+        border-radius: 9px;
+        z-index: 2;
+        box-shadow: 0 8px 28px #0006;
+      }
+      #menu button {
+        display: block;
+        width: 100%;
+        border: 0;
+        text-align: left;
+        background: transparent;
+      }
+      #menu button:hover {
+        background: #415b60;
+      }
+      #status {
+        position: absolute;
+        left: 20px;
+        bottom: 40px;
+        background: #26363b;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <button data-action="fit">适应窗口</button><button data-action="actual">原始大小</button
+      ><button data-action="out" aria-label="缩小">−</button><span id="percent">100%</span
+      ><button data-action="in" aria-label="放大">＋</button><button data-action="copy">复制</button
+      ><button data-action="save">另存为</button>
+    </header>
+    <main id="stage"><img id="image" alt="聊天图片" draggable="false" /></main>
+    <footer>滚轮缩放 · 拖动查看 · 双击切换原尺寸 · Esc 关闭</footer>
+    <div id="menu" hidden>
+      <button data-action="fit">适应窗口</button><button data-action="actual">原始大小</button
+      ><button data-action="copy">复制图片</button><button data-action="save">另存为</button>
+    </div>
+    <div id="status" role="status" hidden></div>
+    <script src="./shiye-image-viewer.js"></script>
+  </body>
+</html>

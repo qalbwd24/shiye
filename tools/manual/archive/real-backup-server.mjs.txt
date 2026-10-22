@@ -1,5 +1,0 @@
-// Historical real-data acceptance script. Read tools/manual/README.md first.
-import {createDiaryServer} from '../../server.mjs';
-const server=await createDiaryServer({dataDir:'F:/我的奋斗/真实备份验收',seed:false});
-server.listen(18767,'127.0.0.1',()=>console.log('Real backup local validation service ready'));
-

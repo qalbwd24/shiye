@@ -4,9 +4,10 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { createHash } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fixture } from './helpers.mjs';
-import { resolveVideoRuntime } from '../src/server/routes/media-compression.mjs';
+import { createRoutes, resolveVideoRuntime } from '../src/server/routes/media-compression.mjs';
 const exec = promisify(execFile);
 let runtime;
 try {
@@ -15,6 +16,13 @@ try {
   /* Optional external runtime is not bundled. */
 }
 const skip = runtime ? false : 'External FFmpeg/FFprobe runtime not installed';
+const deferred = () => {
+  let resolve;
+  const promise = new Promise((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+};
 async function upload(base, bytes, quality = 'balanced') {
   const response = await fetch(base + '/api/media-compression-upload?quality=' + quality, {
     method: 'POST',
@@ -39,6 +47,89 @@ async function finished(request, id) {
   }
   throw Error('Synthetic video job timed out');
 }
+test(
+  'done and error stay unpublished while staged-file cleanup is blocked',
+  { skip, timeout: 10000 },
+  async (t) => {
+    for (const terminal of ['done', 'error']) {
+      await t.test(terminal, async (subtest) => {
+        const { dir } = await fixture(subtest);
+        const staging = path.join(dir, 'media-staging');
+        const bytes = Buffer.from('synthetic duplicate upload');
+        const existing = {
+          id: 'existing-media',
+          originalSha256: createHash('sha256').update(bytes).digest('hex'),
+          compressionQuality: 'balanced',
+        };
+        const entered = deferred(),
+          release = deferred(),
+          unlinked = deferred();
+        const unlink = fs.unlink;
+        subtest.mock.method(fs, 'unlink', async (file) => {
+          if (path.dirname(file) === staging && file.endsWith('.uploading')) {
+            entered.resolve();
+            await release.promise;
+            try {
+              return await unlink(file);
+            } finally {
+              unlinked.resolve();
+            }
+          }
+          return unlink(file);
+        });
+        const route = createRoutes({
+          dataDir: dir,
+          getDb: () => {
+            if (terminal === 'error') throw Error('Synthetic processing failure');
+            return { media: [existing] };
+          },
+          mutate: () => assert.fail('Duplicate/failed job must not mutate media'),
+          reply: (res, status, value) => {
+            res.status = status;
+            res.value = value;
+          },
+          fail: (status, message) => Object.assign(Error(message), { status }),
+        });
+        const accepted = {};
+        await route(
+          {
+            method: 'POST',
+            url: '/api/media-compression-upload?quality=balanced',
+            headers: { 'content-type': 'video/mp4' },
+            async *[Symbol.asyncIterator]() {
+              yield bytes;
+            },
+          },
+          accepted,
+          '/api/media-compression-upload',
+        );
+        assert.equal(accepted.status, 202);
+        const request = async (url) => {
+          const res = {};
+          await route({ method: 'GET' }, res, url);
+          return { status: res.status, json: async () => res.value };
+        };
+        try {
+          await entered.promise;
+          const during = await (
+            await request('/api/media-compression/' + accepted.value.id)
+          ).json();
+          assert.equal(during.state, 'processing');
+          assert.ok(during.progress < 1);
+          assert.deepEqual(await fs.readdir(staging), [accepted.value.id + '.uploading']);
+        } finally {
+          release.resolve();
+          await unlinked.promise;
+        }
+        const result = await finished(request, accepted.value.id);
+        assert.equal(result.state, terminal);
+        assert.deepEqual(await fs.readdir(staging), []);
+        if (terminal === 'done') assert.equal(result.media.id, existing.id);
+        else assert.match(result.error, /Synthetic processing failure/);
+      });
+    }
+  },
+);
 test(
   'video compression retains frame rate, audio and capture time and registers only the smaller result',
   { skip },

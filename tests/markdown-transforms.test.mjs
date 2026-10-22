@@ -125,9 +125,18 @@ test('structure Enter turns auto-indented thematic markers into separate blocks'
     assert.equal(apply(source, transaction), `前段\n\n${marker}\n\n\n后段`);
     assert.equal(transaction.selection.anchor, `前段\n\n${marker}\n\n`.length);
   }
-  const setext = '已有标题\n---';
-  assert.equal(markdownStructureEnter(setext, setext.length, setext.length), null);
-  assert.match(marked.parse(setext), /<h2>已有标题<\/h2>/);
+  for (const prefix of ['', '　　']) {
+    for (const enabled of [false, true]) {
+      const source = `前文第一行\n前文第二行\n${prefix}---`;
+      const result = apply(
+        source,
+        markdownStructureEnter(source, source.length, source.length, enabled),
+      );
+      assert.match(result, /^前文第一行\n前文第二行\n\n---\n\n/);
+      assert.doesNotMatch(marked.parse(result), /<h2>/);
+      assert.match(marked.parse(result), /<hr>/);
+    }
+  }
 });
 
 test('recovered noninitial ordered list parses as a list after prose', () => {
@@ -213,10 +222,18 @@ test('structure Enter does not rewrite fenced or indented code examples', () => 
   assert.equal(markdownStructureEnter(closing, closing.length, closing.length), null);
 });
 
-test('explicit horizontal-rule command separates adjacent prose and replaces only the selection', () => {
+test('explicit horizontal-rule command separates prose and preserves selected paragraphs', () => {
   assert.equal(
     apply('前后', transformMarkdown('前后', 1, 1, 'insertHorizontalRule')),
     '前\n\n---\n\n后',
   );
-  assert.equal(apply('待替换', transformMarkdown('待替换', 0, 3, 'insertHorizontalRule')), '---');
+  const source = '前一段\n第二段';
+  assert.equal(
+    apply(source, transformMarkdown(source, 0, source.length, 'insertHorizontalRule')),
+    source + '\n\n---',
+  );
+  assert.equal(
+    apply('前中后', transformMarkdown('前中后', 1, 2, 'insertHorizontalRule')),
+    '前中\n\n---\n\n后',
+  );
 });

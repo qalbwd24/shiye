@@ -1,4 +1,5 @@
 import { dayKey, ordinal, isHidden } from './entry-state.js';
+import { dateParts } from './time-zone.js';
 export function statistics(
   entries,
   media,
@@ -11,7 +12,7 @@ export function statistics(
       !e.draft &&
       (includeDemo || !e.demo) &&
       (includeHidden || !isHidden(e)) &&
-      (!year || new Date(e.date).getFullYear() === Number(year)) &&
+      (!year || +dateParts(e.date).year === Number(year)) &&
       (!category || e.category === category),
   );
   const days = new Map(),
@@ -29,7 +30,7 @@ export function statistics(
     }
     const key = dayKey(e.date);
     days.set(key, (days.get(key) || 0) + 1);
-    months[new Date(e.date).getMonth()]++;
+    months[+dateParts(e.date).month - 1]++;
     for (const field of ['category', 'mood', 'weather', 'location']) {
       const value = e[field] || '未填写';
       groups[field][value] = (groups[field][value] || 0) + 1;

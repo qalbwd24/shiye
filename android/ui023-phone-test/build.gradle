@@ -1,0 +1,26 @@
+plugins { id 'com.android.application' version '8.13.2' }
+
+def workspace = rootProject.projectDir.parentFile.parentFile
+def stage = new File(workspace, 'tmp/android-chat-ui023/stage')
+layout.buildDirectory = new File(workspace, 'tmp/android-ui023-phone-test/app-build')
+android {
+    namespace 'dev.shiye.app'
+    compileSdk 36
+    buildToolsVersion '36.0.0'
+    defaultConfig { applicationId 'dev.shiye.app'; minSdk 26; targetSdk 35; versionCode 25; versionName '0.23.0-ui-test' }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+    sourceSets { main {
+        manifest.srcFile new File(stage, 'native/AndroidManifest.xml')
+        java.srcDirs = [new File(stage, 'native/java')]
+        res.srcDirs = [new File(stage, 'native/res')]
+        assets.srcDirs = [new File(stage, 'assets')]
+    } }
+    signingConfigs { debug { storeFile file('D:/codex-tools/android-state/keys/shiye-prototype-debug.jks'); storePassword 'android'; keyAlias 'androiddebugkey'; keyPassword 'android' } }
+}
+tasks.register('verifyUiStage') {
+    doLast {
+        def receipt = new groovy.json.JsonSlurper().parse(new File(workspace, 'outputs/2026-10-19-android-ui023/stage-manifest.json'))
+        receipt.stageHashes.each { name, sha -> if (java.security.MessageDigest.getInstance('SHA-256').digest(new File(stage,name).bytes).encodeHex().toString()!=sha) throw new GradleException('Frozen stage changed: '+name) }
+    }
+}
+tasks.named('preBuild').configure { dependsOn tasks.named('verifyUiStage') }

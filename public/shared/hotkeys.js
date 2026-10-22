@@ -50,6 +50,52 @@ export function chord(e) {
 }
 export const binding = (c, settings) =>
   Object.hasOwn(settings || {}, c.id) ? settings[c.id] : c.default;
+
+// Keep saved custom bindings intact, but require explicit opt-in before they run.
+export function effectiveShortcuts(settings, enabled = false) {
+  return enabled
+    ? settings || {}
+    : Object.fromEntries(commands.map((c) => [c.id, c.id === 'datetime' ? 'Alt+T' : null]));
+}
+
+export function pausedShortcut(event, settings, enabled = false) {
+  if (enabled) return false;
+  if (event.getModifierState?.('AltGraph')) return false;
+  const value = chord(event);
+  // Basic text editing, focus navigation, dialog keys and IME remain native.
+  if (!value || ['Tab', 'Escape', 'Enter', 'Alt+T'].includes(value)) return false;
+  if (!event.ctrlKey && !event.altKey && !event.metaKey && !/^F\d+$/.test(event.key)) return false;
+  if (/^(Ctrl|Meta)\+(A|C|V|X|Z|Y|Shift\+Z|Shift\+V)$/.test(value)) return false;
+  return (
+    commands.some(
+      (c) => c.id !== 'datetime' && (c.default === value || binding(c, settings) === value),
+    ) ||
+    (settings?.datetime && settings.datetime !== 'Alt+T' && settings.datetime === value) ||
+    /^(Ctrl\+)?Alt\+(Shift\+)?Arrow(Up|Down|Left|Right)$/.test(value) ||
+    [
+      'Alt+ArrowLeft',
+      'Alt+ArrowRight',
+      'Alt+ArrowUp',
+      'Alt+ArrowDown',
+      'Alt+Shift+ArrowUp',
+      'Alt+Shift+ArrowDown',
+      'Ctrl+Alt+ArrowUp',
+      'Ctrl+Alt+ArrowDown',
+      'Ctrl+Enter',
+      'Alt+L',
+      'Ctrl+[',
+      'Ctrl+]',
+      'Ctrl+Alt+\\',
+      'Ctrl+Shift+K',
+      'Ctrl+Shift+\\',
+      'Ctrl+/',
+      'Alt+A',
+      'Ctrl+M',
+      'Ctrl+U',
+      'Alt+U',
+    ].includes(value)
+  );
+}
 export function conflicts(value, id, settings) {
   return commands.filter((c) => c.id !== id && value && binding(c, settings) === value);
 }
@@ -68,3 +114,34 @@ export function match(event, settings, inEditor, typing) {
         /^F\d+$/.test(event.key)),
   );
 }
+
+// Native resident-window commands use their own host, outside web-page key handlers.
+export const desktopWindowCommands = Object.freeze([
+  {
+    id: 'chat-window',
+    name: '唤回／收起随想并定位输入末尾',
+    default: 'F15',
+    scope: 'desktop',
+    configurableKeys: 'F13–F24',
+  },
+]);
+
+// Independent notes UI; these bindings never install global desktop hotkeys.
+export const notesWorkspaceCommands = Object.freeze([
+  { id: 'new-note', name: '新建便签', default: 'Ctrl+T', aliases: ['Ctrl+N'], scope: 'notes' },
+  { id: 'close-note', name: '关闭当前标签', default: 'Ctrl+W', scope: 'notes' },
+  { id: 'reopen-note', name: '重开刚关闭的标签', default: 'Ctrl+Shift+T', scope: 'notes' },
+  { id: 'next-note', name: '下一个标签', default: 'Ctrl+Tab', scope: 'notes' },
+  { id: 'previous-note', name: '上一个标签', default: 'Ctrl+Shift+Tab', scope: 'notes' },
+  { id: 'rename-note', name: '编辑便签标题', default: 'F2', scope: 'notes' },
+  { id: 'save-notes', name: '立即保存便签草稿', default: 'Ctrl+S', scope: 'notes' },
+  {
+    id: 'notes-zoom-in',
+    name: '放大便签正文',
+    default: 'Ctrl+=',
+    aliases: ['Ctrl++', 'Ctrl+Shift++'],
+    scope: 'notes',
+  },
+  { id: 'notes-zoom-out', name: '缩小便签正文', default: 'Ctrl+-', scope: 'notes' },
+  { id: 'notes-zoom-reset', name: '恢复便签正文缩放', default: 'Ctrl+0', scope: 'notes' },
+]);

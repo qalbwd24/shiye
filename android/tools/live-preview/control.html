@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>拾页 · Android 实时样式预览</title>
+  <style>
+    body {
+      font:
+        15px system-ui,
+        sans-serif;
+      margin: 28px auto;
+      padding: 0 20px;
+      max-width: 1100px;
+      color: #183249;
+      background: #edf7fd;
+    }
+    h1 {
+      font-size: 24px;
+    }
+    button,
+    select,
+    input {
+      font: inherit;
+      padding: 8px;
+      margin: 4px;
+      border: 1px solid #a4c7de;
+      border-radius: 6px;
+    }
+    button {
+      cursor: pointer;
+      background: #fff;
+    }
+    button:disabled {
+      opacity: 0.5;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-all;
+      background: #fff;
+      padding: 16px;
+      border-radius: 8px;
+    }
+    main {
+      display: grid;
+      grid-template-columns: minmax(300px, 1fr) minmax(240px, 1fr);
+      gap: 24px;
+    }
+    label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    input {
+      width: 140px;
+    }
+    img {
+      max-width: 100%;
+      max-height: 75vh;
+      border: 1px solid #aac8dc;
+    }
+    small {
+      display: block;
+      line-height: 1.6;
+    }
+    #error {
+      color: #a02929;
+      white-space: pre-wrap;
+    }
+    #parameters {
+      max-height: 55vh;
+      overflow: auto;
+    }
+    @media (max-width: 700px) {
+      main {
+        display: block;
+      }
+    }
+  </style>
+  <h1>拾页 · Android 实时样式预览</h1>
+  <p>
+    只覆盖当前真实 WebView 的 CSS；保留原地址与桥。源码 CSS 修改自动生效，原生列表、系统栏和 Java
+    仍需构建。
+  </p>
+  <button id="toggle">暂停预览并恢复包内样式</button
+  ><button id="refresh">刷新状态</button>
+  <p id="error" role="alert"></p>
+  <pre id="status">正在连接…</pre>
+  <main>
+    <section>
+      <h2>临时参数</h2>
+      <select id="kind">
+        <option value="chat">随想</option>
+        <option value="editor">思绪编辑</option>
+      </select>
+      <small
+        >只列出源码首个 :root 已有颜色变量与受限尺寸参数（单位 px）。改值后点「应用预览」，不保存
+        App 偏好。源码有并行更改时会拒绝旧版本保存。</small
+      >
+      <p id="source"></p>
+      <div id="parameters"></div>
+      <button id="apply">应用临时预览</button><button id="reset">清除临时参数</button
+      ><button id="save">保存这些参数到源码</button>
+      <small
+        >保存只修改上面指定 CSS 中已有 :root 变量，不修改或覆盖 App 显式偏好。持久字号请在 App
+        排版设置中修改。临时预览会优先显示所选值，清除后恢复 App 偏好。完整 CSS
+        调整请直接编辑该源文件，watch 会自动注入。</small
+      >
+    </section>
+    <section>
+      <h2>真实页面截图</h2>
+      <select id="page"></select
+      ><button id="capture">手动截取</button>
+      <small
+        >只有点击时抓取；截图仅在此浏览器内存显示，不写日志或磁盘。需要留证时手动保存到项目
+        outputs/2026-10-17-android-live-preview。</small
+      >
+      <p><img id="screenshot" hidden alt="手动抓取的真实 WebView 画面" /></p>
+    </section>
+  </main>
+  <script>
+    const token = '__SESSION_TOKEN__';
+    const $ = (id) => document.getElementById(id);
+    let state, editingHash;
+    async function request(route, data) {
+      const response = await fetch(route, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Preview-Token': token },
+        body: JSON.stringify(data),
+      });
+      const value = await response.json();
+      if (!response.ok) throw Error(value.error);
+      return value;
+    }
+    function parameters() {
+      const source = state?.sources[$('kind').value];
+      if (!source) return;
+      editingHash = source.hash;
+      $('source').textContent = source.path + ' · ' + source.hash.slice(0, 12);
+      $('parameters').replaceChildren();
+      for (const [name, value] of Object.entries(source.variables)) {
+        const label = document.createElement('label');
+        label.append(document.createTextNode(name));
+        const input = document.createElement('input');
+        input.dataset.name = name;
+        const control = source.controls?.[name] ?? { type: 'text', unit: '' };
+        input.type = control.type;
+        input.dataset.unit = control.unit;
+        input.required = true;
+        if (control.type === 'number') {
+          input.min = String(control.min);
+          input.max = String(control.max);
+          input.step = String(control.step);
+          input.value = (source.overrides[name] ?? value).replace(/px$/, '');
+          input.title = `${control.min}–${control.max} px`;
+        } else {
+          input.value = source.overrides[name] ?? value;
+          input.pattern = '#[0-9a-fA-F]{3,4}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}';
+          input.title = '十六进制颜色，例如 #428ac4 或 #428ac480';
+        }
+        input.setAttribute('aria-label', name + (control.unit ? ' (px)' : ''));
+        label.append(input);
+        if (control.unit) label.append(document.createTextNode(' px'));
+        $('parameters').append(label);
+      }
+    }
+    function render(value) {
+      state = value;
+      $('status').textContent = JSON.stringify(
+        {
+          state: value.state,
+          serial: value.serial,
+          package: value.package,
+          enabled: value.enabled,
+          pages: value.pages,
+          errors: value.errors,
+        },
+        null,
+        2,
+      );
+      $('toggle').textContent = value.enabled ? '暂停预览并恢复包内样式' : '恢复预览';
+      const current = $('page').value;
+      $('page').replaceChildren();
+      for (const page of value.pages) {
+        const option = document.createElement('option');
+        option.value = page.key;
+        option.textContent = page.kind + ' · ' + page.path;
+        $('page').append(option);
+      }
+      if ([...$('page').options].some((o) => o.value === current)) $('page').value = current;
+    }
+    async function refresh() {
+      const value = await (await fetch('/status')).json();
+      render(value);
+      if (!editingHash) parameters();
+    }
+    function values() {
+      return Object.fromEntries(
+        [...$('parameters').querySelectorAll('input')].map((i) => {
+          if (!i.checkValidity()) {
+            i.reportValidity();
+            throw Error(`参数不在允许范围：${i.dataset.name}`);
+          }
+          return [i.dataset.name, i.value.trim() + (i.dataset.unit ?? '')];
+        }),
+      );
+    }
+    function guarded(action) {
+      return async () => {
+        try {
+          $('error').textContent = '';
+          await action();
+        } catch (error) {
+          $('error').textContent = error.message;
+        }
+      };
+    }
+    const stopButton = document.createElement('button');
+    stopButton.textContent = '退出工具并恢复包内样式';
+    $('toggle').after(stopButton);
+    stopButton.onclick = guarded(async () => {
+      await request('/stop', {});
+      $('status').textContent = '正在撤销注入和端口转发；请查看终端退出回执。';
+    });
+    $('kind').onchange = parameters;
+    $('refresh').onclick = guarded(async () => {
+      await refresh();
+      parameters();
+    });
+    $('toggle').onclick = guarded(async () =>
+      render(await request('/enabled', { enabled: !state.enabled })),
+    );
+    $('apply').onclick = guarded(async () =>
+      render(
+        await request('/preview', { kind: $('kind').value, hash: editingHash, values: values() }),
+      ),
+    );
+    $('reset').onclick = guarded(async () => {
+      render(await request('/preview', { kind: $('kind').value, hash: editingHash, values: {} }));
+      parameters();
+    });
+    $('save').onclick = guarded(async () => {
+      if (!confirm('将这些参数写入 ' + state.sources[$('kind').value].path + '？')) return;
+      render(
+        await request('/save', { kind: $('kind').value, hash: editingHash, values: values() }),
+      );
+      parameters();
+    });
+    $('capture').onclick = guarded(async () => {
+      const result = await request('/screenshot', { key: $('page').value });
+      $('screenshot').src = 'data:image/png;base64,' + result.png;
+      $('screenshot').hidden = false;
+    });
+    guarded(refresh)();
+    setInterval(guarded(refresh), 1500);
+  </script>
+</html>

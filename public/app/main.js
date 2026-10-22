@@ -1,5 +1,15 @@
-import { createBodyEditor } from '../editor/body-editor.js';
+import { createQuickDocumentEditor } from '../editor/quick-document-editor.js';
+import { createCategoryPicker } from '../features/category-picker.js';
+import { installTitleNavigation } from '../features/title-navigation.js';
+import { createEntrySave } from '../features/entry-save.js';
+import { createWindowRefresh } from '../features/window-refresh.js';
+import { chooseEntryConflict } from '../features/entry-conflict-dialog.js';
+import { installQuickCapture } from '../features/quick-capture-window.js';
+import { createQuickResumePosition } from '../features/quick-resume-position.js';
+import { hasQuickContent } from '../shared/quick-capture.js';
 import { getEditorDocument } from '../shared/editor-document.js';
+import { richMediaReferences } from '../shared/rich-document.js';
+import { capturePastedFiles } from '../core/clipboard-files.js';
 import { createPersistence } from '../editor/persistence.js';
 import { createMediaImport } from '../features/media-import.js';
 import { sortedTaxonomy } from '../shared/taxonomy.js';
@@ -9,6 +19,7 @@ import { createReturnNavigation, restoreBrowsePosition } from '../features/retur
 import { createLegacyBackups } from '../features/legacy-backups.js';
 import { download } from '../core/downloads.js';
 import { LIMITS } from '../shared/limits.js';
+import { dateParts, formatZoned, parseZonedInput } from '../shared/time-zone.js';
 import {
   $,
   $$,
@@ -25,8 +36,39 @@ import { api, uploadLegacyFile } from '../core/api.js';
 import { installOffline } from '../features/index.js';
 import { isHidden } from '../shared/insights.js';
 let offline;
+let quickWindow;
+let windowRefresh;
+const launchParams = new URLSearchParams(location.search);
+const isQuick = launchParams.get('quick') === '1';
+let richQuickAvailable = false;
+let lastInlineAssets = '';
+document.body.classList.toggle('quick-capture', isQuick);
+const categoryPicker = createCategoryPicker({ getLibrary: () => library });
+let freezeCount = 0;
+function freezeEditor() {
+  freezeCount++;
+  $('#editorPanel').inert = true;
+  return () => {
+    freezeCount--;
+    $('#editorPanel').inert = freezeCount > 0;
+  };
+}
+const saveEntry = createEntrySave({
+  api,
+  freeze: freezeEditor,
+  chooseConflict: chooseEntryConflict,
+  toast,
+});
 
-import { commands, chord, binding, conflicts, match } from '../shared/hotkeys.js';
+import {
+  commands,
+  chord,
+  binding,
+  conflicts,
+  match,
+  effectiveShortcuts,
+  pausedShortcut,
+} from '../shared/hotkeys.js';
 
 let library = { entries: [], categories: [], media: [], imports: [] },
   selected = null,
@@ -37,42 +79,82 @@ let library = { entries: [], categories: [], media: [], imports: [] },
   ascending = false,
   query = '',
   calendarDate = new Date();
+let calendarInitialized = false;
 let listLimit = LIMITS.pageEntries;
 let detailEntry = null;
 let recordingShortcut = null,
   shortcutQuery = '';
-const shortcuts = () => library.settings?.shortcuts || {};
+const storedShortcuts = () => library.settings?.shortcuts || {};
+const extendedShortcuts = () => library.settings?.preferences?.extendedShortcuts === true;
+const shortcuts = () => effectiveShortcuts(storedShortcuts(), extendedShortcuts());
 
 const persistence = createPersistence({
+  saveEntry,
+  async onIdentity(entry, oldId) {
+    if (selected === oldId) selected = entry.id;
+    bodyEditor.syncIdentity(entry, oldId);
+    if (!oldId.startsWith('draft-')) {
+      entry._captureToken = null;
+      const original = await api('/api/entries/' + oldId);
+      if (!library.entries.some((e) => e.id === oldId)) library.entries.push(original);
+    }
+  },
+  async onEntrySaved(entry, saved) {
+    if (isQuick && hasQuickContent(saved))
+      await api('/api/quick-history', { method: 'POST', data: { entryId: saved.id } });
+    if (current() === entry && document.activeElement?.closest?.('#editorPanel') === null)
+      renderEditor();
+    syncChannel?.postMessage({ type: 'saved', id: saved.id });
+  },
   api,
   sanitize,
   status,
   toast,
   current,
-  onDirty: countWords,
+  onDirty() {
+    countWords();
+    const entry = current();
+    const assets =
+      entry?.contentFormat === 'richdoc'
+        ? JSON.stringify([entry.id, richMediaReferences(entry.body).map((image) => image.assetId)])
+        : '';
+    if (assets !== lastInlineAssets) {
+      lastInlineAssets = assets;
+      renderAttachments();
+    }
+    windowRefresh?.invalidate();
+  },
+  onContentChanged: countWords,
+  syncEditor: (entry, options) => bodyEditor.commit(options),
   onSaved() {
     renderList();
     renderSide();
+    windowRefresh?.resume();
   },
 });
 const { markDirty, flush } = persistence;
+const syncChannel =
+  typeof BroadcastChannel === 'function' ? new BroadcastChannel('shiye.windows.v1') : null;
 const editorCommands = createEditorCommands({ $, sanitize, current, markDirty });
-const bodyEditor = createBodyEditor({
-  $,
-  sanitize,
-  escape,
-  modal,
-  closeModal,
-  toast,
-  current,
-  markDirty,
-  flush,
-  pause: persistence.pause,
-  get library() {
-    return library;
+const bodyEditor = createQuickDocumentEditor(
+  {
+    $,
+    sanitize,
+    escape,
+    modal,
+    closeModal,
+    toast,
+    current,
+    markDirty,
+    flush,
+    pause: persistence.pause,
+    get library() {
+      return library;
+    },
+    upload: (...args) => upload(...args),
   },
-  upload: (...args) => upload(...args),
-});
+  { richNewDocuments: () => richQuickAvailable },
+);
 function command(name, value) {
   if (!bodyEditor.command(name, value)) editorCommands.command(name, value);
 }
@@ -152,6 +234,7 @@ const returnNavigation = createReturnNavigation({
 });
 
 const mediaImport = createMediaImport({
+  editor: bodyEditor,
   $,
   escape,
   toast,
@@ -177,15 +260,31 @@ function status(text, error = false) {
 }
 async function refreshLibrary() {
   await flush();
-  library = await api('/api/library');
+  applyLibrary(await api('/api/library'));
+}
+function applyLibrary(nextLibrary) {
+  const previous = library.entries;
+  library = nextLibrary;
+  for (const entry of previous) {
+    if (entry._unsaved) library.entries.unshift(entry);
+    else if (entry._captureToken) {
+      const next = library.entries.find((e) => e.id === entry.id);
+      if (next) next._captureToken = entry._captureToken;
+    }
+  }
   offline?.apply();
+  if (!calendarInitialized) {
+    const p = dateParts(new Date());
+    calendarDate = new Date(+p.year, +p.month - 1, 1);
+    calendarInitialized = true;
+  }
   renderSide();
 }
 function current() {
   return library.entries.find((e) => e.id === selected);
 }
 function renderSide() {
-  const live = library.entries.filter((e) => !e.deleted && !e.draft && !isHidden(e));
+  const live = library.entries.filter((e) => !e._unsaved && !e.deleted && !e.draft && !isHidden(e));
   $('#allCount').textContent = live.length;
   $('#allEntries').classList.toggle('active', view === 'all' && !category && !tag);
   const colors = ['#72b8b7', '#b8a4cc', '#d1b67f', '#8fadcd', '#c49c96'];
@@ -211,6 +310,7 @@ function filtered() {
   return library.entries
     .filter(
       (e) =>
+        !e._unsaved &&
         (view === 'trash'
           ? e.deleted
           : view === 'hidden'
@@ -265,13 +365,13 @@ function renderList() {
     entries
       .slice(0, listLimit)
       .map((e) => {
-        const d = new Date(e.date),
-          m = `${d.getFullYear()} 年 ${d.getMonth() + 1} 月`,
+        const d = dateParts(e.date),
+          m = `${d.year} 年 ${Number(d.month)} 月`,
           heading = m !== month ? `<div class="month-label">${m}</div>` : '';
         month = m;
         return (
           heading +
-          `<button class="entry-card ${e.id === selected ? 'active' : ''}" data-entry="${e.id}">${coverMarkup(e, mediaById, escape)}<div class="card-date"><strong>${String(d.getDate()).padStart(2, '0')}</strong>${d.toLocaleDateString('zh-CN', { weekday: 'short' })} · ${timeText(d)}<span class="card-weather">${escape(e.weather)}</span></div><h3>${escape(e.title || '无标题日记')}</h3>${offline?.prefs().showPreview === false ? '' : `<p>${escape(textOf(e.content).slice(0, 240) || '留一点空间，给今天的故事。')}</p>`}<div class="card-bottom"><span class="small-chip">${escape(e.category)}</span>${e.tags[0] ? `<span># ${escape(e.tags[0])}</span>` : ''}${e.pinned ? icon('pin') : e.attachments.length ? icon('image') : ''}${(library.conflicts || []).some((item) => item.kind === 'entry' && item.status === 'open' && [item.left, item.right].includes(e.id)) ? '<span class="conflict-badge">待核对</span>' : ''}</div></button>`
+          `<button class="entry-card ${e.id === selected ? 'active' : ''}" data-entry="${e.id}">${coverMarkup(e, mediaById, escape)}<div class="card-date"><strong>${d.day}</strong>${formatZoned(e.date, { weekday: 'short' })} · ${timeText(e.date)}<span class="card-weather">${escape(e.weather)}</span></div><h3>${escape(e.title || '无标题日记')}</h3>${offline?.prefs().showPreview === false ? '' : `<p>${escape(textOf(e.content).slice(0, 240) || '留一点空间，给今天的故事。')}</p>`}<div class="card-bottom"><span class="small-chip">${escape(e.category)}</span>${e.tags[0] ? `<span># ${escape(e.tags[0])}</span>` : ''}${e.pinned ? icon('pin') : e.attachments.length ? icon('image') : ''}${(library.conflicts || []).some((item) => item.kind === 'entry' && item.status === 'open' && [item.left, item.right].includes(e.id)) ? '<span class="conflict-badge">待核对</span>' : ''}</div></button>`
         );
       })
       .join('') || '<div class="empty-list">这里还没有记录<br>换个关键词，或写下新的一页。</div>';
@@ -295,22 +395,23 @@ function ensureOption(select, value) {
 }
 function renderEditor() {
   const e = current();
+  if (e) persistence.observe(e);
   offline?.readingPosition.select(e?.id || null);
   $('#editorWrap').classList.toggle('hidden', !e);
   $('#editorEmpty').classList.toggle('hidden', !!e);
   offline?.comments.render(e);
   if (!e) {
     bodyEditor.render({ content: '', deleted: true });
+    offline?.entryReading.render(null);
     renderAttachments();
     return;
   }
   $('#entryDateline').textContent =
     window.innerWidth < 650
       ? '‹ 返回列表'
-      : dateText(e.date) +
-        ' · ' +
-        new Date(e.date).toLocaleDateString('zh-CN', { weekday: 'long' });
-  $('#entryCategory').innerHTML = library.categories
+      : dateText(e.date) + ' · ' + formatZoned(e.date, { weekday: 'long' });
+  $('#entryCategory').innerHTML = sortedTaxonomy(library, 'category')
+    .map((item) => item.name)
     .map((c) => `<option>${escape(c)}</option>`)
     .join('');
   ensureOption($('#entryCategory'), e.category);
@@ -321,13 +422,22 @@ function renderEditor() {
   ensureOption($('#entryWeather'), e.weather);
   ensureOption($('#entryMood'), e.mood);
   bodyEditor.render(e);
+  offline?.entryReading.render(e);
   $('#demoBadge').textContent = e.demo ? '体验示例' : e.legacy ? '旧格式导入' : '';
   $('#demoBadge').classList.toggle('hidden', !e.demo && !e.legacy);
   $('#pinButton').classList.toggle('active', e.pinned);
   $('#entryCover').classList.toggle('hidden', !e.cover);
   $('#entryCover').classList.toggle('evening', e.cover === 'evening');
   $('#footerDate').textContent = '';
-  status(e.deleted ? '在回收站 · 可恢复' : '已保存到本地');
+  status(
+    e.deleted
+      ? '在回收站 · 可恢复'
+      : e._unsaved
+        ? '尚未输入 · 空白不会保存'
+        : persistence.pending
+          ? '正在保存…'
+          : '已保存到本地',
+  );
   countWords();
   renderAttachments();
   editorCommands.resetSelection();
@@ -364,7 +474,7 @@ async function openPreviewEntry(id, active) {
   return true;
 }
 async function selectEntry(id) {
-  await flush();
+  await finishCurrent();
   await offline?.readingMode();
   selected = id;
   detailEntry = null;
@@ -383,11 +493,19 @@ async function withLibraryMutation(action) {
   }
 }
 async function newEntry(date = new Date(), initial = {}) {
-  await flush();
+  await finishCurrent();
+  const chosenCategory = initial._confirmedCategory || (await categoryPicker.open());
+  if (chosenCategory === null) return false;
+  library.entries = library.entries.filter((entry) => !entry._unsaved);
   returnNavigation.clear();
   detailEntry = null;
-  const chosenCategory = initial.category || category || '日常';
-  if (offline?.prefs().nightYesterday && date.getHours() < 4) date.setDate(date.getDate() - 1);
+  if (offline?.prefs().nightYesterday && +dateParts(date).hour < 4) {
+    const p = dateParts(date);
+    const previous = new Date(Date.UTC(+p.year, +p.month - 1, +p.day - 1))
+      .toISOString()
+      .slice(0, 10);
+    date = parseZonedInput(`${previous}T${p.hour}:${p.minute}:${p.second}`);
+  }
   const boundTemplate = library.templates?.find((t) => !t.deleted && t.category === chosenCategory);
   view = 'all';
   day = null;
@@ -395,31 +513,55 @@ async function newEntry(date = new Date(), initial = {}) {
   tag = null;
   query = '';
   $('#search').value = '';
-  const e = await api('/api/entries', {
-    method: 'POST',
-    data: {
-      title: '',
-      ...bodyEditor.newDocument(
-        boundTemplate?.content || '',
-        offline.prefs().autoIndentParagraph !== false,
-      ),
-      date: date.toISOString(),
-      category: chosenCategory,
-      tags: initial.tags || [],
-      attachments: [],
-      weather: '',
-      mood: '',
-      location: '',
-    },
-  });
+  const token = crypto.randomUUID();
+  const e = {
+    id: 'draft-' + token,
+    revision: 0,
+    history: [],
+    _unsaved: true,
+    _captureToken: token,
+    title: '',
+    ...bodyEditor.newDocument(
+      boundTemplate?.content || '',
+      offline.prefs().autoIndentParagraph !== false,
+    ),
+    date: date.toISOString(),
+    category: chosenCategory,
+    tags: initial.tags || [],
+    attachments: [],
+    weather: '',
+    mood: '',
+    location: '',
+  };
+  if (e.contentFormat === 'richdoc')
+    e.attachments = [...new Set(richMediaReferences(e.body).map((image) => image.assetId))];
   library.entries.unshift(e);
   selected = e.id;
   renderView();
   $('#journalView').classList.add('has-selected');
   bodyEditor.focus();
+  return true;
+}
+async function finishCurrent() {
+  await mediaImport.settle();
+  await flush();
+  const entry = current();
+  if (
+    entry &&
+    !entry._unsaved &&
+    entry._captureToken &&
+    !hasQuickContent(entry) &&
+    !entry.deleted
+  ) {
+    const saved = await api('/api/quick-entries/' + entry.id + '/discard-empty', {
+      method: 'POST',
+      data: { clientToken: entry._captureToken, expectedRevision: entry.revision },
+    });
+    Object.assign(entry, saved);
+  }
 }
 async function changeView(next) {
-  await flush();
+  await finishCurrent();
   returnNavigation.clear();
   detailEntry = null;
   view = next;
@@ -430,7 +572,7 @@ async function changeView(next) {
   renderView();
 }
 async function filterView({ category: cat = null, tag: t = null } = {}) {
-  await flush();
+  await finishCurrent();
   returnNavigation.clear();
   detailEntry = null;
   await offline?.showList();
@@ -442,7 +584,7 @@ async function filterView({ category: cat = null, tag: t = null } = {}) {
   $('#search').value = '';
   renderView();
 }
-function renderView() {
+function renderView({ preserveEntry = false } = {}) {
   offline?.releaseEntryReader();
   const journal = ['all', 'trash', 'drafts', 'hidden'].includes(view);
   $('#journalView').classList.toggle('hidden', !journal);
@@ -470,7 +612,12 @@ function renderView() {
       library.entries.some(
         (entry) => entry.id === detailEntry && !entry.deleted && !entry.draft && !isHidden(entry),
       );
-    if (!openedDetail && !filtered().some((e) => e.id === selected))
+    if (
+      !preserveEntry &&
+      !current()?._unsaved &&
+      !openedDetail &&
+      !filtered().some((e) => e.id === selected)
+    )
       selected = filtered()[0]?.id || null;
     renderList();
     renderEditor();
@@ -491,7 +638,7 @@ function renderAlternate() {
       (_, i) => {
         const d = new Date(start);
         d.setDate(d.getDate() + i);
-        const iso = localDate(d),
+        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
           entries = live.filter((e) => localDate(e.date) === iso);
         return `<button class="calendar-day ${d.getMonth() !== m ? 'outside' : ''} ${iso === localDate(new Date()) ? 'today' : ''}" data-day="${iso}"><strong>${d.getDate()}</strong>${entries
           .slice(0, 2)
@@ -510,7 +657,8 @@ function renderAlternate() {
       renderAlternate();
     };
     $('#todayMonth').onclick = () => {
-      calendarDate = new Date();
+      const p = dateParts(new Date());
+      calendarDate = new Date(+p.year, +p.month - 1, 1);
       renderAlternate();
     };
   } else if (view === 'stats') {
@@ -617,6 +765,8 @@ function updateKeyHints() {
       commands.find((c) => c.id === 'save'),
       shortcuts(),
     ) || '—';
+  for (const kbd of document.querySelectorAll('.search-box kbd, #newEntry kbd, #saveButton kbd'))
+    kbd.hidden = kbd.textContent === '—';
 }
 function shortcutRows() {
   const q = shortcutQuery.toLowerCase();
@@ -626,21 +776,55 @@ function shortcutRows() {
     )
     .map(
       (c) =>
-        `<div class="shortcut-row"><div><strong>${escape(c.name)}</strong><small>${escape(c.group)} · ${c.scope === 'editor' ? '仅正文编辑区' : '应用内'}</small></div><button class="shortcut-key ${recordingShortcut === c.id ? 'recording' : ''}" data-record-key="${c.id}" aria-label="设置${escape(c.name)}快捷键">${recordingShortcut === c.id ? '请按快捷键…' : escape(binding(c, shortcuts()) || '未设置')}</button><button class="icon-button" data-clear-key="${c.id}" aria-label="清除${escape(c.name)}快捷键">×</button><button class="icon-button" data-reset-key="${c.id}" aria-label="恢复${escape(c.name)}默认快捷键">↺</button></div>`,
+        `<div class="shortcut-row"><div><strong>${escape(c.name)}</strong><small>${escape(c.group)} · ${c.scope === 'editor' ? '仅正文编辑区' : '应用内'}</small></div><button class="shortcut-key ${recordingShortcut === c.id ? 'recording' : ''}" data-record-key="${c.id}" aria-label="设置${escape(c.name)}快捷键">${recordingShortcut === c.id ? '请按快捷键…' : escape(binding(c, shortcuts()) || (extendedShortcuts() ? '未设置' : '已停用'))}</button><button class="icon-button" data-clear-key="${c.id}" aria-label="清除${escape(c.name)}快捷键">×</button><button class="icon-button" data-reset-key="${c.id}" aria-label="恢复${escape(c.name)}默认快捷键">↺</button></div>`,
     )
     .join('');
+  for (const button of document.querySelectorAll('#shortcutRows button'))
+    button.disabled = !extendedShortcuts();
+  $('#resetAllShortcuts').disabled = !extendedShortcuts();
 }
 function keyboardSettings() {
   shortcutQuery = '';
   recordingShortcut = null;
   modal(
     '快捷键',
-    `<p>点击快捷键开始录入，按 Esc 取消。支持 Ctrl、Alt、Shift 组合键，也可以设置 Tab、功能键等单键；系统占用的组合键可能无法使用。</p><input class="field" id="shortcutSearch" placeholder="搜索功能或快捷键" aria-label="搜索快捷键"><div id="shortcutNotice" role="status">正文命令只在正文内生效，输入法组词期间不会触发。</div><div id="shortcutRows"></div><div class="modal-actions"><button class="secondary" id="resetAllShortcuts">全部恢复默认</button></div>`,
+    `<p>正文 Tab／Shift＋Tab 缩进始终可用。扩展命令默认只保留 Alt＋T 插入日期时间。需要自定义其他按键时，先主动启用下方开关，再点击按键录入；Esc 取消录入。</p><input class="field" id="shortcutSearch" placeholder="搜索功能或快捷键" aria-label="搜索快捷键"><div id="shortcutNotice" role="status">正文命令只在正文内生效，输入法组词期间不会触发。</div><div id="shortcutRows"></div><div class="modal-actions"><button class="secondary" id="resetAllShortcuts">全部恢复默认</button></div>`,
   );
   $('#shortcutSearch').oninput = (e) => {
     shortcutQuery = e.target.value;
     shortcutRows();
   };
+  const mode = document.createElement('label');
+  mode.className = 'check-row';
+  mode.innerHTML =
+    '<input type="checkbox" id="enableExtendedShortcuts">启用其他应用快捷键（默认关闭）';
+  $('#shortcutSearch').before(mode);
+  const toggle = $('#enableExtendedShortcuts');
+  toggle.checked = extendedShortcuts();
+  const explain = () => {
+    $('#shortcutNotice').textContent = extendedShortcuts()
+      ? '其他应用快捷键已启用，使用下方保存的配置。'
+      : '仅启用 Alt＋T 插入日期时间。其他应用快捷键已停用；复制、粘贴、全选、撤销和正常方向键操作保留。旧绑定已保留，勾选后才会恢复。';
+  };
+  toggle.onchange = async () => {
+    toggle.disabled = true;
+    recordingShortcut = null;
+    try {
+      library.settings.preferences = await api('/api/preferences', {
+        method: 'PUT',
+        data: { extendedShortcuts: toggle.checked },
+      });
+      shortcutRows();
+      updateKeyHints();
+      explain();
+    } catch (error) {
+      toggle.checked = extendedShortcuts();
+      $('#shortcutNotice').textContent = error.message;
+    } finally {
+      toggle.disabled = false;
+    }
+  };
+  explain();
   $('#resetAllShortcuts').onclick = async () => {
     try {
       library.settings = await api('/api/settings', { method: 'PUT', data: { shortcuts: {} } });
@@ -654,7 +838,8 @@ function keyboardSettings() {
   shortcutRows();
 }
 async function setShortcut(id, value, reset = false) {
-  const next = { ...shortcuts() };
+  if (!extendedShortcuts()) return false;
+  const next = { ...storedShortcuts() };
   if (reset) delete next[id];
   else next[id] = value;
   const command = commands.find((c) => c.id === id),
@@ -743,7 +928,8 @@ function bind() {
         renderSide();
         const e = current();
         if (e) {
-          $('#entryCategory').innerHTML = library.categories
+          $('#entryCategory').innerHTML = sortedTaxonomy(library, 'category')
+            .map((item) => item.name)
             .map((c) => `<option>${escape(c)}</option>`)
             .join('');
           ensureOption($('#entryCategory'), e.category);
@@ -773,22 +959,28 @@ function bind() {
     toast(ascending ? '时间从旧到新' : '时间从新到旧');
   };
   $('#bodyEditor').addEventListener('input', () => {
-    if (bodyEditor.isMarkdown) return;
+    if (bodyEditor.isStructured) return;
     if (current()) {
       current().content = $('#bodyEditor').innerHTML;
       markDirty();
     }
   });
   $('#bodyEditor').addEventListener('compositionstart', () => {
-    if (bodyEditor.isMarkdown) return;
+    if (bodyEditor.isStructured) return;
     persistence.pause();
   });
   $('#bodyEditor').addEventListener('compositionend', () => {
-    if (bodyEditor.isMarkdown) return;
+    if (bodyEditor.isStructured) return;
     if (current()) {
       current().content = $('#bodyEditor').innerHTML;
       markDirty();
     }
+  });
+  installTitleNavigation($('#entryTitle'), {
+    body: $('#bodyEditor'),
+    atBodyStart: () => bodyEditor.atStart(),
+    focusBody: () => bodyEditor.focus(),
+    canFocus: () => !!current() && !current().deleted && freezeCount === 0,
   });
   for (const [id, field] of [
     ['entryTitle', 'title'],
@@ -814,7 +1006,13 @@ function bind() {
   };
   $('#entryDate').onchange = (e) => {
     if (current() && e.target.value) {
-      current().date = new Date(e.target.value).toISOString();
+      try {
+        current().date = parseZonedInput(e.target.value).toISOString();
+      } catch (error) {
+        e.target.value = inputDate(current().date);
+        toast(error.message);
+        return;
+      }
       markDirty();
     }
   };
@@ -833,9 +1031,9 @@ function bind() {
   $('#templateButton').onclick = () => offline.templates();
   document.addEventListener('selectionchange', editorCommands.captureSelection);
   $('#bodyEditor').onpaste = (e) => {
-    if (bodyEditor.isMarkdown) return;
-    const files = [...e.clipboardData.files];
-    if (files.length) {
+    if (bodyEditor.isStructured) return;
+    const files = capturePastedFiles(e);
+    if (files) {
       e.preventDefault();
       upload(files).catch((e) => toast(e.message));
     } else {
@@ -856,6 +1054,8 @@ function bind() {
   $('#attachmentEditor').onclick = (e) => {
     const b = e.target.closest('[data-remove-media]');
     if (b && current()) {
+      if (bodyEditor.usesMedia(b.dataset.removeMedia))
+        return toast('这张图片仍在正文中，请先从正文移除，再移除附件关联');
       current().attachments = current().attachments.filter((id) => id !== b.dataset.removeMedia);
       markDirty();
       renderAttachments();
@@ -927,10 +1127,8 @@ function bind() {
   $('#exportLibrary').onclick = () => offline.backups();
   $('#helpButton').onclick = help;
   $('#cloudStatus').onclick = () =>
-    modal(
-      '本地保存，云同步待接入',
-      '<p>当前内容只保存在这台电脑，没有连接官方云或你的服务器。</p><p>你可以使用“备份与导入”生成包含媒体的加密备份，再放到服务器或网盘。原版一本日记无法直接读取新增的 .syvault2 加密层，需要在此客户端解密。</p><button class="primary" id="goBackup">打开备份与导入</button>',
-    );
+    offline?.sync?.settings?.() ||
+    modal('同步功能未加载', '<p>请先重启拾页日记，再打开云同步设置。</p>');
   $('#modalBody').addEventListener('click', (e) => {
     if (e.target.id === 'goBackup') backups();
   });
@@ -984,6 +1182,7 @@ function bind() {
     'keydown',
     (e) => {
       if (e.isComposing || e.keyCode === 229) return;
+      if (document.querySelector('dialog[open]') && !recordingShortcut) return;
       if (recordingShortcut) {
         e.preventDefault();
         e.stopPropagation();
@@ -997,10 +1196,18 @@ function bind() {
         if (value) setShortcut(recordingShortcut, value);
         return;
       }
+      if (pausedShortcut(e, storedShortcuts(), extendedShortcuts())) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
       if (document.querySelector('dialog[open]')) return;
       if (e.altKey && e.target.closest?.('[data-sort-handle]') && e.key.startsWith('Arrow')) return;
       const editor = $('#bodyEditor').contains(e.target),
         typing = !!e.target.closest('input,textarea,select,[contenteditable="true"]');
+      // Body controls own Tab/Shift+Tab, including lists/tables and IME.
+      // The configurable legacy "空两格" binding must not apply a second edit.
+      if (editor && e.key === 'Tab' && !e.ctrlKey && !e.altKey && !e.metaKey) return;
       const action = match(e, shortcuts(), editor, typing);
       if (action) {
         e.preventDefault();
@@ -1067,8 +1274,16 @@ offline = installOffline({
   markDirty,
   renderView,
   renderEditor,
+  renderAttachments,
   refreshLibrary,
   changeView,
+  returnToEditor: async () => {
+    await finishCurrent();
+    view = 'all';
+    category = tag = day = null;
+    renderView({ preserveEntry: true });
+    bodyEditor.focus();
+  },
   filtered,
   upload,
   download,
@@ -1111,12 +1326,97 @@ async function unlockGate() {
 }
 try {
   await unlockGate();
+  const capabilities = await api('/api/health');
+  richQuickAvailable =
+    isQuick &&
+    launchParams.get('richdoc') !== '0' &&
+    capabilities.contentFormats?.includes('richdoc') === true;
   await refreshLibrary();
   selected = filtered()[0]?.id || null;
   renderView();
   updateKeyHints();
-  if (offline.prefs().openView === 'calendar') await changeView('calendar');
-  if (offline.prefs().openView === 'new') await newEntry();
+  if (isQuick) {
+    selected = null;
+    renderEditor();
+    quickWindow = installQuickCapture({
+      version: capabilities.version,
+      editor: bodyEditor,
+      resumePosition: createQuickResumePosition({
+        current,
+        editor: bodyEditor,
+        title: $('#entryTitle'),
+        scroller: $('.writing-scroll'),
+      }),
+      api,
+      newEntry,
+      current,
+      flush: finishCurrent,
+      pending: () => persistence.pending,
+      freeze: freezeEditor,
+      focus: () => {
+        if (library.settings?.preferences?.quickInitialFocus === 'title') $('#entryTitle').focus();
+        else bodyEditor.focus();
+      },
+      focusBody: () => bodyEditor.focus(),
+      commit: () => bodyEditor.commit(),
+      selectEntry,
+      refreshLibrary,
+      toast,
+      chooseCategory: (options) => categoryPicker.open(options),
+      appearanceSettings: offline.quickAppearanceSettings,
+      settings: (section = 'quickAppearance') => offline.settings(section),
+      readingDocument: offline.entryReading,
+      modal,
+      closeModal,
+      cancelCategory: () => categoryPicker.cancel(),
+      syncEditor: (entry, options) => bodyEditor.commit(options),
+      launchParams,
+    });
+    await quickWindow.start();
+  } else if (launchParams.get('entry')) {
+    const id = launchParams.get('entry');
+    if (library.entries.some((e) => e.id === id && !e.deleted)) await selectEntry(id);
+    else toast('这篇日记不存在或已移入回收站');
+  } else {
+    if (offline.prefs().openView === 'calendar') await changeView('calendar');
+    if (offline.prefs().openView === 'new') await newEntry();
+  }
+  const refreshContext = () => [library, selected, view, category, tag, day, query];
+  windowRefresh = createWindowRefresh({
+    canRefresh: () =>
+      !document.hidden &&
+      !persistence.pending &&
+      !current()?._unsaved &&
+      !freezeCount &&
+      !document.querySelector('dialog[open]') &&
+      !document.activeElement?.closest?.('#editorPanel'),
+    capture: refreshContext,
+    isCurrent: (before) => before.every((value, index) => value === refreshContext()[index]),
+    fetch: () => api('/api/library'),
+    apply(snapshot) {
+      applyLibrary(snapshot);
+      // Keep this window's selected article and browsing position. Never select
+      // another window's saved article, or the first item in the refreshed list.
+      renderList();
+      if (['all', 'trash', 'drafts', 'hidden'].includes(view)) renderEditor();
+      else renderAlternate();
+    },
+  });
+  syncChannel?.addEventListener('message', ({ data }) => {
+    if (data?.type === 'saved') windowRefresh.request();
+  });
+  // Native quick WebView2 and the Edge main window have separate browser
+  // profiles. Refocusing also refreshes those windows without BroadcastChannel.
+  window.addEventListener('focus', () => windowRefresh.request());
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) windowRefresh.request();
+  });
+  for (const event of ['input', 'change', 'compositionstart', 'pointerdown', 'keydown'])
+    document.addEventListener(event, () => windowRefresh.invalidate(), true);
+  document.addEventListener('focusin', () => windowRefresh.invalidate());
+  document.addEventListener('focusout', () => windowRefresh.invalidate());
+  document.addEventListener('close', () => windowRefresh.resume(), true);
+  window.addEventListener('pagehide', () => windowRefresh.dispose(), { once: true });
 } catch (e) {
   status('无法连接本地服务', true);
   toast(e.message);

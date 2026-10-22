@@ -1,10 +1,13 @@
-﻿# Project-local release switch. Check editor save status before invoking.
+# Project-local release switch. Check editor save status before invoking.
 param([Parameter(Mandatory=$true)][string]$SourceRef, [Parameter(Mandatory=$true)][string]$ExpectedVersion)
 $ErrorActionPreference = 'Stop'
-$releaseRoot = [IO.Path]::GetFullPath('F:\我的奋斗\日记软件本地化\电脑前端')
+if (!$env:SHIYE_RELEASE_ROOT) { throw 'Set SHIYE_RELEASE_ROOT to the deployed app directory before upgrading.' }
+$releaseRoot = [IO.Path]::GetFullPath($env:SHIYE_RELEASE_ROOT)
 $sourceRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $releaseEntry = Join-Path $releaseRoot 'server.mjs'
-$nodeFile = 'D:\软件\Apps\NodeJS\node-v24.18.1-win-x64\node.exe'
+$nodeFile = if ($env:SHIYE_NODE) { $env:SHIYE_NODE } else { (Get-Command node -ErrorAction SilentlyContinue).Source }
+if (!$nodeFile) { throw 'Node runtime not found; set SHIYE_NODE to its absolute path.' }
+$snapshotRoot = if ($env:SHIYE_SNAPSHOT_ROOT) { $env:SHIYE_SNAPSHOT_ROOT } else { Join-Path $releaseRoot 'snapshots' }
 if ($ExpectedVersion -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid version.' }
 Push-Location $releaseRoot
 try {
@@ -23,7 +26,7 @@ try {
     }
     foreach ($listener in $listeners) { Stop-Process -Id $listener.OwningProcess -ErrorAction Stop }
     try {
-        $snapshot = Join-Path 'F:\我的奋斗\迁移记录' ('升级' + $ExpectedVersion + '-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+        $snapshot = Join-Path $snapshotRoot ('升级' + $ExpectedVersion + '-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
         New-Item -ItemType Directory -Path $snapshot | Out-Null
         Copy-Item -LiteralPath (Join-Path $releaseRoot 'data\diary.json') -Destination (Join-Path $snapshot 'diary-before.json')
         $branch = 'codex/release-v' + $ExpectedVersion + '-' + (Get-Date -Format 'yyyyMMdd-HHmmss')

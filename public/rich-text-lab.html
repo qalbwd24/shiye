@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'"
+    />
+    <title>拾页 · 图文试写</title>
+    <link rel="stylesheet" href="/styles/rich-text-lab.css" />
+  </head>
+  <body>
+    <header>
+      <div><strong>图文试写</strong><small>第一步 · 独立草稿，不写入日记库</small></div>
+      <output id="status" role="status">正在打开试验草稿…</output
+      ><button id="save" disabled>保存草稿</button><button id="export" disabled>导出原件</button>
+    </header>
+    <nav aria-label="试写工具">
+      <button data-action="bold" aria-label="加粗"><b>粗</b></button
+      ><button data-action="italic" aria-label="斜体"><i>斜</i></button
+      ><button data-action="highlight">高亮</button><button data-action="strike">删除线</button
+      ><button data-action="heading">标题</button><button data-action="bulletList">列表</button
+      ><button data-action="taskList">待办</button><button data-action="blockquote">引用</button
+      ><button data-action="codeBlock">代码块</button
+      ><button data-action="horizontalRule">分割线</button><button data-action="table">表格</button
+      ><button id="insert-image">插入图片</button><button id="markdown">Markdown 输入</button
+      ><button data-action="undo">撤销</button><button data-action="redo">重做</button>
+      <details>
+        <summary>其他</summary>
+        <div class="extra">
+          <label>导入试验原件<input id="import" type="file" accept=".json" /></label
+          ><label
+            >只读查看旧 HTML / Markdown<input
+              id="legacy"
+              type="file"
+              accept=".html,.htm,.md,.txt" /></label
+          ><button id="markdown-export">查看 Markdown 导出</button>
+          <button id="restore-before-import" disabled>恢复导入前的草稿</button>
+          <p>Ctrl＋加减号或 Ctrl＋滚轮：按 4% 调整文字，自动记忆。双击图片可放大。</p>
+        </div>
+      </details>
+    </nav>
+    <main>
+      <section class="writing">
+        <div class="section-label">正文 · 可编辑</div>
+        <div id="editor" class="rich-content"></div>
+      </section>
+      <aside>
+        <div class="section-label">同一份内容 · 消息只读预览</div>
+        <p class="hint">用于核对图文语义，尚未接入聊天界面。</p>
+        <div class="bubble"><div id="message-preview" class="rich-content"></div></div>
+      </aside>
+    </main>
+    <section id="image-settings" hidden aria-label="选中图片排版">
+      <label>图片宽度<input id="image-width" type="range" min="10" max="100" step="1" /></label
+      ><label
+        >对齐<select id="image-align">
+          <option value="left">靠左</option>
+          <option value="center">居中</option>
+          <option value="right">靠右</option>
+        </select></label
+      ><label>图注<input id="image-caption" maxlength="1000" /></label
+      ><button id="view-image">查看原图</button><span>只调整显示，保留原图</span>
+    </section>
+    <input
+      id="image-file"
+      type="file"
+      accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+      multiple
+      hidden
+    />
+    <dialog id="markdown-dialog">
+      <h2 id="markdown-title">插入 Markdown</h2>
+      <p>
+        支持 CommonMark / GFM 的基本图文语义及 ==高亮==。标准斜体为 *文字* 或 _文字_；__文字__
+        是加粗。图片请从本地插入。Markdown 不保留图片排版与定位 ID，完整保存请用“导出原件”。
+      </p>
+      <textarea
+        id="markdown-source"
+        aria-label="Markdown 内容"
+        rows="12"
+        spellcheck="false"
+      ></textarea>
+      <div class="dialog-actions">
+        <button id="markdown-cancel">取消</button><button id="markdown-apply">插入到正文</button>
+      </div>
+    </dialog>
+    <dialog id="image-dialog">
+      <div class="viewer-tools">
+        <button id="image-close">关闭</button><button data-image-zoom="-1">−</button
+        ><output data-image-scale>100%</output><button data-image-zoom="1">＋</button
+        ><button data-image-zoom="0">适应窗口</button><button data-image-original>原始像素</button>
+      </div>
+      <div data-image-stage><img alt="图片原件" /></div>
+    </dialog>
+    <dialog id="legacy-dialog">
+      <h2>旧内容只读查看</h2>
+      <p>只读显示所选文件；原文件和试验草稿均不改写。旧附件未接入，可能显示缺失。</p>
+      <div id="legacy-preview" class="rich-content"></div>
+      <button id="legacy-close">关闭</button>
+    </dialog>
+    <script type="module" src="/features/rich-text-lab.js"></script>
+  </body>
+</html>

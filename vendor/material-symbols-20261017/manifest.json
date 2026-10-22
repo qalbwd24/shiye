@@ -1,0 +1,67 @@
+{
+  "upstream": "google/material-design-icons",
+  "commit": "49d4db35df873165d6bd6ba09b063c7dafbac2f4",
+  "license": "Apache-2.0",
+  "files": [
+    {
+      "name": "chat_bubble",
+      "url": "https://raw.githubusercontent.com/google/material-design-icons/49d4db35df873165d6bd6ba09b063c7dafbac2f4/symbols/web/chat_bubble/materialsymbolsrounded/chat_bubble_24px.svg",
+      "originalSha256": "5323668b977357f7b5379fd1e8b073375b0a5d12c6351e10694308d4c2d5c9d7",
+      "vectorSha256": "5d2595a0c962d3661d9eb67aefcfc13a0bffb0fd760243245a79d953567e4877"
+    },
+    {
+      "name": "edit_square",
+      "url": "https://raw.githubusercontent.com/google/material-design-icons/49d4db35df873165d6bd6ba09b063c7dafbac2f4/symbols/web/edit_square/materialsymbolsrounded/edit_square_24px.svg",
+      "originalSha256": "6ee28f42b34cd1e646b59ec5bc62363edacc4fedfc51dad384d7638695b29a10",
+      "vectorSha256": "318393b609fdbb2eec97c370787de0d5085000850d0cb79dbf97e1496ca207bf"
+    },
+    {
+      "name": "menu_book",
+      "url": "https://raw.githubusercontent.com/google/material-design-icons/49d4db35df873165d6bd6ba09b063c7dafbac2f4/symbols/web/menu_book/materialsymbolsrounded/menu_book_24px.svg",
+      "originalSha256": "3327047961e6ec0a924c09c4beed9873642c1f4173638989d91cd14d3fc69e44",
+      "vectorSha256": "5a697bded94e27d7e83da2b5123fd664445088b35809e63203b54d9ae79b27dc"
+    },
+    {
+      "name": "more_horiz",
+      "url": "https://raw.githubusercontent.com/google/material-design-icons/49d4db35df873165d6bd6ba09b063c7dafbac2f4/symbols/web/more_horiz/materialsymbolsrounded/more_horiz_24px.svg",
+      "originalSha256": "498ade89fbbdd4f4ab9b90bb49bae4cc6b2dc0ff0f019b6b051ac641a7bd5872",
+      "vectorSha256": "c770fb2d3e50f88d4cee624ff42b68800e4451e6202f85ecbf5bc3d3882fc432"
+    },
+    {
+      "name": "arrow_back",
+      "url": "https://raw.githubusercontent.com/google/material-design-icons/49d4db35df873165d6bd6ba09b063c7dafbac2f4/symbols/web/arrow_back/materialsymbolsrounded/arrow_back_24px.svg",
+      "originalSha256": "b9b58d54e13e0e3693a10d997c1001ec270c12eaa935f993cee1d8c916236ceb",
+      "vectorSha256": "59a9e10feea4a452ec47e7e00333be327d5c7b03bfe3f61be20afdccbb6bcc69"
+    },
+    {
+      "name": "search",
+      "url": "https://raw.githubusercontent.com/google/material-design-icons/49d4db35df873165d6bd6ba09b063c7dafbac2f4/symbols/web/search/materialsymbolsrounded/search_24px.svg",
+      "originalSha256": "8d12ac6ba27a23ccf0e57794c28481ce9c978efcb2f80ba6d2979ccdf238c993",
+      "vectorSha256": "63931eaa086f21d51b844fa0c428df039b6cb485fd142fbe630181d298abe761"
+    },
+    {
+      "name": "add",
+      "url": "https://raw.githubusercontent.com/google/material-design-icons/49d4db35df873165d6bd6ba09b063c7dafbac2f4/symbols/web/add/materialsymbolsrounded/add_24px.svg",
+      "originalSha256": "747fe04ec3eb546a96f514a5d2df9e81be53397818b83f05630519ab008bb6e9",
+      "vectorSha256": "b9df2b3c7a0cf7f66710595b609eea9825dca15f9ad6b1b3aace45324b8267c3"
+    },
+    {
+      "name": "close",
+      "url": "https://raw.githubusercontent.com/google/material-design-icons/49d4db35df873165d6bd6ba09b063c7dafbac2f4/symbols/web/close/materialsymbolsrounded/close_24px.svg",
+      "originalSha256": "fabc7e16160e93ed11d6d72b87f5c67092d04abfcc1fc2410fab1abe075cd8fc",
+      "vectorSha256": "65617492c5ae48aa86c7289b7621cc92e7b91b843411f1b481b71be2b5e8d94a"
+    },
+    {
+      "name": "arrow_upward",
+      "url": "https://raw.githubusercontent.com/google/material-design-icons/49d4db35df873165d6bd6ba09b063c7dafbac2f4/symbols/web/arrow_upward/materialsymbolsrounded/arrow_upward_24px.svg",
+      "originalSha256": "28f6a3032188778a7760394d22a91b0b85aa20395c7da20e091f36b51dc5d8b5",
+      "vectorSha256": "df2624197bddf646c8440442eb024dbd9f16edf5b32afddedbdf90e6b50921c5"
+    },
+    {
+      "name": "calendar_month",
+      "url": "https://raw.githubusercontent.com/google/material-design-icons/49d4db35df873165d6bd6ba09b063c7dafbac2f4/symbols/web/calendar_month/materialsymbolsrounded/calendar_month_24px.svg",
+      "originalSha256": "5e519e24938ba00d32b07f9cc16126584bfba6fe06e451b1ec3a17cdd286fe20",
+      "vectorSha256": "fba343477015b50aab02280bc5a651fd5ad01ff910f5f307f2563944a3eda80f"
+    }
+  ]
+}

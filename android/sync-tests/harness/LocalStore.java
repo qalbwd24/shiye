@@ -1,0 +1,3 @@
+package dev.shiye.app;
+import android.database.sqlite.SQLiteDatabase;import android.content.Context;import java.io.File;
+final class LocalStore {final ProductRepository repo;final SQLiteDatabase db;final Context ctx;LocalStore(Context c)throws Exception {ctx=c;File f=c.getDatabasePath("synthetic021.db");f.getParentFile().mkdirs();db=SQLiteDatabase.openOrCreateDatabase(f,null);repo=new ProductRepository(db);repo.initialize();} interface ProductWork<T>{T run(ProductRepository r)throws Exception;} synchronized <T>T withProduct(ProductWork<T>work)throws Exception{return work.run(repo);} File mediaFile(String id){return new File(ctx.getFilesDir(),"media/"+id);} }

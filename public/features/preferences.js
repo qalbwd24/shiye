@@ -1,4 +1,6 @@
-import { dayKey } from '../shared/insights.js';
+import { sortedTaxonomy } from '../shared/taxonomy.js';
+import { applyTheme } from './theme.js';
+import { setTimeZone, DEFAULT_TIME_ZONE, zonedDay, formatZoned } from '../shared/time-zone.js';
 
 /** Feature-local state; c.library is a live getter, never a cached snapshot. */
 export function createPreferences(c) {
@@ -13,12 +15,8 @@ export function createPreferences(c) {
   }
   function apply() {
     const p = prefs();
-    document.documentElement.dataset.theme =
-      p.theme === 'system'
-        ? matchMedia('(prefers-color-scheme: dark)').matches
-          ? 'dark'
-          : 'light'
-        : p.theme || 'light';
+    setTimeZone(p.timeZone || DEFAULT_TIME_ZONE);
+    applyTheme(p);
     document.documentElement.style.setProperty('--writing-size', (p.fontSize || 16) + 'px');
     document.documentElement.style.setProperty('--writing-line', p.lineHeight || 2);
     document.documentElement.style.setProperty(
@@ -51,8 +49,66 @@ export function createPreferences(c) {
       `<label>主题<select class="field" id="prefTheme">${['light', 'dark', 'system'].map((v, i) => `<option value="${v}">${['浅色', '深色', '跟随系统'][i]}</option>`).join('')}</select></label><label>正文字号<select class="field" id="prefSize">${[14, 16, 18, 20, 22, 24].map((v) => `<option>${v}</option>`).join('')}</select></label><label>行距<select class="field" id="prefLine">${[1.6, 1.8, 2, 2.2, 2.5].map((v) => `<option>${v}</option>`).join('')}</select></label><label>字体<select class="field" id="prefFont"><option value="sans">无衬线</option><option value="serif">衬线</option><option value="mono">等宽</option></select></label><label>排序<select class="field" id="prefSort"><option value="newest">记录日期：新到旧</option><option value="oldest">记录日期：旧到新</option><option value="updated">最近修改</option></select></label><label class="check-row"><input id="prefPreview" type="checkbox">列表显示正文摘要</label><label class="check-row"><input id="prefYesterday" type="checkbox">凌晨 0–4 点新建日记时默认记作昨天</label><label class="check-row"><input id="prefIndent" type="checkbox">正文开头与普通换段自动空两格</label><label>打开应用时<select class="field" id="prefOpen"><option value="all">日记列表</option><option value="calendar">日历</option><option value="new">新建日记</option></select></label><label>每周第一天<select class="field" id="prefWeek"><option value="1">星期一</option><option value="0">星期日</option></select></label><label>提醒语<input class="field" id="prefReminderText"></label><label>写作提醒（应用打开时）<input class="field" type="time" id="prefReminder"></label><label>自动锁定<select class="field" id="prefLock"><option value="0">不自动锁定</option><option value="1">1 分钟</option><option value="5">5 分钟</option><option value="15">15 分钟</option></select></label><button class="primary" id="savePrefs">保存设置</button><button class="secondary" id="setupLock">${access.enabled ? '修改／关闭本地锁' : '设置本地锁'}</button><p>本地锁保护此应用和本地接口的访问，不等于磁盘加密。备份密码与本地锁密码是两回事。</p>`,
     );
     const p = prefs();
+    const zoneLabel = document.createElement('label');
+    zoneLabel.textContent = '日期与时间的时区';
+    const zoneSelect = document.createElement('select');
+    zoneSelect.className = 'field';
+    zoneSelect.id = 'prefTimeZone';
+    for (const [value, label] of [
+      ['Asia/Shanghai', '北京时间（UTC+08:00）'],
+      ['system', '跟随系统'],
+      ['UTC', '协调世界时（UTC）'],
+      ['Asia/Tokyo', '东京'],
+      ['America/Los_Angeles', '美国太平洋时间'],
+      ['America/New_York', '美国东部时间'],
+      ['Europe/London', '伦敦'],
+    ]) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      zoneSelect.append(option);
+    }
+    const selectedZone = p.timeZone || DEFAULT_TIME_ZONE;
+    if (![...zoneSelect.options].some((option) => option.value === selectedZone)) {
+      const option = document.createElement('option');
+      option.value = selectedZone;
+      option.textContent = selectedZone;
+      zoneSelect.append(option);
+    }
+    zoneSelect.value = selectedZone;
+    zoneLabel.append(zoneSelect);
+    $('#prefSort').closest('label').before(zoneLabel);
+    const categoryLabel = document.createElement('label');
+    const focusLabel = document.createElement('label');
+    focusLabel.textContent = '思绪进入编辑时';
+    const focusSelect = document.createElement('select');
+    focusSelect.className = 'field';
+    focusSelect.id = 'prefQuickFocus';
+    focusSelect.innerHTML =
+      '<option value="body">先写正文</option><option value="title">先写标题</option>';
+    focusSelect.value = p.quickInitialFocus || 'body';
+    focusLabel.append(focusSelect);
+    $('#prefIndent').closest('label').after(focusLabel);
+    categoryLabel.textContent = '新日记默认分类';
+    const categorySelect = document.createElement('select');
+    categorySelect.className = 'field';
+    categorySelect.id = 'prefDefaultCategory';
+    const unset = document.createElement('option');
+    unset.value = '';
+    unset.textContent = '尚未设置（预选排序第一项）';
+    unset.disabled = true;
+    categorySelect.append(unset);
+    for (const item of sortedTaxonomy(c.library, 'category')) {
+      const option = document.createElement('option');
+      option.value = item.name;
+      option.textContent = item.name;
+      categorySelect.append(option);
+    }
+    categorySelect.value = p.defaultCategory || '';
+    categoryLabel.append(categorySelect);
+    $('#prefOpen').closest('label').before(categoryLabel);
     for (const [id, value] of [
-      ['prefTheme', p.theme || 'light'],
+      ['prefTheme', p.theme || 'system'],
       ['prefSize', p.fontSize || 16],
       ['prefLine', p.lineHeight || 2],
       ['prefFont', p.fontFamily || 'sans'],
@@ -70,6 +126,9 @@ export function createPreferences(c) {
     $('#savePrefs').onclick = async () => {
       try {
         await preference({
+          ...(categorySelect.value ? { defaultCategory: categorySelect.value } : {}),
+          quickInitialFocus: focusSelect.value,
+          timeZone: zoneSelect.value,
           theme: $('#prefTheme').value,
           fontSize: Number($('#prefSize').value),
           lineHeight: Number($('#prefLine').value),
@@ -121,8 +180,8 @@ export function createPreferences(c) {
   for (const event of ['pointerdown', 'keydown'])
     document.addEventListener(event, resetIdle, { passive: true });
   setInterval(() => {
-    const time = new Date().toTimeString().slice(0, 5),
-      key = dayKey(new Date()) + ' ' + time;
+    const time = formatZoned(new Date(), { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }),
+      key = zonedDay(new Date()) + ' ' + time;
     if (prefs().reminderTime === time && lastReminder !== key) {
       lastReminder = key;
       toast(prefs().reminderText || '到了写日记的时间，给今天留下一页吧。');

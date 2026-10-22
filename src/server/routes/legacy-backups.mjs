@@ -9,6 +9,11 @@ import { promises as fs, createReadStream } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { decodeLegacy, sha } from '../imports/legacy.mjs';
+import { legacySourceOptions } from '../imports/one-diary-source.mjs';
+import {
+  preserveMessageArchiveOwners,
+  reconcileMessageArchive,
+} from '../domain/message-store-archive.mjs';
 
 export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
   return async (req, res, p) => {
@@ -40,7 +45,7 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
         throw fail(409, '这个原始备份已导入，不会重复添加');
       let imported;
       try {
-        imported = await decodeLegacy(raw, name);
+        imported = await decodeLegacy(raw, name, legacySourceOptions(req.headers));
       } catch (e) {
         throw fail(422, '无法导入：' + e.message);
       }
@@ -142,7 +147,8 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
         m.title = e.title;
         m.attachments = e.attachments.map((id) => remap.get('media' + id));
         m.revision = 1;
-        m.restoredFrom = { id: e.id, history: e.history || [] };
+        // remapEntryMedia already preserves/remaps history; do not duplicate raw snapshots.
+        m.restoredFrom = { id: e.id };
         return m;
       });
       const imports = lib.imports.map((a) => ({ ...a, id: remap.get('originals' + a.id) }));
@@ -159,7 +165,11 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
           ...(d.templates || []),
           ...(lib.templates || []).map((t) => ({ ...t, id: randomUUID() })),
         ];
-        const result = reconcileImport(d, { entries, media });
+        const result = reconcileImport(d, {
+          entries: preserveMessageArchiveOwners(d, lib, entries),
+          media,
+          chatJournal: lib.chatJournal,
+        });
         reconciliation = result.report;
         reconcileStickers(d, stickers, result.mediaMap);
         if (profile !== undefined) {
@@ -171,6 +181,18 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
         }
         const entryIds = new Map(
           lib.entries.map((e, i) => [e.id, result.entryMap.get(entries[i].id)]),
+        );
+        Object.assign(
+          reconciliation,
+          reconcileMessageArchive(d, lib, {
+            entryMap: entryIds,
+            mediaMap: new Map(
+              lib.media.map((item) => [
+                item.id,
+                result.mediaMap.get(mediaIdMap.get(item.id)) || mediaIdMap.get(item.id),
+              ]),
+            ),
+          }),
         );
         for (const old of lib.conflicts || []) {
           const lookup = (id) =>
@@ -207,6 +229,10 @@ export function createRoutes({ dataDir, getDb, mutate, body, reply, fail }) {
         d.categories = [
           ...new Set([...d.categories, ...lib.categories.filter((c) => typeof c === 'string')]),
         ];
+      }).catch(async (error) => {
+        for (const file of writes)
+          await fs.unlink(path.join(dataDir, file.folder, file.id)).catch(() => {});
+        throw error;
       });
       for (const id of reconciliation.redundantMedia)
         await fs.unlink(path.join(dataDir, 'media', id)).catch(() => {});

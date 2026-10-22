@@ -253,6 +253,9 @@ export function createWorkbench(c, actions) {
   );
   let generation = 0;
   const sections = [
+    ...(document.body.classList.contains('quick-capture')
+      ? [['quickAppearance', '思绪外观', '独立壁纸、字体与系统深浅色']]
+      : []),
     ['profile', '个人资料', '你的头像、名字和喜欢的一句话'],
     ['general', '常规', '打开方式、日历与日记列表'],
     ['writing', '编辑与记录', '文字排版、提醒和书写习惯'],
@@ -260,6 +263,8 @@ export function createWorkbench(c, actions) {
     ['appearance', '外观与背景', '主题色、明暗模式和分区背景'],
     ['organization', '分类与标签', '整理内容，保留每一篇记录'],
     ['data', '数据与备份', '导入、备份、导出和冲突处理'],
+    ['sync', '云同步', '连接手机与电脑，使用自己的 WebDAV 服务器'],
+    ['integrations', '组件与 AI 数据', '读取接口、结构化导出和组件示例'],
     ['stickers', '表情包', '收藏常用图片与动态表情'],
     ['privacy', '隐私与锁定', '本地访问锁和自动锁定'],
     ['shortcuts', '快捷键', '为常用操作设置顺手的按键'],
@@ -408,13 +413,21 @@ export function createWorkbench(c, actions) {
         await actions.preferences();
         if (turn !== generation) return;
         const fields = {
-          general: ['prefSort', 'prefPreview', 'prefOpen', 'prefWeek'],
+          general: [
+            'prefSort',
+            'prefPreview',
+            'prefOpen',
+            'prefWeek',
+            'prefDefaultCategory',
+            'prefTimeZone',
+          ],
           writing: [
             'prefSize',
             'prefLine',
             'prefFont',
             'prefYesterday',
             'prefIndent',
+            'prefQuickFocus',
             'prefReminderText',
             'prefReminder',
           ],
@@ -431,7 +444,9 @@ export function createWorkbench(c, actions) {
           lockButton.onclick = () => actions.lock().catch((e) => c.toast(e.message));
           $('#modalBody').append(lockButton);
         }
-      } else if (section === 'profile') profilePage();
+      } else if (section === 'quickAppearance') actions.quickAppearance();
+      else if (section === 'integrations') await actions.openData.settings();
+      else if (section === 'profile') profilePage();
       else if (section === 'stickers') {
         c.closeModal();
         await actions.stickers();
@@ -439,13 +454,18 @@ export function createWorkbench(c, actions) {
       } else if (section === 'appearance') actions.appearance();
       else if (section === 'layout') layoutPage();
       else if (section === 'shortcuts') $('#shortcutSettings').click();
-      else if (section === 'help')
+      else if (section === 'sync') {
+        c.closeModal();
+        actions.sync?.settings?.();
+        return;
+      } else if (section === 'help')
         options('帮助与关于', [
           ['使用帮助', '查看写作、媒体、快捷键和保存说明', () => $('#helpButton').click()],
           ['本地日记库', '查看存储位置与本地服务信息', () => $('#cloudStatus').click()],
         ]);
       else if (section === 'organization')
         options('分类与标签', [
+          ['调整分类顺序', '上移、下移或移到指定位置，预览后一次保存', actions.categoryOrder],
           [
             '分类与标签管理',
             '排序、重命名、合并与批量整理',
@@ -487,7 +507,6 @@ export function createWorkbench(c, actions) {
   $('#settingsButton').onclick = () => open();
   $('#profileButton').onclick = () => open('profile');
   $('.bottom-actions').hidden = true;
-  $('#cloudStatus').hidden = true;
   $('#focusButton').hidden = true;
   $('#modal').addEventListener('close', () => {
     generation++;

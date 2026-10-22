@@ -1,0 +1,110 @@
+/* QQ-inspired shell only. All font, bubble, theme and wallpaper parameters remain inherited. */
+body[data-shiye-chat-skin='qq'] .shiye-android-header {
+  padding-inline: 16px 8px;
+  gap: 12px;
+  border-bottom: 1px solid var(--shiye-line);
+}
+body[data-shiye-chat-skin='qq'] .shiye-android-header > button:first-child {
+  display: none;
+}
+body[data-shiye-chat-skin='qq'] .shiye-android-header strong {
+  margin: 0;
+  text-align: start;
+}
+body[data-shiye-chat-skin='qq'] #MiddleColumn .Composer.is-chat-composer {
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+}
+body[data-shiye-chat-skin='qq'] #MiddleColumn .Composer .message-input-wrapper {
+  background: transparent;
+  border-radius: 12px;
+}
+body[data-shiye-chat-skin='qq'] #MiddleColumn .Composer #message-input-text {
+  border-radius: 8px;
+  background: var(--shiye-input-surface);
+  box-shadow: inset 0 0 0 1px var(--shiye-line);
+}
+body[data-shiye-chat-skin='qq'] #MiddleColumn .Composer .shiye-symbol-button,
+body[data-shiye-chat-skin='qq'] #MiddleColumn .Composer .AttachMenu--button,
+body[data-shiye-chat-skin='qq'] #MiddleColumn .Composer > .main-button,
+body[data-shiye-chat-skin='qq'] #MiddleColumn .Composer > .shiye-empty-send {
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+}
+body[data-shiye-chat-skin='qq'] #MiddleColumn .Composer > .main-button .icon-new-send,
+body[data-shiye-chat-skin='qq'] #MiddleColumn .Composer > .shiye-empty-send .icon-new-send {
+  color: var(--shiye-accent);
+}
+body[data-shiye-chat-skin='qq'] #MiddleColumn .Composer > .shiye-empty-send:disabled {
+  opacity: 0.45;
+}
+body[data-shiye-chat-skin='qq'] .shiye-android-dialog input[type='range'] {
+  touch-action: pan-y;
+}
+body[data-shiye-chat-skin='qq'] .shiye-android-dialog button,
+body[data-shiye-chat-skin='qq'] .shiye-android-dialog label {
+  touch-action: pan-y;
+}
+body[data-shiye-chat-skin='qq'] .shiye-qq-message-menu {
+  position: fixed;
+  inset: auto;
+  width: min(284px, calc(100% - 16px));
+  margin: 0;
+  padding: 6px;
+  border-radius: 12px;
+  max-height: min(70dvh, 400px);
+  overflow: auto;
+  background: var(--shiye-surface);
+  color: var(--shiye-ink);
+  box-shadow: 0 6px 24px #0003;
+}
+body[data-shiye-chat-skin='qq'] .shiye-qq-message-menu::backdrop {
+  background: #0002;
+  backdrop-filter: none;
+}
+body[data-shiye-chat-skin='qq'] .shiye-qq-message-menu form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+body[data-shiye-chat-skin='qq'] .shiye-qq-message-menu .shiye-dialog-heading {
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  margin: 0;
+  min-height: 28px;
+}
+body[data-shiye-chat-skin='qq'] .shiye-qq-message-menu h2 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+body[data-shiye-chat-skin='qq'] .shiye-qq-message-menu .shiye-dialog-close {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+}
+body[data-shiye-chat-skin='qq'] .shiye-qq-message-menu .shiye-menu-row {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 2px;
+  min-height: 64px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+}
+body[data-shiye-chat-skin='qq'] .shiye-qq-message-menu .shiye-menu-row svg {
+  width: 20px;
+  height: 20px;
+}
+body[data-shiye-chat-skin='qq'] .shiye-qq-message-menu .shiye-menu-row:active {
+  background: var(--shiye-input-surface);
+}

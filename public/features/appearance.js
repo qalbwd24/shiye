@@ -1,11 +1,11 @@
 import { regions, fills, positions, defaults, normalizeAppearance } from '../shared/appearance.js';
 import { LIMITS } from '../shared/limits.js';
+import { applyTheme } from './theme.js';
 
 /** Local draft previews; only Save commits preferences. Background files use media APIs. */
 export function createAppearance(c) {
   const { $, $$, api, escape: esc } = c;
   const prefs = () => c.library.settings?.preferences || {};
-  const systemTheme = matchMedia('(prefers-color-scheme: dark)');
   function current() {
     try {
       return normalizeAppearance(prefs().appearance || defaults());
@@ -15,7 +15,7 @@ export function createAppearance(c) {
   }
   function preview(a, theme) {
     const root = document.documentElement;
-    root.dataset.theme = theme === 'system' ? (systemTheme.matches ? 'dark' : 'light') : theme;
+    applyTheme({ ...prefs(), theme });
     root.style.setProperty('--accent', a.accent);
     root.style.setProperty('--accent-dark', `color-mix(in srgb, ${a.accent}, black 24%)`);
     root.style.setProperty('--mint', `color-mix(in srgb, ${a.accent} 14%, var(--paper))`);
@@ -34,14 +34,11 @@ export function createAppearance(c) {
       el.style.setProperty('--region-position', b?.position || 'center');
     }
   }
-  const apply = () => preview(current(), prefs().theme || 'light');
-  systemTheme.addEventListener('change', () => {
-    if (!$('#appearanceSettings')) apply();
-  });
+  const apply = () => preview(current(), prefs().theme || 'system');
 
   function settings() {
     let draft = current(),
-      theme = prefs().theme || 'light',
+      theme = prefs().theme || 'system',
       region = 'app',
       active = true,
       pending = false;
@@ -180,7 +177,7 @@ export function createAppearance(c) {
     $('#appearanceCancel').onclick = c.closeModal;
     $('#appearanceReset').onclick = () => {
       draft = defaults();
-      theme = 'light';
+      theme = 'system';
       $('#appearanceTheme').value = theme;
       $('#appearanceAccent').value = draft.accent;
       render();

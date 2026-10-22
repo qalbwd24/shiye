@@ -1,0 +1,178 @@
+.shiye-revisit-dialog {
+  color: #dce5e7;
+  background: #242c30;
+  border: 1px solid #506064;
+  border-radius: 14px;
+  padding: 24px;
+  width: min(760px, 90vw);
+  max-height: 85vh;
+  overflow: auto;
+}
+.shiye-revisit-dialog::backdrop {
+  background: #0008;
+}
+.shiye-revisit-dialog .shiye-revisit-enable {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 14px;
+  border: 1px solid #70a8ab80;
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+.shiye-revisit-enable span {
+  grid-column: 1 / -1;
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+.shiye-revisit-dialog label {
+  display: block;
+  margin: 12px 0;
+}
+.shiye-revisit-dialog input,
+.shiye-revisit-dialog select {
+  color: inherit;
+  background: #1c2427;
+  border: 1px solid #506064;
+  border-radius: 6px;
+  padding: 6px;
+  margin: 4px;
+  max-width: 100%;
+}
+.shiye-revisit-dialog button {
+  color: inherit;
+  background: #303c40;
+  border: 1px solid #506064;
+  border-radius: 7px;
+  padding: 7px 12px;
+  margin: 5px;
+}
+.shiye-revisit-dialog button:hover {
+  border-color: #80acb1;
+  background: #35464a;
+}
+.shiye-revisit-dialog img,
+.shiye-revisit-dialog video {
+  max-width: 100%;
+  max-height: 60vh;
+}
+.shiye-revisit-dialog article {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.shiye-revisit-target {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 6px;
+  text-align: start;
+  color: #b9d3d5;
+  background: #253236ee;
+  border: 1px solid #506064;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+#MiddleColumn .middle-column-footer:has(> .shiye-revisit-target:not([hidden])) {
+  flex-wrap: wrap;
+}
+.shiye-revisit-target[hidden] {
+  display: none;
+}
+.shiye-revisit-feedback {
+  display: flex;
+  flex: 0 0 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  color: #ffe0b3;
+  background: #493d30;
+  border-radius: 8px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.shiye-revisit-feedback[hidden] {
+  display: none;
+}
+.shiye-revisit-feedback > span {
+  flex: 1;
+  min-width: 0;
+}
+.shiye-revisit-feedback > button {
+  flex: 0 0 auto;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+.shiye-revisit-settings[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.shiye-revisit-settings > h2,
+.shiye-revisit-actions {
+  flex: 0 0 auto;
+}
+.shiye-revisit-settings-body {
+  min-height: 0;
+  overflow: auto;
+}
+.shiye-revisit-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+body[data-shiye-revisit-room='true'][data-shiye-align='left'] .Message:not(.own) {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+body[data-shiye-revisit-room='true'][data-shiye-align='right'] .Message:not(.own) {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+body[data-shiye-revisit-room='true'] #MiddleColumn .Message .message-title,
+body[data-shiye-revisit-room='true'] #MiddleColumn .message-date-group .Avatar,
+body[data-shiye-revisit-room='true'] #MiddleColumn [class*='avatarContainer'] {
+  display: none;
+}
+body[data-shiye-revisit-room='true'] #MiddleColumn .Message {
+  padding-inline: 0;
+}
+body[data-shiye-revisit-room='true'] #MiddleColumn .Message > .message-content-wrapper {
+  margin-inline: 0;
+}
+.shiye-revisit-date-note {
+  position: absolute;
+  z-index: 5;
+  top: 112px;
+  left: 50%;
+  width: fit-content;
+  max-width: 90%;
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: var(--color-text, #e2e8e9);
+  background: var(--color-background-secondary, #253035);
+  box-shadow: 0 2px 8px #0003;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+body[data-shiye-revisit-room='true'][data-shiye-revisit-date-style='date']
+  .Message[data-shiye-history-date]
+  > .message-content-wrapper::before {
+  content: attr(data-shiye-history-date);
+  display: block;
+  margin: 2px 4px 4px;
+  color: var(--color-text-secondary, #a7b2b5);
+  font-size: 12px;
+  line-height: 1.4;
+}

@@ -6,6 +6,7 @@ import { createEditorToolbox } from './editor-toolbox.js';
 import { createConflicts } from './conflicts.js';
 import { createPreferences } from './preferences.js';
 import { createAppearance } from './appearance.js';
+import { createQuickAppearance } from './quick-appearance.js';
 import { createLayout } from './layout.js';
 import { createWorkbench } from './workbench.js';
 import { createGallery } from './gallery.js';
@@ -16,14 +17,20 @@ import { createReadingPosition } from './reading-position.js';
 import { createSearch } from './search.js';
 import { createInsights } from './insights.js';
 import { createOrganization } from './organization.js';
+import { createCategoryOrder } from './category-order.js';
 import { createTemplates } from './templates.js';
 import { createEditorTools } from './editor-tools.js';
 import { createMediaTools } from './media-tools.js';
 import { createExport } from './export.js';
+import { createOpenData } from './open-data.js';
+import { createRichTextLabEntry } from './rich-text-lab-entry.js';
 import { createBackups } from './backups.js';
+import { createCloudSync } from './cloud-sync.js';
+import { createEntryReadingDocument } from './entry-reading-document.js';
 export function installOffline(c) {
   const { $, modal, closeModal, toast, command } = c;
   const reader = createEntryReader(c);
+  const entryReading = createEntryReadingDocument(c);
   const editorInput = createEditorInput(c);
   createEditorToolbox(c);
   const browsingContext = Object.create(c);
@@ -31,11 +38,17 @@ export function installOffline(c) {
   browsingContext.mountEntryReader = reader.mount;
   const { apply: applyPreferences, preference, prefs, settings, lock } = createPreferences(c);
   const appearance = createAppearance(c);
+  const quickAppearance = createQuickAppearance(c);
   const layout = createLayout(c);
-  const readingGallery = createGallery(c, {
+  const galleryContext = Object.create(c);
+  galleryContext.readingProjection = entryReading.projection;
+  const readingGallery = createGallery(galleryContext, {
     defer: () => $('#editorPanel').classList.contains('inline-editing'),
   });
-  const attachmentGallery = createGallery(c, { host: $('#attachmentEditor'), editing: () => true });
+  const attachmentGallery = createGallery(galleryContext, {
+    host: $('#attachmentEditor'),
+    editing: () => true,
+  });
   const gallery = {
     render(entry) {
       readingGallery.render(entry);
@@ -52,6 +65,7 @@ export function installOffline(c) {
   const apply = () => {
     applyPreferences();
     appearance.apply();
+    quickAppearance.apply();
     layout.apply();
     workbench.applyProfile();
   };
@@ -69,8 +83,11 @@ export function installOffline(c) {
   const { toggle } = createEditorTools(c);
   const { recording, draw, speak } = createMediaTools(c);
   const { exportMenu } = createExport(c);
+  const richTextLab = createRichTextLabEntry(c);
+  const openData = createOpenData(c, { exportMenu, richTextLab });
   createContextMenu(c, { exportMenu });
   const { backupsV2 } = createBackups(c);
+  const sync = createCloudSync(c);
   const button = (name, fn, parent = $('.bottom-actions')) => {
     const b = document.createElement('button');
     b.textContent = name;
@@ -86,11 +103,15 @@ export function installOffline(c) {
     completeEditing: () => gallery.render(c.current()),
     preferences: settings,
     appearance: appearance.settings,
+    quickAppearance: quickAppearance.settings,
     layout,
     manage,
+    categoryOrder: createCategoryOrder(c),
     conflicts: conflicts.manage,
     backups: backupsV2,
+    sync,
     exportMenu,
+    openData,
     lock,
     stickers: stickers.manage,
   });
@@ -175,6 +196,7 @@ export function installOffline(c) {
       recollection.restoreNavigation(snapshot?.recollection);
     },
     editorInput,
+    entryReading,
     render,
     releaseEntryReader: reader.release,
     gallery,
@@ -188,7 +210,9 @@ export function installOffline(c) {
     prefs,
     templates,
     backups: backupsV2,
+    sync,
     settings: workbench.settings,
+    quickAppearanceSettings: quickAppearance.settings,
     toggleWriting: workbench.toggleWriting,
     readingMode: workbench.readingMode,
     lock,

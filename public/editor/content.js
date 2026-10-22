@@ -8,6 +8,8 @@ export function sanitize(html) {
     'B',
     'I',
     'EM',
+    'MARK',
+    'DEL',
     'U',
     'S',
     'STRIKE',

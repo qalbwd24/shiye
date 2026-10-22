@@ -1,3 +1,4 @@
+import { formatZoned } from '../shared/time-zone.js';
 /** Compare explicitly; filename matches never imply a library-wide replacement. */
 export function createConflicts(c) {
   const { $, escape: esc, sanitize, api, toast, modal, closeModal } = c;
@@ -6,7 +7,15 @@ export function createConflicts(c) {
     busy = false;
   const time = (value) =>
     value !== undefined && value !== null && Number.isFinite(new Date(value).getTime())
-      ? new Date(value).toLocaleString('zh-CN')
+      ? formatZoned(value, {
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hourCycle: 'h23',
+        })
       : '未记录';
   const labels = { both: '保留两份', left: '采用已有版本', right: '采用导入版本' };
   async function manage() {

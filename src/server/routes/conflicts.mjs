@@ -1,4 +1,12 @@
 import { remapEntryMedia } from '../domain/import-reconciliation.mjs';
+import { createHash } from 'node:crypto';
+import { commitDiaryUnits } from '../domain/message-store.mjs';
+import { commitCommentUnit } from '../domain/message-comments.mjs';
+
+const projectionHash = (entry) =>
+  createHash('sha256')
+    .update(JSON.stringify([entry.title, entry.content, entry.category, entry.attachments]))
+    .digest('hex');
 
 const snapshot = (entry) => {
   const result = structuredClone(entry);
@@ -6,9 +14,31 @@ const snapshot = (entry) => {
   return result;
 };
 const save = (entry, before) => {
+  if (entry.contentEditedAt === undefined && Number.isFinite(Date.parse(before.updatedAt)))
+    entry.contentEditedAt = before.updatedAt;
   entry.history = [before, ...(entry.history || [])].slice(0, 20);
   entry.revision++;
   entry.updatedAt = new Date().toISOString();
+};
+
+/** Conflict edits and their undo must move the authoritative tree with its cache. */
+const syncMessages = (db, entry, before) => {
+  commitDiaryUnits(db, entry, before);
+  for (const comment of entry.comments || []) {
+    const previous = db.messageStore?.units.find((unit) => unit.id === comment.messageUnitId);
+    if (!previous) continue;
+    const oldComment = before.comments?.find((item) => item.id === comment.id);
+    if (JSON.stringify(comment.attachments) !== JSON.stringify(oldComment?.attachments)) {
+      comment.revision = Math.max(comment.revision || 1, previous.revision) + 1;
+      comment.updatedAt = entry.updatedAt;
+    }
+    commitCommentUnit(db, entry, comment);
+  }
+};
+
+const guardChatMedia = (entry, fail) => {
+  if (entry.chatJournal)
+    throw fail(409, '聊天归篇只读，请在聊天窗口撤回并重新发送，不能在日记端替换原消息附件');
 };
 
 export function createRoutes({ mutate, body, reply, fail }) {
@@ -41,6 +71,7 @@ export function createRoutes({ mutate, body, reply, fail }) {
             !before
           )
             throw fail(409, '处理后日记已改变或历史已过期，请打开日记历史核对，不能覆盖后续编辑');
+          guardChatMedia(entry, fail);
           return { entry, before };
         });
         for (const { entry, before } of restores) {
@@ -51,6 +82,8 @@ export function createRoutes({ mutate, body, reply, fail }) {
             history: entry.history,
           };
           save(restored, previous);
+          restored.contentEditedAt = restored.updatedAt;
+          syncMessages(db, restored, previous);
           db.entries[db.entries.indexOf(entry)] = restored;
         }
         action.undoneAt = new Date().toISOString();
@@ -72,8 +105,11 @@ export function createRoutes({ mutate, body, reply, fail }) {
       if (input.title !== undefined) {
         if (typeof input.title !== 'string' || !input.title.trim() || input.title.length > 500)
           throw fail(400, '新名称不正确');
+        const ownedTitle =
+          conflict.kind === 'entry' && right.chatJournal?.projectionHash === projectionHash(right);
         if (conflict.kind === 'entry') save(right, snapshot(right));
         right[conflict.kind === 'entry' ? 'title' : 'name'] = input.title.trim();
+        if (ownedTitle) right.chatJournal.projectionHash = projectionHash(right);
       }
       const targets = [];
       if (input.choice !== 'both') {
@@ -101,6 +137,15 @@ export function createRoutes({ mutate, body, reply, fail }) {
               throw fail(409, '选中的日记或附件已变化，请重新核对');
             if ((entry.attachments || []).includes(keep.id))
               throw fail(409, '这篇日记已同时包含两份附件，请保留两份；不能将不同图片合并为一个');
+            if (
+              (entry.comments || []).some(
+                (comment) =>
+                  comment.attachments?.includes(discard.id) &&
+                  comment.attachments.includes(keep.id),
+              )
+            )
+              throw fail(409, '评论已同时包含两份附件，请保留两份，不能合并不同图片');
+            guardChatMedia(entry, fail);
             const old = snapshot(entry);
             const mapped = remapEntryMedia(
               { ...entry, history: [] },
@@ -108,6 +153,8 @@ export function createRoutes({ mutate, body, reply, fail }) {
             );
             mapped.history = entry.history || [];
             save(mapped, old);
+            mapped.contentEditedAt = mapped.updatedAt;
+            syncMessages(db, mapped, old);
             db.entries[db.entries.indexOf(entry)] = mapped;
             targets.push({
               id: entry.id,

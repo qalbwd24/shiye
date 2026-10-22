@@ -2,7 +2,10 @@
 import path from 'node:path';
 import { createDiaryServer } from '../server.mjs';
 import { APP_ROOT } from '../src/server/config.mjs';
-const server = await createDiaryServer({ dataDir: path.join(APP_ROOT, 'var', 'dev-data') });
+const server = await createDiaryServer({
+  dataDir: path.join(APP_ROOT, 'var', 'dev-data'),
+  messageUnits: true,
+});
 server.on('error', (error) => {
   console.error(error.code);
   process.exitCode = 1;

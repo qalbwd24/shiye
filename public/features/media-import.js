@@ -1,7 +1,7 @@
 import { uploadMediaFile } from '../core/api.js';
 import { isExternalFileDrag, SORT_MIME } from '../core/drag-sort.js';
 import { compressUpload } from '../core/media-compression.js';
-import { chooseMediaBatch } from './media-batch.js';
+import { chooseMediaBatch, immediateImageBatch } from './media-batch.js';
 
 /** Owns file drops, upload queue and progress UI. Captures the target entry per batch. */
 export function createMediaImport(c) {
@@ -11,6 +11,7 @@ export function createMediaImport(c) {
   const bytes = (size) =>
     size >= 1048576 ? `${(size / 1048576).toFixed(1)} MB` : `${Math.ceil(size / 1024)} KB`;
   let queue = Promise.resolve(),
+    preparing = 0,
     depth = 0,
     visible = false,
     internalDrag = false;
@@ -29,6 +30,7 @@ export function createMediaImport(c) {
   const hasFiles = (event) => isExternalFileDrag(event.dataTransfer, internalDrag);
   const targetReady = () =>
     c.current() &&
+    !c.editor?.isReadingDocument &&
     !c.current().deleted &&
     (!$('#journalView').classList.contains('hidden') ||
       ($('#editorPanel')?.classList.contains('embedded-entry-reader') &&
@@ -55,9 +57,17 @@ export function createMediaImport(c) {
     panel.querySelectorAll('[data-clear]').forEach((button) => {
       button.onclick = () => {
         jobs.splice(Number(button.dataset.clear), 1);
+        collapseCompleted();
         render();
       };
     });
+  }
+  // Collapse only on completion, not while rendering: the user can still
+  // reopen the saved queue. A batch review dialog has its own lifecycle.
+  function collapseCompleted(announce = false) {
+    if (jobs.some((job) => job.state !== 'done')) return;
+    visible = false;
+    if (announce && jobs.length) toast('附件已保存');
   }
   // Capture before child sort handlers run. Browser image drags may contain
   // Files, so inspecting the drop payload alone is not sufficient.
@@ -120,23 +130,55 @@ export function createMediaImport(c) {
         job.sizeNote = `${bytes(job.file.size)} → ${bytes(job.media.size ?? job.processed.file.size)}${job.processed.changed ? ' · 已压缩' : ''}`;
       }
       // A taxonomy operation may have refreshed the library during the upload.
-      const entry = c.library.entries.find((e) => e.id === job.entryId);
+      const entry = c.library.entries.find((e) => e.id === job.entryId || e === job.entryRef);
       if (!entry || entry.deleted) throw Error('目标日记不可编辑，请恢复它后重试');
       if (!c.library.media.some((m) => m.id === job.media.id)) c.library.media.push(job.media);
       if (!entry.attachments.includes(job.media.id)) entry.attachments.push(job.media.id);
+      if (!job.insertedAt) job.insertedAt = new Date().toISOString();
+      c.editor?.insertUploadedMedia?.(
+        entry,
+        job.media,
+        job.position,
+        job.insertedAt,
+        job.occurrenceId,
+      );
       job.state = 'saving';
       job.message = '正在保存附件关联';
       render();
       c.markDirty(entry);
       if (c.current()?.id === entry.id) c.renderAttachments();
       await c.flush();
+      // A resolved save can adopt the server version after a conflict. That
+      // decision must not be reported as having saved this upload's occurrence.
+      const savedEntry = c.library.entries.find((item) => item.id === entry.id || item === entry);
+      if (!savedEntry?.attachments?.includes(job.media.id))
+        throw Error('当前保存版本未包含这项附件；原件已上传，若仍需添加请在队列重试');
+      if (savedEntry.contentFormat === 'richdoc' && /^(image|video)\//.test(job.media.type || '')) {
+        const contains = (nodes) =>
+          (nodes || []).some(
+            (node) =>
+              (['image', 'video'].includes(node.type) &&
+                node.attrs?.occurrenceId === job.occurrenceId) ||
+              contains(node.content),
+          );
+        if (!contains(savedEntry.body?.content))
+          throw Error('当前保存版本未包含这次正文插图；原件已上传，若仍需添加请在队列重试');
+      }
       job.state = 'done';
       job.message = '已保存到目标日记';
       job.progress = 1;
+      if (
+        !jobs.some(
+          (other) => other !== job && other.position === job.position && other.state !== 'done',
+        )
+      )
+        c.editor?.releaseMediaPosition?.(job.position);
     } catch (e) {
       job.state = 'error';
       job.message = e.message;
+      visible = true;
     }
+    collapseCompleted(true);
     render();
   }
   function enqueue(job) {
@@ -147,38 +189,70 @@ export function createMediaImport(c) {
   async function upload(files, targetEntry = null) {
     const entry = targetEntry || c.current();
     if (!entry || entry.deleted) return toast('请先选择或新建一篇日记');
-    if (!files.length) return;
-    const targetId = entry.id;
-    let quality = 'balanced';
+    if (c.editor?.isReadingDocument && c.current()?.id === entry.id)
+      return toast('当前为图文阅读，请先点“继续编辑原文”后添加媒体');
+    if (Array.isArray(files) && !files.length) return;
+    preparing++;
     try {
-      quality = localStorage.getItem('shiye.media-quality') || quality;
-    } catch {
-      /* Use the batch default. */
+      const targetId = entry.id;
+      const position = c.editor?.captureMediaPosition?.(entry);
+      try {
+        files = await files;
+        if (!files?.length) {
+          c.editor?.releaseMediaPosition?.(position);
+          return;
+        }
+        if ([...files].some((file) => !file.size))
+          throw Error('文件内容为空，未添加；请重新复制图片或选择原始文件。');
+      } catch (error) {
+        c.editor?.releaseMediaPosition?.(position);
+        throw error;
+      }
+      let quality = 'balanced';
+      try {
+        quality = localStorage.getItem('shiye.media-quality') || quality;
+      } catch {
+        /* Use the batch default. */
+      }
+      const selection =
+        immediateImageBatch([...files], quality) ||
+        (await (c.chooseMediaBatch || chooseMediaBatch)([...files], {
+          escape: esc,
+          quality,
+          targetLabel: entry.title || '无标题日记',
+        }));
+      if (!selection.length) {
+        c.editor?.releaseMediaPosition?.(position);
+        return;
+      }
+      if (
+        !c.library.entries.some((item) => (item.id === targetId || item === entry) && !item.deleted)
+      ) {
+        c.editor?.releaseMediaPosition?.(position);
+        return toast('原目标日记已不可编辑，本批文件没有上传');
+      }
+      // Release old completed File references between batches.
+      for (let i = jobs.length - 1; i >= 0; i--) if (jobs[i].state === 'done') jobs.splice(i, 1);
+      visible = true;
+      for (const { file, quality: selectedQuality } of selection) {
+        const job = {
+          file,
+          quality: selectedQuality,
+          entryId: targetId,
+          entryRef: entry,
+          position,
+          occurrenceId: crypto.randomUUID(),
+          progress: 0,
+          state: 'queued',
+          message: '等待处理',
+        };
+        jobs.push(job);
+        enqueue(job);
+      }
+      await queue;
+    } finally {
+      preparing--;
     }
-    const selection = await (c.chooseMediaBatch || chooseMediaBatch)([...files], {
-      escape: esc,
-      quality,
-      targetLabel: entry.title || '无标题日记',
-    });
-    if (!selection.length) return;
-    if (!c.library.entries.some((item) => item.id === targetId && !item.deleted))
-      return toast('原目标日记已不可编辑，本批文件没有上传');
-    // Release old completed File references between batches.
-    for (let i = jobs.length - 1; i >= 0; i--) if (jobs[i].state === 'done') jobs.splice(i, 1);
-    visible = true;
-    for (const { file, quality: selectedQuality } of selection) {
-      const job = {
-        file,
-        quality: selectedQuality,
-        entryId: targetId,
-        progress: 0,
-        state: 'queued',
-        message: '等待处理',
-      };
-      jobs.push(job);
-      enqueue(job);
-    }
-    await queue;
   }
   document.addEventListener('dragenter', (event) => {
     if (!hasFiles(event)) return;
@@ -213,12 +287,22 @@ export function createMediaImport(c) {
     if (event.key === 'Escape') hide();
   });
   window.addEventListener('beforeunload', (event) => {
-    if (jobs.some((j) => activeStates.includes(j.state))) {
+    if (preparing || jobs.some((j) => activeStates.includes(j.state))) {
       event.preventDefault();
       event.returnValue = '';
     }
   });
   return {
+    async settle() {
+      if (document.querySelector('dialog[open]')) throw Error('请先完成或取消当前弹窗');
+      if (preparing) throw Error('正在读取或添加媒体，请等待完成后继续');
+      await queue;
+      if (jobs.some((job) => job.state === 'error')) {
+        visible = true;
+        render();
+        throw Error('还有媒体未保存，请重试或移除失败项后继续');
+      }
+    },
     upload,
     show: () => {
       visible = true;

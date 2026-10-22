@@ -1,5 +1,11 @@
 # 架构说明
 
+第六步将运行器拆成src/server/revisit-runner/client.mjs与runtime.mjs，HTTP控制宿主在routes/revisit-runner.mjs，CLI在tools/revisit/并保留旧入口。运行器只调用固定本机API，不保存密码/游标或读写源日记；投递和去重仍由服务端原mutate负责。API受管实例默认停止，UI以后显式控制；独立CLI是另一可选宿主，不能在UI另启tick定时器。认证、取消和退避状态协议见[第六步](revisit/06-runner.md)，本轮仅隔离验证，未绑定生命周期或部署。
+
+朝花夕拾从2026-10-17按六子项目分步拆解，边界/接口/状态以[子项目入口](revisit/README.md)为准。已抽出纯引擎、[来源适配](revisit/02-sources.md)、[推送状态](revisit/03-delivery.md)及[评论上下文](revisit/04-comments.md)：来源按操作捕获只读快照；推送/评论同用全库mutate同步生成计划、核对来源/状态令牌再提交，查询返回自有副本。评论仅保存db.revisit.comments一个主体，通过固定SourceRef/occurrenceId按篇读取，不进入回看。旧入口/API兼容，HTTP只校验/传输/分块；同源归档复用内容及关联校验，通用备份合并映射未接入。群聊UI和运行宿主待继续分离，不拆数据库或多个服务；前四步均未部署本轮候选。
+
+第五步现已将收件/评论outbox/目标状态抽成无DOM客户端previews/telegram-chat/shiye-revisit-client.js，由现有UI包装层与隔离测试端共同调用；不复制另一套权威内容。Node实验室通过实际日记桥、原生固定动作镜像、真实HTTP后端和本地worker持久化验证，存储使用私有fake-indexeddb；无原生窗口/浏览器验证、未部署。见[后台接入验收](validation/2026-10-17-revisit-stage5-background-integration.md)。
+
 ## 运行边界
 
 Windows exe 负责找到 Node.js、启动根目录 server.mjs、打开浏览器。浏览器使用原生 ES modules，应用仍为原生模块；CodeMirror 与 HTML 转换器通过构建工具预打包成本地资源，无运行期 npm 或 CDN 依赖。Node 只监听回环地址，负责日记库、文件与本地访问锁；浏览器负责编辑、显示以及新备份的压缩加解密。

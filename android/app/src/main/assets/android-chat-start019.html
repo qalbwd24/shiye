@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; base-uri 'none'"
+    />
+    <title>拾页</title>
+    <style>
+      body {
+        margin: 0;
+        background: #fff;
+        color: #243341;
+        font: 14px/1.6 system-ui;
+      }
+      main {
+        padding: 24px 18px;
+      }
+      button {
+        padding: 10px 18px;
+        background: #edf5fc;
+        border: 0;
+        border-radius: 8px;
+        color: inherit;
+      }
+    </style>
+    <script src="/native-chat-start019.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <p role="status" id="status">正在打开本机会话…</p>
+      <button id="retry" hidden>重试</button>
+    </main>
+  </body>
+</html>

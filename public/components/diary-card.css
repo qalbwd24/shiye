@@ -1,0 +1,149 @@
+:root {
+  color-scheme: light;
+  font-family: 'Microsoft YaHei', system-ui, sans-serif;
+  color: #21483f;
+  background: #edf6f1;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  padding: 24px;
+}
+.card {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 28px;
+  border: 1px solid #c8ded4;
+  border-radius: 24px;
+  background: #fcfefa;
+  box-shadow: 0 16px 50px #36675312;
+}
+header,
+footer,
+nav,
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+header {
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.brand {
+  font-size: 24px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #24745a;
+}
+.subtitle,
+.metadata {
+  color: #657d73;
+  font-size: 13px;
+}
+nav {
+  flex-wrap: wrap;
+}
+button {
+  cursor: pointer;
+  border: 1px solid #cce1d6;
+  background: #f5faf6;
+  color: #285d4d;
+  padding: 9px 14px;
+  border-radius: 11px;
+  font: inherit;
+  font-size: 14px;
+}
+button:hover {
+  background: #e3f1e9;
+}
+button[aria-pressed='true'],
+.primary {
+  background: #d5eade;
+  border-color: #82b09a;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #4d9578;
+  outline-offset: 3px;
+}
+#status {
+  min-height: 22px;
+  font-size: 14px;
+  color: #61786f;
+}
+#unlock {
+  display: inline-block;
+  margin-bottom: 22px;
+  color: #246a53;
+}
+[hidden] {
+  display: none !important;
+}
+h1 {
+  font-size: clamp(21px, 5vw, 28px);
+  line-height: 1.5;
+  margin: 12px 0 20px;
+  overflow-wrap: anywhere;
+}
+.content {
+  line-height: 1.9;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.content > :first-child {
+  margin-top: 0;
+}
+.content blockquote {
+  margin: 16px 0;
+  padding-left: 16px;
+  border-left: 3px solid #9bc5ae;
+  color: #637d6e;
+}
+.content pre {
+  white-space: pre-wrap;
+  background: #edf5ef;
+  padding: 12px;
+  border-radius: 8px;
+}
+.content table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.content a {
+  color: #24745a;
+}
+figure {
+  margin: 22px 0 0;
+}
+figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: auto;
+  border-radius: 14px;
+}
+footer {
+  justify-content: space-between;
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid #e1ece5;
+  flex-wrap: wrap;
+}
+@media (max-width: 420px) {
+  body {
+    padding: 12px;
+  }
+  .card {
+    padding: 20px;
+    border-radius: 18px;
+  }
+}

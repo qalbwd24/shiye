@@ -523,13 +523,19 @@ dialog.settings-dialog {
   margin-bottom: 4px;
   color: var(--ink);
 }
-.settings-nav button:hover {
-  background: var(--bg);
+.settings-nav button:enabled:hover {
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 .settings-nav button.active {
   background: var(--mint);
   color: var(--accent-dark);
   font-weight: 600;
+}
+.settings-content button.secondary:enabled:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  color: var(--ink);
 }
 .settings-content {
   padding: 26px 32px 36px;

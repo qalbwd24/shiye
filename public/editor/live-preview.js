@@ -115,6 +115,13 @@ class RuleWidget extends WidgetType {
     const rule = view.dom.ownerDocument.createElement('span');
     rule.className = 'md-rule';
     rule.setAttribute('role', 'separator');
+    rule.setAttribute('aria-label', '分割线');
+    rule.title = '点击编辑分割线标记';
+    rule.addEventListener('click', () => {
+      // Use the current DOM position: earlier edits may have shifted this widget.
+      view.dispatch({ selection: { anchor: view.posAtDOM(rule) } });
+      view.focus();
+    });
     return rule;
   }
   ignoreEvent() {

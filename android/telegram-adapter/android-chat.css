@@ -1,0 +1,1700 @@
+/* Android shell seams over the frozen Web A layout and message renderer. */
+body[data-shiye-chat-required='true'] #MiddleColumn {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+body[data-shiye-chat-required='true'] > .shiye-android-header {
+  display: none !important;
+}
+#shiye-qq-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 19999;
+  padding: 24px 16px;
+  background: var(--shiye-base-surface, #fff);
+  color: var(--shiye-ink, #17191b);
+}
+#shiye-qq-loading[hidden] {
+  display: none;
+}
+#shiye-qq-loading h2 {
+  font-size: 17px;
+}
+#shiye-qq-loading p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+#shiye-qq-loading button {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--shiye-ink, #17191b);
+  background: var(--shiye-surface-soft, #eef2f5);
+}
+:root {
+  --font-family: 'HONOR Sans CN', 'Noto Sans SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --shiye-accent: #428ac4;
+  --shiye-surface: #f5fafed6;
+  --shiye-base-surface: #f5fafe;
+  --shiye-ink: #111827;
+  --shiye-muted: #475569;
+  --shiye-line: #cadfee;
+  --shiye-chat-background: #eaf5fc;
+  --shiye-bubble-out: #ddeffd;
+  --shiye-bubble-in: #fff;
+  --shiye-input-surface: #ffffffd9;
+  --shiye-surface-soft: #edf6fdd1;
+  --shiye-pressed: #dceefad9;
+  --shiye-selection: #c9e5f8;
+  --shiye-accent-hover: #3478ad;
+  --shiye-quote-surface: #c9e5f866;
+  --shiye-message-meta: #001e34;
+  --shiye-backdrop: #172b3f59;
+  --shiye-shadow: #254b6a20;
+  --shiye-error: #b04444;
+  --shiye-list-avatar-size: 50px;
+  --shiye-list-title-size: 16px;
+  --shiye-list-preview-size: 14px;
+  --shiye-list-time-size: 11px;
+  --shiye-list-pinned: #c8e2f5;
+  --shiye-list-pinned-selected: #b6d8ef;
+  --shiye-list-pinned-pressed: #a9d2ee;
+  --shiye-list-divider: #d7eaf5;
+  --shiye-list-pin-veil: #7099b580;
+}
+html body {
+  color-scheme: light;
+  color: var(--shiye-ink);
+  --color-background: var(--shiye-surface);
+  --color-background-secondary: var(--shiye-surface-soft);
+  --color-background-secondary-accent: var(--shiye-pressed);
+  --color-background-compact-menu: var(--shiye-surface);
+  --color-background-own: var(--shiye-bubble-out);
+  --color-background-own-apple: var(--shiye-bubble-out);
+  --color-background-selected: var(--shiye-selection);
+  --color-background-own-selected: var(--shiye-selection);
+  --color-text: var(--shiye-ink);
+  --color-text-rgb: 17, 24, 39;
+  --color-text-secondary: var(--shiye-muted);
+  --color-icon-secondary: var(--shiye-muted);
+  --color-text-meta: var(--shiye-message-meta);
+  --color-text-meta-rgb: 61, 100, 127;
+  --color-primary: var(--shiye-accent);
+  --color-primary-shade: var(--shiye-accent-hover);
+  --color-primary-opacity: var(--shiye-pressed);
+  --color-links: var(--shiye-accent);
+  --color-own-links: var(--shiye-accent-hover);
+  --color-accent-own: var(--shiye-message-meta);
+  --color-accent-own-rgb: 61, 100, 127;
+  --color-message-meta-own: var(--shiye-message-meta);
+  --color-text-green: var(--shiye-message-meta);
+  --color-green: var(--shiye-accent);
+  --color-chat-hover: var(--shiye-surface-soft);
+  --color-chat-active: var(--shiye-pressed);
+  --color-item-hover: var(--shiye-surface-soft);
+  --color-item-active: var(--shiye-pressed);
+  --color-borders: var(--shiye-line);
+  --color-borders-input: var(--shiye-line);
+  --color-message-reaction-own: var(--shiye-selection);
+  --color-message-reaction-hover-own: var(--shiye-pressed);
+  --color-reply-own-hover: var(--shiye-quote-surface);
+  --color-reply-own-active: var(--shiye-selection);
+  --color-reply-hover: var(--shiye-quote-surface);
+  --color-reply-active: var(--shiye-selection);
+}
+html body,
+button,
+input,
+#LeftColumn .fullName,
+#LeftColumn .last-message,
+.text-content,
+.ProseMirror {
+  font-family: 'HONOR Sans CN', 'Noto Sans SC', 'Microsoft YaHei', system-ui, sans-serif !important;
+}
+#LeftMainHeader.shiye-left-header,
+.shiye-left-header #LeftMainHeader {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-inline: 8px;
+  /* Native clears the root top padding only for the list. Keep controls below
+     the system bar while the wallpaper-backed column reaches the screen edge. */
+  box-sizing: border-box;
+  height: calc(var(--column-header-height, 3.5rem) + var(--shiye-native-top-inset, 0px));
+  min-height: calc(var(--column-header-height, 3.5rem) + var(--shiye-native-top-inset, 0px));
+  padding-top: var(--shiye-native-top-inset, 0px);
+  border-bottom: 1px solid var(--shiye-line);
+  background: var(--shiye-surface);
+}
+.shiye-topic-title {
+  display: block;
+  order: 0;
+  flex: 1;
+  margin: 0;
+  font-size: 0;
+}
+.shiye-topic-title::after {
+  content: '随想';
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+}
+#LeftMainHeader.shiye-left-header,
+.shiye-left-header #LeftMainHeader,
+.shiye-left-header {
+  background: transparent;
+  border-bottom-color: transparent;
+  box-shadow: none;
+}
+#LeftMainHeader > button:nth-of-type(1) {
+  order: 2;
+}
+#LeftMainHeader > button:nth-of-type(2) {
+  order: 1;
+}
+#LeftMainHeader > button:nth-of-type(3) {
+  display: none;
+}
+#LeftMainHeader button {
+  color: var(--shiye-muted);
+  flex-shrink: 0;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+}
+#LeftMainHeader button .icon,
+#LeftMainHeader button svg {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+#LeftMainHeader .SearchInput {
+  min-width: 0;
+}
+#LeftColumn .NewChatButton button {
+  background-color: var(--shiye-accent);
+}
+#LeftColumn .Chat .fullName {
+  font-size: var(--shiye-list-title-size);
+  font-weight: 600;
+}
+#LeftColumn .Chat .last-message {
+  font-size: var(--shiye-list-preview-size);
+  color: var(--shiye-muted);
+}
+#LeftColumn .Chat .Avatar.no-photo > .inner {
+  background-image: var(--shiye-avatar-gradient);
+}
+#LeftColumn .Chat .Avatar .letters {
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 550;
+}
+#LeftColumn .Chat .ListItem-button {
+  /* ChatList positions rows at 72px intervals. Keep this contract unchanged. */
+  height: 72px;
+  min-height: 72px;
+  padding: 11px 8px 11px 12px;
+  gap: 0;
+  border-radius: 0;
+}
+#LeftColumn .Chat .Avatar {
+  width: var(--shiye-list-avatar-size);
+  height: var(--shiye-list-avatar-size);
+  margin-inline-end: 12px;
+  flex: none;
+}
+#LeftColumn .Chat .info {
+  gap: 3px;
+}
+#LeftColumn .Chat .info-row {
+  min-height: 22px;
+  line-height: 22px;
+  align-items: center;
+}
+#LeftColumn .Chat .title {
+  min-width: 0;
+  flex-shrink: 1;
+}
+#LeftColumn .Chat .subtitle {
+  min-height: 20px;
+  line-height: 20px;
+}
+#LeftColumn .Chat .LastMessageMeta {
+  font-size: var(--shiye-list-time-size);
+  margin-inline-start: 6px;
+  color: var(--shiye-muted);
+  font-variant-numeric: tabular-nums;
+}
+#LeftColumn .Chat .shiye-room-settings {
+  margin-inline-start: 4px;
+  position: relative;
+}
+#LeftColumn .Chat .ListItem-button:active {
+  background-color: var(--shiye-pressed);
+}
+.shiye-room-settings {
+  border: 0;
+  background: transparent;
+  color: var(--shiye-muted);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  flex: none;
+}
+.shiye-room-settings .icon {
+  display: none;
+}
+.shiye-room-settings::after {
+  content: '';
+  display: block;
+  width: 22px;
+  height: 22px;
+  margin: auto;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='5' r='1.6'/%3E%3Ccircle cx='12' cy='12' r='1.6'/%3E%3Ccircle cx='12' cy='19' r='1.6'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+.shiye-room-settings:active,
+.shiye-room-settings:hover {
+  background: var(--shiye-pressed);
+}
+.shiye-android-pinned .shiye-room-settings {
+  color: var(--shiye-accent);
+}
+.shiye-android-pinned .shiye-room-settings::before {
+  content: none;
+}
+.time[data-android-date] {
+  font-size: 0 !important;
+}
+.time[data-android-date]::after {
+  content: attr(data-android-date);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--shiye-muted);
+}
+.shiye-android-header {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 48px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  background: var(--shiye-surface);
+  color: var(--shiye-ink);
+  box-shadow: 0 1px 0 var(--shiye-line);
+}
+.shiye-android-header button {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--shiye-muted);
+}
+.shiye-android-header strong {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shiye-android-header svg,
+.shiye-android-dialog svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.shiye-android-header[hidden] {
+  display: none;
+}
+.shiye-android-dialog {
+  font-size: 13px;
+  box-sizing: border-box;
+  width: min(100% - 24px, 440px);
+  max-height: min(82dvh, 700px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--shiye-line);
+  border-radius: 16px;
+  color: var(--shiye-ink);
+  background: var(--shiye-surface);
+  box-shadow: 0 16px 60px var(--shiye-shadow);
+  overscroll-behavior: contain;
+  overflow: hidden;
+}
+.shiye-android-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.shiye-android-dialog > .shiye-dialog-heading {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--shiye-line);
+}
+.shiye-android-dialog > .shiye-dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px;
+  margin: 0;
+}
+.shiye-dialog-footer {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border-top: 1px solid var(--shiye-line);
+  background: var(--shiye-base-surface);
+}
+.shiye-android-dialog::backdrop {
+  background: var(--shiye-backdrop);
+  backdrop-filter: blur(3px);
+}
+.shiye-android-dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.shiye-dialog-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.shiye-android-dialog h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.shiye-android-dialog button {
+  font: inherit;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 120ms,
+    opacity 120ms;
+}
+.shiye-android-dialog .shiye-dialog-close {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: var(--shiye-surface-soft);
+  color: var(--shiye-muted);
+}
+.shiye-dialog-close span {
+  display: none;
+}
+.shiye-android-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--shiye-muted);
+}
+.shiye-android-dialog input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 50px;
+  font-size: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--shiye-line);
+  border-radius: 12px;
+  color: var(--shiye-ink);
+  background: var(--shiye-input-surface);
+  outline: none;
+}
+.shiye-android-dialog input:focus {
+  border-color: var(--shiye-accent);
+  box-shadow: none;
+}
+.shiye-android-dialog .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.shiye-android-dialog .actions button {
+  min-height: 44px;
+  min-width: 76px;
+  padding: 10px 18px;
+  background: var(--shiye-accent);
+  color: #fff;
+  font-weight: 600;
+}
+.shiye-android-dialog .actions button:first-child {
+  background: transparent;
+  color: var(--shiye-muted);
+}
+.shiye-android-dialog .shiye-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: var(--shiye-ink);
+  text-align: start;
+}
+.shiye-menu-row svg {
+  color: var(--shiye-muted);
+}
+.shiye-menu-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shiye-android-dialog .shiye-menu-primary {
+  color: var(--shiye-accent);
+  background: var(--shiye-surface-soft);
+}
+.shiye-menu-primary svg {
+  color: inherit;
+}
+.shiye-dialog-note {
+  margin: -4px 0 4px;
+  color: var(--shiye-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.shiye-android-dialog button:active,
+.shiye-android-header button:active {
+  background: var(--shiye-pressed);
+}
+.shiye-android-dialog button:disabled {
+  opacity: 0.5;
+}
+.shiye-android-dialog .error {
+  color: var(--shiye-error);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.shiye-android-dialog .error:empty {
+  display: none;
+}
+.shiye-search-results {
+  max-height: none;
+  min-height: 0;
+  overflow: auto;
+  flex: 1;
+  overscroll-behavior: contain;
+}
+.shiye-search-dialog {
+  width: min(calc(100% - 16px), 560px);
+  height: calc(100dvh - 16px);
+  max-height: calc(100dvh - 16px);
+}
+.shiye-search-dialog .shiye-dialog-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.shiye-search-dialog .room-result-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.shiye-search-dialog .room-result-heading strong {
+  font-size: 13px;
+}
+.shiye-search-dialog time {
+  font-size: 10px;
+  color: var(--shiye-muted);
+  margin-inline-start: auto;
+}
+.shiye-search-dialog .room-result {
+  padding-block: 10px;
+  gap: 4px 8px;
+  grid-template-columns: 20px minmax(0, 1fr);
+}
+.shiye-search-dialog .room-result > span {
+  font-size: 12px;
+  -webkit-line-clamp: 3;
+}
+.shiye-android-dialog .room-result {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 5px 12px;
+  padding: 14px 4px;
+  text-align: start;
+  color: inherit;
+  background: transparent;
+  border-bottom: 1px solid var(--shiye-line);
+}
+.room-result svg {
+  grid-row: span 2;
+  color: var(--shiye-muted);
+}
+.room-result strong {
+  font-size: 14px;
+}
+.room-result span {
+  font-size: 14px;
+  color: var(--shiye-muted);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: pre-wrap;
+}
+.shiye-markdown {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.shiye-markdown p {
+  white-space: pre-wrap;
+  margin: 0.45em 0;
+}
+.shiye-markdown > :first-child {
+  margin-top: 0;
+}
+.shiye-markdown > :last-child {
+  margin-bottom: 0;
+}
+.text-content:has(> .shiye-markdown) {
+  white-space: normal !important;
+}
+.shiye-markdown blockquote {
+  margin: 0.35em 0;
+  padding: 6px 9px;
+  border: 0;
+  border-inline-start: 3px solid var(--shiye-accent);
+  white-space: normal;
+  border-radius: 5px;
+}
+.shiye-markdown blockquote > :first-child {
+  margin-top: 0;
+}
+.shiye-markdown blockquote > :last-child {
+  margin-bottom: 0;
+}
+.shiye-markdown blockquote::before,
+.shiye-markdown blockquote::after {
+  content: none;
+}
+.shiye-markdown pre {
+  max-width: 100%;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+.shiye-markdown img {
+  max-width: 100%;
+}
+.Composer .ai-composer-button {
+  display: none;
+}
+.Composer .record,
+.Composer button[aria-label='Record voice message'],
+.Composer button[aria-label='录制语音消息'] {
+  visibility: hidden;
+}
+/* Frozen ui18's built-in light wallpaper identifies its base as #bdcd8c.
+   Tint only that built-in pattern. Custom image/color/pattern layers retain
+   their original renderer, image, opacity, mask and independent preference. */
+#Main[style*='#bdcd8c']:not([style*='--custom-pattern'])
+  > [class*='background'][class*='withPattern']:not([class*='customBgImage']) {
+  background-color: var(--shiye-chat-background);
+}
+#Main[style*='#bdcd8c']:not([style*='--custom-pattern'])
+  > [class*='background'][class*='withPattern']:not([class*='customBgImage'])
+  canvas {
+  filter: grayscale(1);
+  mix-blend-mode: soft-light;
+  opacity: 0.2;
+}
+/* Frozen ui18's known default dark wallpaper: black base + purple masked
+   gradient. Only this exact pair is retinted; user image/pattern/color choices
+   keep their own renderer and original media. */
+#Main[style*='#000000'][style*='#27308a66']:not(
+    [style*='--custom-pattern'],
+    [style*='--custom-background']
+  )
+  > [class*='background'][class*='customBgColor'][class*='withMaskedPattern']:not(
+    [class*='customBgImage']
+  ) {
+  background-color: var(--shiye-chat-background);
+}
+#Main[style*='#000000'][style*='#27308a66']:not(
+    [style*='--custom-pattern'],
+    [style*='--custom-background']
+  )
+  > [class*='background'][class*='customBgColor'][class*='withMaskedPattern']:not(
+    [class*='customBgImage']
+  )
+  canvas {
+  filter: grayscale(1);
+  mix-blend-mode: screen;
+  opacity: 0.12;
+}
+body[data-shiye-chat-theme] #LeftColumn {
+  background-color: var(--shiye-base-surface);
+}
+#LeftColumn .LeftColumn-main {
+  background-color: var(--shiye-surface);
+}
+body[data-shiye-list-background='true'] #LeftColumn {
+  background-image: var(--shiye-list-background, none);
+  background-position: center;
+  background-size: cover;
+}
+body[data-shiye-list-background='true'] #LeftColumn .LeftColumn-main,
+body[data-shiye-list-background='true'] #LeftColumn-main,
+body[data-shiye-list-background='true'] #LeftColumn .chat-list {
+  background-color: transparent;
+}
+#Main {
+  --action-message-bg: var(--shiye-accent-hover);
+}
+#MiddleColumn .sticky-date > span,
+#MiddleColumn .local-action-message > span,
+#MiddleColumn .empty > span {
+  color: var(--shiye-ink);
+  background-color: var(--shiye-selection);
+}
+#LeftColumn .MessageOutgoingStatus {
+  color: var(--shiye-accent-hover);
+}
+#MiddleColumn .Message:not(.own) {
+  --background-color: var(--shiye-bubble-in);
+}
+.Message .text-content,
+.Message .shiye-markdown {
+  color: var(--shiye-ink);
+}
+.Message .MessageMeta,
+.Message.own .MessageMeta {
+  color: var(--shiye-message-meta);
+}
+.Message .EmbeddedMessage,
+.Composer .EmbeddedMessage {
+  --accent-background-color: var(--shiye-quote-surface);
+}
+.shiye-markdown blockquote {
+  color: var(--shiye-ink);
+  background-color: var(--shiye-quote-surface);
+}
+.Composer .input-scroller,
+.Composer .composer-wrapper,
+.Composer .ComposerEmbeddedMessage {
+  background-color: var(--shiye-input-surface);
+}
+.Composer .placeholder-text {
+  color: var(--shiye-muted);
+}
+.Composer .AttachMenu--button,
+.Composer .shiye-symbol-button {
+  color: var(--shiye-ink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .shiye-android-dialog button {
+    transition: none;
+  }
+}
+/* Android 0.5: desktop-confirmed display preferences and local input UI. */
+#LeftColumn .NewChatButton {
+  display: none !important;
+}
+#LeftColumn .Chat.shiye-android-pinned,
+#LeftColumn .Chat.shiye-android-pinned .ListItem-button {
+  background: var(--shiye-list-pinned);
+}
+#LeftColumn .Chat.shiye-android-pinned.selected .ListItem-button {
+  background: var(--shiye-list-pinned-selected);
+}
+#LeftColumn .Chat.shiye-android-pinned .ListItem-button:active {
+  background: var(--shiye-list-pinned-pressed);
+}
+#LeftColumn .shiye-android-pinned .fullName {
+  color: #122c42;
+}
+#MiddleColumn {
+  --message-text-size: var(--shiye-message-size, 16px);
+}
+#MiddleColumn .Message {
+  --border-radius-messages: var(--shiye-bubble-radius, 16px);
+  margin-bottom: var(--shiye-message-gap, 3px);
+}
+/* The chat layout omits sender furniture. Remove its lane as well as the
+   visible avatar; embedded reply/source labels retain their target context. */
+#MiddleColumn .Message > .Avatar,
+#MiddleColumn .Message .content-inner > .message-title {
+  display: none;
+}
+#MiddleColumn .Message:not(.own),
+#MiddleColumn .Message.has-guest-avatar {
+  padding-inline-start: 0;
+}
+#MiddleColumn .Message .text-content {
+  font-size: var(--shiye-message-size, 16px);
+}
+#MiddleColumn
+  .message-content.has-solid-background:has(.text-content):not(
+    :has(.media-inner, .shiye-emoji-message, .File, .Document)
+  ) {
+  padding: var(--shiye-bubble-padding-block, var(--shiye-bubble-padding, 4px))
+    var(--shiye-bubble-padding, 8px);
+}
+#MiddleColumn
+  .message-content.has-solid-background:not(
+    :has(.media-inner, .shiye-emoji-message, .File, .Document)
+  )
+  .text-content {
+  padding-bottom: 0;
+}
+.Composer,
+.shiye-attachment-modal {
+  --composer-text-size: var(--shiye-input-size, 16px);
+}
+/* Keep visible text, placeholder and measured vertical padding in agreement. */
+#MiddleColumn .Composer #message-input-text {
+  --composer-input-line-height: 1.5;
+}
+#MiddleColumn .MessageMeta,
+#MiddleColumn .sticky-date {
+  font-variant-numeric: tabular-nums;
+}
+#MiddleColumn .sticky-date > span {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+}
+.Composer #editable-message-text,
+.shiye-attachment-modal #editable-message-text-modal,
+.Composer .placeholder-text,
+.shiye-attachment-modal .placeholder-text {
+  font-size: var(--shiye-input-size, 16px);
+  line-height: 1.5;
+}
+#MiddleColumn .shiye-markdown.shiye-emoji-message {
+  font-size: calc(var(--shiye-message-size, 16px) * 2);
+  line-height: 1.3;
+}
+#MiddleColumn .Message:has(.shiye-emoji-message) .message-content {
+  background: var(--shiye-bubble-in);
+}
+
+/* Android 08: stable rectangular bubbles, including emoji-only messages. */
+#MiddleColumn .Message {
+  max-width: var(--shiye-bubble-width, 88%);
+}
+#MiddleColumn .Message .message-content.has-solid-background,
+#MiddleColumn .Message:has(.shiye-emoji-message) .message-content {
+  border-radius: var(--shiye-bubble-radius, 16px) !important;
+  background: color-mix(
+    in srgb,
+    var(--shiye-bubble-in) calc(var(--shiye-bubble-opacity, 1) * 100%),
+    transparent
+  );
+}
+#MiddleColumn .Message.own .message-content.has-solid-background,
+#MiddleColumn .Message.own:has(.shiye-emoji-message) .message-content {
+  background: color-mix(
+    in srgb,
+    var(--shiye-bubble-in) calc(var(--shiye-bubble-opacity, 1) * 100%),
+    transparent
+  );
+}
+#MiddleColumn .Message .svg-appendix {
+  display: none !important;
+}
+#MiddleColumn .Message:has(.shiye-emoji-message) .message-content {
+  padding: var(--shiye-bubble-padding-block, var(--shiye-bubble-padding, 4px))
+    var(--shiye-bubble-padding, 8px);
+  display: block;
+}
+/* The existing metadata stays in normal inline flow after the last paragraph.
+   No overlay: when the tail does not fit it wraps with its own reserved width. */
+#MiddleColumn .Message .message-content:has(.shiye-markdown) .shiye-markdown,
+#MiddleColumn .Message .message-content:has(.shiye-markdown) .shiye-markdown > p:last-child {
+  display: contents;
+}
+#MiddleColumn .Message .message-content:has(.shiye-emoji-message) > .content-inner,
+#MiddleColumn .Message .message-content:has(.shiye-emoji-message) .text-content {
+  display: inline;
+}
+#MiddleColumn .Message .text-content::after {
+  content: '';
+  display: block;
+  clear: both;
+}
+#MiddleColumn .Message .message-content:has(.shiye-emoji-message) {
+  display: flow-root;
+}
+#MiddleColumn .Message .message-content:has(.shiye-emoji-message) .text-content::after {
+  display: none;
+}
+#MiddleColumn .Message .shiye-markdown blockquote {
+  display: block;
+}
+#MiddleColumn .Message .text-content > .MessageMeta,
+#MiddleColumn .Message .message-content.text:not(.media) > .MessageMeta {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  float: right;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: baseline;
+  width: max-content;
+  height: auto;
+  min-height: 1em;
+  margin: max(
+      0px,
+      calc(var(--shiye-message-size, 16px) * 1.5 - var(--shiye-message-time-size, 8.5px) - 2px)
+    )
+    0 0 6px;
+  padding: 0;
+  white-space: nowrap;
+  font-size: var(--shiye-message-time-size, 8.5px);
+  line-height: 1;
+  opacity: var(--shiye-message-time-opacity, 0.62);
+  background: transparent;
+  color: var(--shiye-message-meta) !important;
+}
+#MiddleColumn .Message .message-content:has(.shiye-markdown) > .MessageMeta * {
+  color: inherit !important;
+}
+#MiddleColumn .Message .message-content:has(.shiye-emoji-message) > .MessageMeta {
+  margin-top: max(
+    0px,
+    calc(var(--shiye-message-size, 16px) * 2 * 1.3 - var(--shiye-message-time-size, 8.5px) - 2px)
+  );
+}
+#MiddleColumn .Message .MessageMeta,
+#MiddleColumn .Message .MessageMeta .message-time {
+  font-size: var(--shiye-message-time-size, 8.5px);
+}
+#MiddleColumn .Message .MessageMeta .message-time {
+  font-size: inherit;
+  line-height: inherit;
+}
+#MiddleColumn .Message .MessageOutgoingStatus {
+  font-size: inherit;
+  width: 1.4em;
+  height: 1em;
+}
+#MiddleColumn .Message .MessageOutgoingStatus .icon {
+  font-size: 1.2em;
+}
+/* Keep full-width row geometry so row-reverse reaches the actual right edge. */
+#MiddleColumn .Message {
+  max-width: none;
+}
+#MiddleColumn .Message > .message-content-wrapper {
+  max-width: var(--shiye-bubble-width, 88%);
+  min-width: 0;
+}
+#MiddleColumn .Message.own {
+  padding-inline-end: 0;
+}
+body[data-shiye-chat-theme='dark'] {
+  --shiye-accent: #78d7ff;
+  --shiye-accent-hover: #a6e4ff;
+  --shiye-surface: #192c3ed6;
+  --shiye-base-surface: #192c3e;
+  --shiye-surface-soft: #243d53d1;
+  --shiye-input-surface: #253e52d9;
+  --shiye-ink: #e6f2ff;
+  --shiye-muted: #a5bacd;
+  --shiye-line: #305168;
+  --shiye-chat-background: #182d40;
+  --shiye-bubble-in: #294359;
+  --shiye-bubble-out: #294359;
+  --shiye-pressed: #233f55d9;
+  --shiye-selection: #254b64;
+  --shiye-quote-surface: #244b6380;
+  --shiye-message-meta: #e9f6ff;
+  --shiye-backdrop: #020a1399;
+  --shiye-shadow: #00000050;
+  --shiye-list-pinned: #1b354a;
+  --shiye-list-pinned-selected: #254a62;
+  --shiye-list-pinned-pressed: #2b566f;
+  --shiye-list-divider: #d7eaf5;
+  --shiye-list-pin-veil: #071d30b8;
+  --color-text-rgb: 230, 242, 255;
+  --color-text-meta-rgb: 198, 223, 242;
+  --color-accent-own-rgb: 198, 223, 242;
+  color-scheme: dark;
+}
+body[data-shiye-chat-theme='dark'] #LeftColumn .shiye-android-pinned .fullName,
+body[data-shiye-chat-theme='dark'] .shiye-symbol-tabs button[aria-pressed='true'],
+body[data-shiye-chat-theme='dark'] .shiye-sticker-import {
+  color: var(--shiye-ink);
+}
+body[data-shiye-chat-theme='dark'] #MiddleColumn .Composer .AttachMenu--button,
+body[data-shiye-chat-theme='dark'] #MiddleColumn .Composer .shiye-symbol-button {
+  color: var(--shiye-ink) !important;
+}
+.shiye-refresh-status {
+  pointer-events: none;
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: max-content;
+  max-width: 90vw;
+  padding: 8px 14px;
+  border-radius: 16px;
+  color: var(--shiye-ink);
+  background: var(--shiye-selection);
+  font-size: 13px;
+}
+.shiye-refresh-status[data-state='loading']::before {
+  content: '';
+  box-sizing: border-box;
+  flex: 0 0 13px;
+  width: 13px;
+  height: 13px;
+  border: 2px solid color-mix(in srgb, var(--shiye-accent) 25%, transparent);
+  border-top-color: var(--shiye-accent);
+  border-radius: 50%;
+  animation: shiye-refresh-spin 800ms linear infinite;
+}
+@keyframes shiye-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shiye-refresh-status[data-state='loading']::before {
+    animation: none;
+  }
+}
+#MiddleColumn .Message:has(.shiye-emoji-message) .shiye-markdown {
+  margin: 0;
+}
+#MiddleColumn .Message:has(.shiye-emoji-message) .shiye-markdown p {
+  margin: 0;
+}
+#MiddleColumn {
+  background-image: var(--shiye-room-background, none);
+  background-size: cover;
+  background-position: center;
+}
+.Avatar.shiye-room-background-avatar {
+  background-size: cover;
+  background-position: center;
+}
+.Avatar.shiye-room-background-avatar > .inner {
+  visibility: hidden;
+}
+.shiye-empty-send {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  align-self: flex-end;
+  border: 0;
+  border-radius: 50%;
+  background: var(--shiye-surface-soft);
+  color: #9aafbe;
+  font-size: 26px;
+}
+.Composer:has(.main-button:is(.send, .edit, .forward, .schedule)) .shiye-empty-send {
+  display: none;
+}
+body.shiye-symbol-panel-open #MiddleColumn .middle-column-footer {
+  bottom: min(300px, 45dvh);
+}
+body.shiye-symbol-panel-open #MiddleColumn .MessageList {
+  --message-list-bottom-inset: calc(
+    min(300px, 45dvh) + var(--shiye-symbol-footer-height, 60px) + 12px
+  ) !important;
+  clip-path: inset(0 0 calc(min(300px, 45dvh) + var(--shiye-symbol-footer-height, 60px)) 0);
+}
+body.shiye-symbol-panel-open #MiddleColumn .MessageList .messages-container {
+  padding-bottom: calc(
+    min(300px, 45dvh) + var(--shiye-symbol-footer-height, 60px) + 12px
+  ) !important;
+}
+.shiye-keyboard-panel[open] {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 70;
+  width: 100%;
+  max-width: none;
+  height: 300px;
+  max-height: 45dvh;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 0;
+  border: 0;
+  border-top: 1px solid var(--shiye-line);
+  box-shadow: none;
+  overflow-y: auto;
+}
+.shiye-keyboard-panel header {
+  margin-bottom: 4px;
+}
+.shiye-keyboard-panel h2 {
+  font-size: 15px;
+}
+.shiye-keyboard-panel header button {
+  width: 36px;
+  height: 32px;
+}
+.shiye-keyboard-panel .shiye-symbol-tabs {
+  margin-bottom: 6px;
+}
+.shiye-keyboard-panel .shiye-symbol-tabs button {
+  min-height: 36px;
+}
+.shiye-keyboard-panel .shiye-emoji-grid {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+.shiye-keyboard-panel .shiye-sticker-grid {
+  max-height: 180px;
+}
+#MiddleColumn .Message:has(.shiye-emoji-message) .svg-appendix {
+  display: none;
+}
+.shiye-dialog-back {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--shiye-muted);
+  flex: none;
+}
+.shiye-dialog-back span {
+  display: none;
+}
+.shiye-android-dialog .shiye-display-form {
+  max-height: none;
+  overflow-y: auto;
+}
+.shiye-appearance-fields {
+  flex: 0 0 auto;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-inline: 2px;
+}
+.shiye-display-form > .actions {
+  flex: none;
+  border-top: 1px solid var(--shiye-line);
+  padding-top: 12px;
+}
+.shiye-android-dialog input[type='range'] {
+  touch-action: pan-y;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--shiye-accent);
+}
+.shiye-android-dialog input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  accent-color: var(--shiye-accent);
+}
+.shiye-android-dialog select {
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid var(--shiye-line);
+  border-radius: 10px;
+  color: var(--shiye-ink);
+  background: var(--shiye-input-surface);
+}
+.shiye-local-input-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.shiye-local-input-settings p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--shiye-muted);
+}
+.shiye-command-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.shiye-command-settings label {
+  flex-direction: row;
+  align-items: center;
+  min-height: 40px;
+  color: var(--shiye-ink);
+}
+.shiye-local-input-settings button:not(.shiye-dialog-close, .shiye-dialog-back),
+.shiye-mapping-row button {
+  min-height: 44px;
+  padding: 10px;
+  color: var(--shiye-ink);
+  background: var(--shiye-surface-soft);
+}
+.shiye-mapping-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.shiye-mapping-preview {
+  width: 44px;
+  text-align: center;
+  font-size: 24px;
+}
+.shiye-mapping-preview img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+.shiye-symbol-dialog {
+  box-sizing: border-box;
+  width: min(100% - 24px, 440px);
+  max-height: 82dvh;
+  margin: auto auto 12px;
+  padding: 20px;
+  border: 1px solid var(--shiye-line);
+  border-radius: 24px;
+  color: var(--shiye-ink);
+  background: var(--shiye-surface);
+  box-shadow: 0 16px 60px var(--shiye-shadow);
+}
+.shiye-symbol-dialog::backdrop {
+  background: var(--shiye-backdrop);
+  backdrop-filter: blur(3px);
+}
+.shiye-symbol-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.shiye-symbol-dialog h2 {
+  font-size: 19px;
+  margin: 0;
+}
+.shiye-symbol-dialog button {
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--shiye-ink);
+}
+.shiye-symbol-dialog header button {
+  width: 44px;
+  height: 44px;
+  font-size: 24px;
+}
+.shiye-symbol-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.shiye-symbol-tabs button {
+  flex: 1;
+  min-height: 44px;
+  font-size: 15px;
+  background: var(--shiye-surface-soft);
+}
+.shiye-symbol-tabs button[aria-pressed='true'] {
+  background: var(--shiye-selection);
+  color: #164f77;
+  font-weight: 600;
+}
+.shiye-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+.shiye-emoji-grid button {
+  min-height: 44px;
+  padding: 4px 0;
+  font-family: 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif !important;
+  font-size: 26px;
+}
+.shiye-symbol-dialog button:active {
+  background: var(--shiye-pressed);
+}
+.shiye-sticker-import {
+  position: relative;
+  display: block;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px dashed var(--shiye-accent);
+  border-radius: 12px;
+  color: #164f77;
+  font-size: 14px;
+  text-align: center;
+}
+.shiye-sticker-import input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+.shiye-sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  max-height: 42dvh;
+  overflow-y: auto;
+}
+.shiye-sticker-item > button:first-child {
+  width: 100%;
+  height: 96px;
+  padding: 4px;
+  background: var(--shiye-input-surface);
+}
+.shiye-sticker-item img {
+  width: 100%;
+  height: 88px;
+  object-fit: contain;
+}
+.shiye-sticker-item .shiye-sticker-remove {
+  width: 100%;
+  min-height: 36px;
+  padding: 4px;
+  font-size: 12px;
+  color: var(--shiye-muted);
+}
+.shiye-sticker-item .shiye-sticker-edit {
+  width: 100%;
+  min-height: 36px;
+  font-size: 12px;
+}
+.shiye-sticker-metadata {
+  box-sizing: border-box;
+  width: min(420px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--shiye-line);
+  border-radius: 16px;
+  color: var(--shiye-ink);
+  background: var(--shiye-surface);
+  font-size: 14px;
+}
+.shiye-sticker-metadata header,
+.shiye-sticker-metadata .shiye-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.shiye-sticker-metadata h2 {
+  font-size: 16px;
+  margin: 0;
+}
+.shiye-sticker-metadata label {
+  display: grid;
+  gap: 6px;
+  margin-block: 12px;
+}
+.shiye-sticker-metadata input,
+.shiye-sticker-metadata textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--shiye-line);
+  border-radius: 8px;
+  color: var(--shiye-ink);
+  background: var(--shiye-input-surface);
+  font: inherit;
+}
+.shiye-sticker-metadata button {
+  min-width: 44px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--shiye-ink);
+  background: var(--shiye-surface-soft);
+  font: inherit;
+}
+.shiye-symbol-dialog [role='status'] {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--shiye-muted);
+}
+.shiye-command-panel {
+  position: fixed;
+  z-index: 1100;
+  max-width: calc(100vw - 24px);
+  max-height: 42dvh;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--shiye-line);
+  border-radius: 14px;
+  color: var(--shiye-ink);
+  background: var(--shiye-surface);
+  box-shadow: 0 8px 28px var(--shiye-shadow);
+}
+.shiye-command-panel button {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+}
+.shiye-command-panel button[aria-selected='true'] {
+  background: var(--shiye-selection);
+}
+.shiye-command-panel small {
+  color: var(--shiye-muted);
+}
+.shiye-command-heading {
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--shiye-muted);
+}
+/* Keep confirmed writing/media actions; hide unrelated upstream tool entry points. */
+.Composer button[aria-label='Insert block'],
+.Composer button[aria-label='Table'],
+.Composer button[aria-label='Equation'],
+.Composer button[aria-label='AI Editor'] {
+  display: none;
+}
+
+/* Mobile selection wash reaches the viewport edge. Upstream's +/-50vw wash
+   inflated scrollWidth and file focus scrolled every message sideways. */
+#MiddleColumn .MessageList .Message::before,
+#MiddleColumn .MessageList .ActionMessage::before {
+  inset-inline: -8px;
+}
+.shiye-android-header button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* The frozen base stylesheet gives dialogs an explicit display value. */
+.shiye-dialog-footer .shiye-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.shiye-dialog-footer .shiye-actions button {
+  min-height: 44px;
+  padding: 8px 12px;
+  background: var(--shiye-surface-soft);
+  color: var(--shiye-ink);
+}
+.shiye-dialog-footer .shiye-actions button[type='submit'] {
+  background: var(--shiye-accent);
+  color: #fff;
+}
+body #LeftColumn,
+body #LeftColumn .LeftColumn-main,
+body #LeftColumn #LeftColumn-main {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: 0;
+  border-radius: 0;
+}
+body #LeftColumn .chat-list {
+  padding-inline: 0;
+  touch-action: pan-y;
+  /* Web A's always-present 6px custom scrollbar otherwise narrows virtual rows. */
+  scrollbar-width: none;
+  scrollbar-gutter: auto;
+}
+body #LeftColumn .chat-list::-webkit-scrollbar {
+  width: 0;
+}
+body #LeftColumn .Chat {
+  margin-inline: 0;
+  border-radius: 0;
+  border-bottom: 0;
+}
+body[data-shiye-list-background='true'] #LeftColumn .Chat .ListItem-button,
+body #LeftColumn .Chat .ListItem-button {
+  width: 100%;
+  margin-inline: 0;
+  border-radius: 0;
+  border-bottom: 0;
+  background: color-mix(
+    in srgb,
+    var(--shiye-base-surface) var(--shiye-list-row-opacity, 0%),
+    transparent
+  );
+}
+body #LeftColumn .Chat.shiye-android-pinned {
+  background: transparent;
+}
+body #LeftColumn .Chat.shiye-android-pinned .ListItem-button {
+  background: color-mix(
+    in srgb,
+    var(--shiye-base-surface) var(--shiye-list-row-opacity, 0%),
+    transparent
+  );
+  box-shadow: inset 3px 0 var(--shiye-accent);
+}
+body #LeftColumn .Chat.shiye-android-pinned .fullName {
+  font-weight: 650;
+}
+/* ChatList virtual rows remain 72px; paint across the row, outside avatar/text insets. */
+body[data-shiye-list-background='true'] #LeftColumn .Chat .ListItem-button,
+body #LeftColumn .Chat .ListItem-button,
+body #LeftColumn .Chat.selected .ListItem-button,
+body #LeftColumn .Chat .ListItem-button:hover {
+  background: color-mix(
+      in srgb,
+      var(--shiye-base-surface) var(--shiye-list-row-opacity, 0%),
+      transparent
+    );
+}
+body #LeftColumn .Chat.shiye-android-pinned .ListItem-button,
+body #LeftColumn .Chat.shiye-android-pinned.selected .ListItem-button,
+body #LeftColumn .Chat.shiye-android-pinned .ListItem-button:hover {
+  background: linear-gradient(var(--shiye-list-pin-veil), var(--shiye-list-pin-veil)),
+    color-mix(
+      in srgb,
+      var(--shiye-base-surface) var(--shiye-list-row-opacity, 0%),
+      transparent
+    );
+}
+/* Paint over the full logical InfiniteScroll extent, not its rendered window.
+   One top edge plus each 72px row's bottom yields N+1 lines with no row gap. */
+body #LeftColumn .chat-list .Chat::after,
+body #LeftColumn .chat-list .Chat.selected::before {
+  content: none;
+  box-shadow: none;
+}
+body #LeftColumn .chat-list > div:has(> .Chat)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--shiye-list-divider), var(--shiye-list-divider)) top / 100% 1px no-repeat,
+    repeating-linear-gradient(to bottom, transparent 0 71px, var(--shiye-list-divider) 71px 72px);
+}
+body #LeftColumn .Chat .fullName,
+body #LeftColumn .Chat.selected .fullName,
+body #LeftColumn .Chat.shiye-android-pinned .fullName {
+  color: var(--shiye-ink);
+}
+.shiye-android-dialog:not([open]),
+.shiye-symbol-dialog:not([open]) {
+  display: none;
+}
+
+/* One surface for the chat pill; inner rectangular scrollers stay transparent. */
+#MiddleColumn .Composer.is-chat-composer {
+  --action-button-size: 36px;
+  --composer-main-button-width: 36px;
+  --composer-main-button-height: 36px;
+  --composer-main-button-gap: 4px;
+  --composer-row-gap: 2px;
+  --composer-pill-padding: 4px;
+  background: var(--shiye-input-surface);
+}
+#MiddleColumn .Composer.is-chat-composer > .main-button.record {
+  display: none;
+}
+#MiddleColumn .Composer.is-chat-composer > .main-button,
+#MiddleColumn .Composer.is-chat-composer > .shiye-empty-send {
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  margin-inline: 4px 0;
+  align-self: flex-end;
+}
+#MiddleColumn .Composer.is-chat-composer .AttachMenu,
+#MiddleColumn .Composer.is-chat-composer .composer-action-button {
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  align-self: flex-end;
+}
+#MiddleColumn .Composer.is-chat-composer .composer-action-button .icon {
+  font-size: 20px;
+}
+#MiddleColumn .Composer.is-chat-composer > .main-button .icon-new-send,
+#MiddleColumn .Composer.is-chat-composer > .shiye-empty-send .icon-new-send {
+  font-size: 20px;
+  animation: none !important;
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+/* Keep the original paper plane in empty, text and pending states. */
+#MiddleColumn .Composer.is-chat-composer > .main-button .main-button-state-icon:not(.icon-new-send),
+#MiddleColumn .Composer.is-chat-composer > .main-button .Spinner {
+  visibility: hidden;
+}
+#MiddleColumn .Composer.is-chat-composer .composer-wrapper {
+  flex: 1 1 calc(100% - 40px);
+  max-width: calc(100% - 40px);
+  min-width: 0;
+}
+#MiddleColumn .Composer.is-chat-composer #message-input-text {
+  flex-basis: 0;
+  min-width: 0;
+}
+#MiddleColumn .Composer.is-chat-composer .composer-wrapper,
+#MiddleColumn .Composer.is-chat-composer .input-scroller {
+  background-color: transparent;
+}
+
+/* Input measurement and visible editor share the same compact line metrics. */
+#MiddleColumn .Composer.is-chat-composer #message-input-text {
+  --composer-input-line-height: 1.4;
+  --composer-input-padding-block: max(6px, calc((36px - var(--shiye-input-size, 16px) * 1.4) / 2));
+}
+#MiddleColumn .Composer.is-chat-composer #editable-message-text,
+#MiddleColumn .Composer.is-chat-composer .input-scroller.clone .form-control,
+#MiddleColumn .Composer.is-chat-composer .placeholder-text {
+  line-height: 1.4;
+}
+#MiddleColumn .Composer.is-chat-composer #editable-message-text,
+#MiddleColumn .Composer.is-chat-composer .input-scroller.clone .form-control {
+  min-height: 36px;
+}
+#MiddleColumn .Composer.is-chat-composer .shiye-empty-send {
+  font-size: 20px;
+}
+/* GIF preview is a view of the original; ordinary photos/GIFs keep upstream layout. */
+#MiddleColumn .File.shiye-local-gif-file {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#MiddleColumn .File > .shiye-local-gif {
+  display: block;
+  flex: 0 0 100%;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 12px;
+}
+#MiddleColumn .shiye-local-gif-frame > :not(.shiye-local-gif) {
+  visibility: hidden;
+}
+#MiddleColumn .shiye-local-gif-frame > .shiye-local-gif {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: pointer;
+}
+.shiye-local-image-viewer {
+  box-sizing: border-box;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 12px;
+  border: 0;
+  color: white;
+  background: #101821;
+}
+.shiye-local-image-viewer img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100dvh - 70px);
+  margin: 12px auto;
+  object-fit: contain;
+}
+.shiye-local-image-viewer button {
+  min-height: 40px;
+  padding: 8px 16px;
+}
+/* Classification is supplied only by favorite hash/media relationships. */
+#MiddleColumn .Message[data-shiye-sticker] .media-inner,
+#MiddleColumn .Message[data-shiye-sticker] .Photo,
+#MiddleColumn .Message[data-shiye-sticker] .Animation,
+#MiddleColumn .Message[data-shiye-sticker] .shiye-local-gif {
+  --media-min-width: 0px;
+  --media-min-height: 0px;
+  width: var(--shiye-sticker-width) !important;
+  height: var(--shiye-sticker-height) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+#MiddleColumn .Message[data-shiye-sticker] .media-inner img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+#MiddleColumn .Message[data-shiye-sticker] .message-content {
+  max-width: max(var(--shiye-sticker-width), 96px);
+}
+
+/* Compact date separators and the actual frozen module's jump-to-bottom control. */
+#MiddleColumn .sticky-date > span,
+#MiddleColumn .ActionMessage > span,
+#MiddleColumn .local-action-message > span {
+  padding: 2px 7px;
+  min-height: 0;
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 500;
+}
+#MiddleColumn .ScrollDownButton-module__button {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+}
+#MiddleColumn .ScrollDownButton-module__button .icon {
+  font-size: 20px;
+}
+
+/* Touch returns must not leave a desktop focus outline on lists or settings. */
+body:not([data-shiye-keyboard-navigation='true']) .shiye-room-settings:focus,
+body:not([data-shiye-keyboard-navigation='true']) .shiye-android-dialog button:focus,
+body:not([data-shiye-keyboard-navigation='true']) #LeftColumn button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+body[data-shiye-list-background='true'] #LeftColumn {
+  isolation: isolate;
+  background-image: none;
+}
+body[data-shiye-list-background='true'] #LeftColumn::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: var(--shiye-native-wallpaper-width, 100%);
+  height: var(--shiye-wallpaper-height, 100%);
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--shiye-list-background, none);
+  background-position: center;
+  background-size: cover;
+}

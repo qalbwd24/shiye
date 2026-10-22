@@ -1,0 +1,1796 @@
+body[data-shiye-theme] {
+  --shiye-pinned-background: #3d4d54;
+  --shiye-pinned-hover: var(--shiye-pinned-background);
+  --shiye-pinned-selected: #18383f;
+  --shiye-sidebar-text: #e3ecee;
+  --shiye-sidebar-muted: #a8b9bd;
+  --font-family: 'Microsoft YaHei UI', 'PingFang SC', 'Noto Sans CJK SC', 'Segoe UI', sans-serif;
+  --color-primary: #61a9ac !important;
+  --color-primary-opacity: #61a9ac12 !important;
+  --color-primary-opacity-hover: #61a9ac20 !important;
+  --color-chat-active: #2d4b4c !important;
+  --color-chat-active-greyed: #294143 !important;
+  --color-chat-hover: #61a9ac0d !important;
+  --color-item-hover: #61a9ac0d !important;
+  --color-background: #20292e !important;
+  --color-background-secondary: #172126 !important;
+  --color-background-own: rgb(43 76 77 / var(--shiye-bubble, 0.94)) !important;
+  --color-background-selected: #26363b !important;
+  --color-text: #e3ecee !important;
+  --color-text-secondary: #a8b9bd !important;
+  --color-borders: #3b4b50 !important;
+  --color-links: #86c6c7 !important;
+  --color-text-meta-colored: #a8c7c6 !important;
+  --color-background-compact-menu: #20292ef5 !important;
+  --color-background-compact-menu-reactions: #20292ef5 !important;
+  --color-message-meta: #9ebbb9 !important;
+  --color-message-meta-own: #a5c6c3 !important;
+  --color-scrollbar: #53626a !important;
+  font-family: var(--font-family);
+  -webkit-font-smoothing: auto;
+  line-break: strict;
+  word-break: normal;
+}
+body[data-shiye-theme] input,
+body[data-shiye-theme] textarea,
+body[data-shiye-theme] button {
+  font-family: var(--font-family);
+}
+body[data-shiye-theme] .text-content {
+  font-size: var(--shiye-message-size, 16px);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+body[data-shiye-theme] #editable-message-text,
+body[data-shiye-theme] #editable-message-text-modal {
+  font-size: var(--shiye-input-size, 16px);
+  line-height: 1.65;
+  max-height: 32vh;
+  overflow-y: auto;
+}
+body[data-shiye-theme] .Modal .modal-dialog {
+  font-size: 14px;
+}
+body[data-shiye-theme] .Modal .modal-header .modal-title {
+  font-size: 18px;
+}
+body[data-shiye-theme] [class*='AttachmentModal-module__send-wrapper'] {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+  margin: 0;
+}
+body[data-shiye-theme] [class*='AttachmentModal-module__send-wrapper'] button {
+  min-height: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 6px 12px;
+  font-size: 14px;
+}
+body[data-shiye-theme] .Modal .symbol-menu-button,
+body[data-shiye-theme] .Modal .mobile-symbol-menu-button,
+body[data-shiye-theme] .shiye-attachment-modal .shiye-symbol-button {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px;
+}
+/* The upstream inline Button is width:100%; constrain both flex items so the
+   send button cannot squeeze Cancel into two lines or escape the dialog. */
+body[data-shiye-theme] .shiye-attachment-caption {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+}
+body[data-shiye-theme] .shiye-attachment-modal [class*='AttachmentModal-module__caption-wrapper'] {
+  container: shiye-attachment-footer / inline-size;
+}
+body[data-shiye-theme] .shiye-attachment-modal #editable-message-text-modal {
+  max-height: none;
+  overflow-y: visible;
+}
+body[data-shiye-theme]
+  .shiye-attachment-modal
+  [class*='AttachmentModal-module__caption-wrapper']:has(
+    [class*='AttachmentModal-module__aiButton']:not([class*='aiButtonHidden'])
+  )
+  #editable-message-text-modal {
+  padding-inline-end: 32px;
+}
+body[data-shiye-theme] .shiye-attachment-modal #caption-input-text .input-scroller {
+  max-height: min(32vh, 180px);
+  overflow-y: auto;
+}
+body[data-shiye-theme] #caption-input-text {
+  --composer-text-size: var(--shiye-input-size, 16px);
+  --composer-input-line-height: 1.65;
+  --composer-input-padding-block: max(
+    6px,
+    calc((var(--base-height, 40px) - var(--composer-text-size) * 1.65) / 2)
+  );
+}
+body[data-shiye-theme] #editable-message-text-modal {
+  max-height: none;
+  line-height: 1.65;
+  padding-block: var(--composer-input-padding-block);
+}
+@container shiye-attachment-footer (max-width: 340px) {
+  body[data-shiye-theme] .shiye-attachment-caption {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    padding-block: 8px;
+  }
+  body[data-shiye-theme] .shiye-attachment-caption #caption-input-text {
+    grid-column: 2;
+  }
+  body[data-shiye-theme]
+    .shiye-attachment-caption
+    > [class*='AttachmentModal-module__send-wrapper'] {
+    grid-column: 1 / -1;
+    justify-self: end;
+    margin-right: 4px;
+  }
+}
+body[data-shiye-theme] .shiye-attachment-modal #caption-input-text {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+}
+body[data-shiye-theme] .shiye-attachment-modal .symbol-menu-button,
+body[data-shiye-theme] .shiye-attachment-modal .mobile-symbol-menu-button,
+body[data-shiye-theme] .shiye-attachment-modal .shiye-symbol-button {
+  flex: 0 0 36px;
+  align-self: center;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+body[data-shiye-theme] .shiye-attachment-modal .shiye-media-cancel {
+  flex: 0 0 64px;
+  width: 64px;
+  min-width: 64px;
+  margin: 0;
+  padding: 0 12px;
+  line-height: 1;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+body[data-shiye-theme] .shiye-attachment-modal .shiye-media-send {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 44px;
+  max-width: 88px;
+  padding: 0 12px !important;
+  border-radius: 18px;
+  white-space: nowrap;
+  background-color: var(--color-primary);
+}
+body[data-shiye-theme] .shiye-attachment-modal .shiye-media-send:has(.icon-new-send) {
+  flex-basis: 44px;
+  width: 44px;
+  padding: 0 !important;
+}
+body[data-shiye-theme] .shiye-attachment-modal .symbol-menu-button .icon,
+body[data-shiye-theme] .shiye-attachment-modal .mobile-symbol-menu-button .icon,
+body[data-shiye-theme] .shiye-attachment-modal .shiye-symbol-button .icon,
+body[data-shiye-theme] .shiye-attachment-modal .shiye-media-send .icon {
+  flex: 0 0 auto;
+  font-size: 20px !important;
+  line-height: 1;
+}
+body[data-shiye-theme] .shiye-attachment-modal [class*='AttachmentModalItem-module__overlay'] {
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border-radius: 20px;
+}
+body[data-shiye-theme] .shiye-attachment-modal [class*='AttachmentModalItem-module__action-item'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+body[data-shiye-theme] .text-content pre,
+body[data-shiye-theme] .text-content code {
+  word-break: normal;
+  line-break: auto;
+}
+body[data-shiye-theme='light'] {
+  --shiye-sidebar-text: #303b42;
+  --shiye-sidebar-muted: #72878c;
+  --color-background: #fdfefe !important;
+  --color-background-secondary: #f2f6f5 !important;
+  --color-background-own: rgb(218 238 232 / var(--shiye-bubble, 0.94)) !important;
+  --color-text: #303b42 !important;
+  --color-text-secondary: #72878c !important;
+  --color-borders: #dce6e4 !important;
+  --color-chat-active: #d7e9e5 !important;
+  --color-chat-active-greyed: #e2eeea !important;
+  --color-links: #357e80 !important;
+  --color-background-compact-menu: #fdfefef5 !important;
+  --color-background-compact-menu-reactions: #fdfefef5 !important;
+}
+#Main {
+  background: var(--color-background-secondary);
+}
+body[data-shiye-theme] #Main > [class*='_patternBackground-module__background'] {
+  display: none;
+}
+body[data-shiye-theme] #LeftColumn {
+  margin: 0;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+body[data-shiye-theme] #LeftColumn::before {
+  border-radius: 0;
+}
+#MiddleColumn {
+  background-color: var(--color-background-secondary);
+  background-image:
+    linear-gradient(
+      rgb(23 33 38 / var(--shiye-shade, 0.85)),
+      rgb(23 33 38 / var(--shiye-shade, 0.85))
+    ),
+    var(--shiye-wallpaper, radial-gradient(ellipse at 80% 10%, #3d6a60, transparent 60%));
+  background-size: cover;
+  background-position: center;
+}
+.shiye-settings-menu button {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-borders);
+  border-radius: 8px;
+  padding: 12px;
+}
+.shiye-settings-menu button:hover {
+  background: #61a9ac10;
+  border-color: #61a9ac80;
+}
+.shiye-settings-menu {
+  display: grid;
+  gap: 10px;
+}
+.shiye-settings-menu button {
+  text-align: left;
+}
+.shiye-settings-menu .shiye-revisit-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  border-color: #70a8ab80;
+}
+.shiye-revisit-entry small {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+.shiye-room-services {
+  margin-block: 16px;
+  border: 1px solid var(--color-borders, #506064);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.shiye-settings-dialog .shiye-room-services legend {
+  padding-inline: 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.shiye-service-summary,
+.shiye-service-hint,
+.shiye-conversation-service-form p {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.shiye-service-hint {
+  font-size: 0.88em;
+  opacity: 0.75;
+}
+.shiye-settings-dialog .shiye-conversation-service-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-block: 16px;
+}
+.shiye-settings-dialog .shiye-conversation-service-form .shiye-service-enable {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--color-borders, #506064);
+  border-radius: 8px;
+}
+.shiye-settings-dialog .shiye-service-enable input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  flex: none;
+  accent-color: #70a8ab;
+}
+.shiye-conversation-service-form details {
+  padding-block: 12px;
+  border-top: 1px solid var(--color-borders, #506064);
+}
+.shiye-conversation-service-form summary {
+  cursor: pointer;
+}
+.shiye-conversation-service-form input,
+.shiye-conversation-service-form select {
+  max-width: 100%;
+  min-width: 0;
+}
+.shiye-dialog textarea {
+  width: 100%;
+  background: var(--color-background-secondary);
+  color: var(--color-text);
+  border: 1px solid var(--color-borders);
+  border-radius: 8px;
+  padding: 8px;
+}
+.shiye-dialog fieldset {
+  border: 1px solid var(--color-borders);
+  border-radius: 8px;
+}
+.shiye-form-status {
+  color: #ffc4a8;
+}
+.shiye-search-dialog {
+  width: min(720px, 92vw);
+}
+.shiye-topic-menu {
+  width: min(340px, 90vw);
+}
+.shiye-topic-menu details {
+  margin-top: 20px;
+  color: var(--color-text-secondary);
+}
+.shiye-search-results {
+  display: grid;
+  gap: 10px;
+}
+.shiye-search-result {
+  text-align: left;
+  width: 100%;
+}
+.shiye-search-result small {
+  color: var(--color-text-secondary);
+}
+.shiye-search-result p {
+  color: var(--color-text);
+  font-size: var(--shiye-message-size, 16px);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 8px 0;
+}
+body[data-shiye-theme] .MiddleHeader .header-tools button[aria-label*='Call'],
+body[data-shiye-theme] .MiddleHeader .header-tools button[aria-label*='通话'] {
+  display: none;
+}
+.Message .message-content {
+  border-radius: var(--shiye-radius, 14px) !important;
+}
+.MiddleHeader {
+  border-bottom: 1px solid var(--color-borders);
+  box-shadow: none !important;
+}
+#LeftColumn {
+  border-right: 1px solid var(--color-borders);
+}
+.MiddleHeader .header-tools [aria-label*='Call'],
+.MiddleHeader .header-tools [title*='Call'],
+.story-ribbon,
+.StoryRibbon,
+.NewChatButton,
+.btn-update {
+  display: none !important;
+}
+.Button:hover {
+  filter: none !important;
+}
+.shiye-dialog {
+  color: var(--color-text);
+  background: var(--color-background);
+  border: 1px solid var(--color-borders);
+  border-radius: 16px;
+  padding: 26px;
+  width: min(450px, 92vw);
+  max-height: 85vh;
+  overflow: auto;
+}
+.shiye-left-header .left-header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem;
+}
+.shiye-topic-title {
+  margin-right: auto;
+  padding-left: 0.5rem;
+  font-size: 1.1rem;
+}
+.shiye-room-management-toolbar,
+.shiye-managed-room-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.shiye-room-management-toolbar button,
+.shiye-managed-room-actions button {
+  color: var(--color-text);
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-borders);
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+}
+.shiye-room-management-toolbar button[aria-pressed='true'] {
+  color: var(--color-text);
+  background: var(--shiye-pinned-background);
+}
+.shiye-room-management-toolbar button:hover:not(:disabled),
+.shiye-managed-room-actions button:hover:not(:disabled) {
+  color: var(--color-text);
+  background: var(--shiye-pinned-hover);
+}
+.shiye-room-management-toolbar button:disabled,
+.shiye-managed-room-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.shiye-managed-room {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.7rem;
+  padding: 0.3rem 0.4rem;
+  border-bottom: 1px solid var(--color-borders);
+}
+.shiye-managed-room-name {
+  flex: 1;
+  min-width: 0;
+  padding: 0.35rem 0.25rem;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.shiye-managed-room-actions {
+  flex-shrink: 0;
+  gap: 0.25rem;
+}
+.shiye-managed-room-actions button {
+  padding: 0.3rem 0.45rem;
+  font-size: 0.85rem;
+}
+.shiye-room-management-list {
+  margin-top: 0.65rem;
+}
+.shiye-room-management-section {
+  margin-bottom: 1.25rem;
+}
+.shiye-room-order-details summary {
+  padding: 0.6rem 0;
+  cursor: pointer;
+}
+.shiye-room-state-controls {
+  margin-bottom: 0.8rem;
+}
+.shiye-room-state-controls [role='status'] {
+  margin-bottom: 0;
+  font-size: 0.85rem;
+}
+.shiye-managed-room.is-pinned {
+  background: var(--shiye-pinned-background);
+}
+body[data-shiye-theme='light'] {
+  --shiye-pinned-background: #dce4ec;
+  --shiye-pinned-hover: var(--shiye-pinned-background);
+  --shiye-pinned-selected: #3d5e68;
+}
+.shiye-toggle-topics {
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+}
+body[data-shiye-sidebar='collapsed'] #LeftColumn {
+  display: none !important;
+}
+body[data-shiye-sidebar='collapsed'] #Main {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+body[data-shiye-sidebar='collapsed'] #MiddleColumn {
+  width: 100%;
+  max-width: none;
+  transform: none !important;
+}
+.shiye-sidebar-fallback {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.65rem;
+  color: var(--color-text);
+  background: var(--color-background);
+  border: 1px solid var(--color-borders);
+  border-radius: 50%;
+}
+body[data-shiye-sidebar='collapsed']:not(:has(.MiddleHeader)) .shiye-sidebar-fallback {
+  display: flex;
+}
+@media (max-width: 925px) {
+  body[data-shiye-sidebar='expanded'] #LeftColumn {
+    top: 0;
+    left: 0;
+    z-index: 100;
+    transform: none !important;
+    width: min(22rem, 85vw) !important;
+  }
+  body[data-shiye-sidebar='expanded'] #MiddleColumn {
+    transform: none !important;
+  }
+}
+.shiye-left-header .Button {
+  flex-shrink: 0;
+}
+.shiye-dialog .shiye-settings-back {
+  padding: 0.4rem;
+  border: 0;
+  color: var(--color-text-secondary);
+}
+.shiye-symbol-dialog {
+  width: min(30rem, 92vw);
+}
+.shiye-symbol-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.shiye-symbol-tabs button[aria-pressed='true'] {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.shiye-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.3rem;
+}
+.shiye-emoji-grid button {
+  padding: 0.5rem 0;
+  border-color: transparent;
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;
+  font-size: 1.6rem;
+}
+.shiye-sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  max-height: 45vh;
+  overflow: auto;
+}
+.shiye-sticker-item > button:first-child {
+  width: 100%;
+  padding: 0.5rem;
+}
+.shiye-sticker-item img {
+  width: 100%;
+  height: 6rem;
+  object-fit: contain;
+}
+.shiye-sticker-item .shiye-sticker-remove {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  padding: 0.25rem;
+  border: 0;
+}
+.shiye-command-panel {
+  position: fixed;
+  z-index: 1100;
+  width: min(23rem, calc(100vw - 1rem));
+  padding: 0.5rem;
+  border: 1px solid var(--color-borders);
+  border-radius: 0.75rem;
+  background: var(--color-background);
+  color: var(--color-text);
+  box-shadow: 0 0.5rem 2rem #0003;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.shiye-command-options {
+  max-height: calc(var(--shiye-visible-options, 5) * 72px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+.shiye-command-heading {
+  flex-shrink: 0;
+  padding: 0.5rem;
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+}
+.shiye-command-panel button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 72px;
+  min-height: 72px;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  background: transparent;
+  color: inherit;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  text-align: left;
+  gap: 10px;
+}
+.shiye-command-panel .shiye-command-preview {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  flex: 0 0 56px;
+  border-radius: 4px;
+  background: #80808012;
+}
+.shiye-command-panel strong {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.shiye-sticker-management-list {
+  grid-template-columns: 1fr;
+  max-height: 55vh;
+  gap: 8px;
+}
+.shiye-sticker-manager {
+  width: min(42rem, 92vw);
+}
+.shiye-sticker-management-list .shiye-sticker-item {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 4px 12px;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid var(--color-borders);
+}
+.shiye-sticker-management-list .shiye-sticker-item > button:first-child {
+  grid-row: span 2;
+  padding: 3px;
+}
+.shiye-sticker-management-list .shiye-sticker-item img {
+  height: 56px;
+}
+.shiye-sticker-name {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
+.shiye-sticker-order-controls,
+.shiye-sticker-order-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.shiye-sticker-order-controls button {
+  font-size: 0.7rem;
+  padding: 5px 8px;
+}
+.shiye-sticker-order-toolbar {
+  justify-content: space-between;
+  margin: 8px 0;
+}
+body[data-shiye-theme] .Composer.is-chat-composer .shiye-symbol-button,
+body[data-shiye-theme] .shiye-attachment-modal .shiye-symbol-button {
+  display: none !important;
+}
+.shiye-command-panel button[aria-selected='true'] {
+  background: #61a9ac10;
+  border-color: #61a9ac66;
+  box-shadow: inset 2px 0 #61a9ac;
+}
+.shiye-command-panel small {
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+}
+.shiye-command-settings label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.shiye-dialog [hidden] {
+  display: none !important;
+}
+.shiye-mapping-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+.shiye-mapping-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid var(--color-borders);
+  padding: 0.75rem 0;
+}
+.shiye-mapping-row > span:nth-child(2) {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.shiye-mapping-row button {
+  padding: 0.4rem;
+  font-size: 0.75rem;
+}
+.shiye-mapping-preview {
+  width: 2.5rem;
+  flex-shrink: 0;
+  font-size: 1.5rem;
+}
+.shiye-mapping-preview img {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+}
+.shiye-command-settings input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: #61a9ac;
+}
+.shiye-dialog::backdrop {
+  background: #14232777;
+  backdrop-filter: blur(5px);
+}
+.shiye-dialog header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+.shiye-dialog h2 {
+  font-size: 19px;
+  margin: 0;
+  font-weight: 600;
+}
+.shiye-dialog p {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.8;
+}
+.shiye-dialog label {
+  display: block;
+  margin: 18px 0;
+  font-size: 13px;
+}
+.shiye-dialog input,
+.shiye-dialog select,
+.shiye-dialog textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 10px;
+  border: 1px solid var(--color-borders);
+  border-radius: 8px;
+  padding: 9px;
+  background: var(--color-background-secondary);
+  color: var(--color-text);
+  font: inherit;
+}
+.shiye-dialog input[type='range'] {
+  padding: 0;
+  accent-color: #61a9ac;
+}
+.shiye-dialog button {
+  border: 1px solid var(--color-borders);
+  background: transparent;
+  color: var(--color-text);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.shiye-dialog button:hover {
+  background: #61a9ac12;
+}
+.shiye-dialog button:focus-visible {
+  outline: 2px solid #61a9ac;
+  outline-offset: 3px;
+}
+.shiye-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.shiye-media-cancel {
+  padding: 8px 12px;
+  margin-right: 10px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--color-borders);
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.shiye-media-cancel:hover {
+  background: #61a9ac0d;
+  box-shadow: inset 2px 0 #61a9ac;
+}
+.shiye-media-cancel:focus-visible,
+[aria-label='确认发送']:focus-visible {
+  outline: 2px solid #61a9ac;
+  outline-offset: 3px;
+}
+
+.shiye-pin {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+}
+.shiye-pin:hover,
+.shiye-pin:focus-visible {
+  background: rgba(130, 174, 179, 0.12);
+  outline: 1px solid rgba(130, 174, 179, 0.35);
+}
+.shiye-pin[aria-pressed='true'] {
+  color: var(--color-primary);
+  background: rgba(130, 174, 179, 0.16);
+}
+
+/* A compact workspace without the duplicated web header. */
+body[data-shiye-theme] .MiddleHeader {
+  display: none !important;
+}
+body[data-shiye-theme] #MiddleColumn {
+  --middle-header-height: 0px;
+  --middle-panel-inline-padding: 0px;
+  --middle-header-gap: 0px;
+}
+body[data-shiye-theme] .MessageList {
+  --message-list-header-base: 2.75rem;
+  --message-list-top-inset: 2.75rem;
+  --message-list-mask-top-inset: 0px;
+}
+body[data-shiye-theme] .MessageList .messages-container {
+  max-width: none;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+body[data-shiye-theme] #MiddleColumn .middle-column-footer {
+  max-width: none;
+  --footer-side-inset: 0.75rem;
+}
+body[data-shiye-align='left'] .Message.own {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+body[data-shiye-align='right'] .Message.own {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+body[data-shiye-theme] .shiye-sidebar-fallback {
+  display: flex;
+  top: 0.4rem;
+  left: 0.5rem;
+  width: 56px;
+  height: 56px;
+  padding: 14px;
+  justify-content: center;
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  box-shadow: none;
+  appearance: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  cursor: pointer;
+  z-index: 110;
+}
+body[data-shiye-theme] .shiye-sidebar-fallback svg {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  pointer-events: none;
+}
+body[data-shiye-theme] .shiye-sidebar-fallback:hover {
+  background: transparent;
+  color: var(--color-primary);
+}
+body[data-shiye-theme] .shiye-sidebar-fallback:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -3px;
+}
+.shiye-room-settings-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  width: min(520px, calc(100vw - 24px));
+  max-height: min(88dvh, 760px);
+  padding: 0;
+  overflow: hidden;
+}
+.shiye-room-settings-dialog > header {
+  flex: none;
+  padding: 16px 20px 12px;
+  margin: 0;
+  border-bottom: 1px solid var(--color-borders);
+}
+.shiye-room-settings-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.shiye-room-settings-parameters {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 20px 16px;
+}
+.shiye-room-settings-actions {
+  flex: none;
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-borders);
+  background: var(--color-background);
+}
+.shiye-room-settings-actions .shiye-form-status {
+  margin: 0 0 8px;
+  max-height: 54px;
+  overflow: auto;
+}
+.shiye-room-settings-actions .shiye-form-status:empty {
+  display: none;
+}
+.shiye-room-settings-actions button[type='submit'] {
+  background: #387b80;
+  color: #fff;
+  border-color: transparent;
+}
+.shiye-room-switcher[data-mode='manual'] .shiye-switch-progress {
+  display: none;
+}
+body[data-shiye-sidebar='expanded'] .shiye-sidebar-fallback {
+  left: calc(var(--left-column-width, 22rem) + 0.5rem);
+}
+@media (max-width: 925px) {
+  body[data-shiye-sidebar='expanded'] .shiye-sidebar-fallback {
+    left: calc(min(22rem, 85vw) + 0.25rem);
+  }
+}
+.shiye-room-wallpaper-preview {
+  width: 100%;
+  height: 8rem;
+  border-radius: 0.7rem;
+  object-fit: cover;
+}
+.shiye-room-choices {
+  display: grid;
+  gap: 0.4rem;
+  max-height: 55vh;
+  overflow: auto;
+}
+.shiye-room-choices button {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  text-align: left;
+  padding: 0.7rem;
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid transparent;
+  border-radius: 0.7rem;
+}
+.shiye-room-choices button[aria-current='true'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-opacity);
+}
+.shiye-room-choices img {
+  width: 2.4rem;
+  height: 2.4rem;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+body[data-shiye-theme] .shiye-sidebar-fallback {
+  left: 0.5rem !important;
+}
+body[data-shiye-sidebar='expanded'] .shiye-left-header .left-header {
+  padding-left: 3.2rem;
+}
+/* Document Markdown and uniform emoji-only messages. */
+.shiye-markdown {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.65;
+}
+.shiye-markdown > :first-child {
+  margin-top: 0;
+}
+.shiye-markdown > :last-child {
+  margin-bottom: 0;
+}
+.shiye-markdown p {
+  margin: 0.45rem 0;
+}
+.shiye-markdown h1,
+.shiye-markdown h2,
+.shiye-markdown h3,
+.shiye-markdown h4,
+.shiye-markdown h5,
+.shiye-markdown h6 {
+  line-height: 1.4;
+  margin: 0.7em 0 0.35em;
+}
+.shiye-markdown h1 {
+  font-size: 1.7em;
+}
+.shiye-markdown h2 {
+  font-size: 1.45em;
+}
+.shiye-markdown h3 {
+  font-size: 1.2em;
+}
+.shiye-markdown ul,
+.shiye-markdown ol {
+  padding-left: 1.6em;
+}
+.shiye-markdown blockquote {
+  border-left: 0.2rem solid var(--shiye-accent, #7da8a8);
+  margin: 0.65rem 0;
+  padding: 0.15rem 0.7rem;
+  opacity: 0.95;
+}
+.shiye-markdown hr {
+  border: 0;
+  border-top: 1px solid #8b999966;
+  margin: 0.9rem 0;
+}
+.shiye-markdown pre {
+  max-width: 100%;
+  white-space: pre;
+  overflow-x: auto;
+  background: #0003;
+  border-radius: 0.45rem;
+  padding: 0.7rem;
+}
+.shiye-markdown code {
+  font-family: Consolas, 'Microsoft YaHei UI', monospace;
+  font-size: 0.92em;
+}
+.shiye-markdown :not(pre) > code {
+  background: #0003;
+  border-radius: 0.25rem;
+  padding: 0.06em 0.25em;
+}
+.shiye-markdown table {
+  border-collapse: collapse;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0.7rem 0;
+}
+.shiye-markdown th,
+.shiye-markdown td {
+  border: 1px solid #82909070;
+  padding: 0.35rem 0.6rem;
+}
+.shiye-markdown th {
+  background: #0002;
+}
+.shiye-markdown input[type='checkbox'] {
+  appearance: auto;
+  margin-right: 0.4rem;
+}
+.shiye-markdown img {
+  max-width: 100%;
+  height: auto;
+}
+.shiye-markdown mark {
+  background: #d8ba5f55;
+  color: inherit;
+  border-radius: 0.15rem;
+}
+.shiye-markdown.shiye-emoji-message {
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+  font-size: 8rem;
+  line-height: 1.15;
+}
+.Message:has(.shiye-emoji-message) .message-content {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.Message:has(.shiye-emoji-message) .svg-appendix {
+  display: none;
+}
+.MessageList .shiye-time-divider {
+  position: static;
+  text-align: center;
+  padding: 0.7rem 0;
+  pointer-events: none;
+}
+.MessageList .shiye-time-divider span {
+  color: #c6d0d0b3;
+  background: #1c252544;
+  box-shadow: none;
+  font-size: 0.78rem;
+  font-weight: normal;
+  padding: 0.2rem 0.55rem;
+}
+
+body[data-shiye-theme] .Message:has(.shiye-emoji-message) .text-content {
+  width: auto !important;
+  max-width: 100%;
+  overflow: visible;
+}
+.shiye-markdown.shiye-emoji-message {
+  font-size: 7rem;
+}
+.shiye-markdown blockquote {
+  display: block;
+  background: transparent;
+  border-radius: 0;
+  font-size: inherit;
+  white-space: normal;
+}
+.shiye-markdown blockquote::before,
+.shiye-markdown blockquote::after {
+  display: none;
+}
+
+#LeftColumn .Chat:has(.shiye-room-settings) .info {
+  padding-right: 2.2rem;
+}
+/* The keyboard target takes precedence over pinning and the currently open room. */
+body[data-shiye-theme] #LeftColumn .ListItem.Chat {
+  --background-color: transparent !important;
+  background: transparent !important;
+}
+body[data-shiye-theme] #LeftColumn .ListItem.Chat .ListItem-button {
+  --background-color: var(--shiye-sidebar-row-background, transparent) !important;
+  --color-text: var(--shiye-sidebar-text) !important;
+  --color-text-secondary: var(--shiye-sidebar-muted) !important;
+  --color-text-meta: var(--shiye-sidebar-muted) !important;
+  --color-text-meta-colored: var(--shiye-sidebar-muted) !important;
+  --color-list-icon: var(--shiye-sidebar-muted) !important;
+  --color-chat-username: var(--shiye-sidebar-text) !important;
+  background: var(--shiye-sidebar-row-background, transparent) !important;
+}
+body[data-shiye-theme] #LeftColumn .ListItem.Chat .ListItem-button:hover:not(:focus-visible) {
+  --background-color: var(--shiye-sidebar-row-background, transparent) !important;
+  background: var(--shiye-sidebar-row-background, transparent) !important;
+}
+body[data-shiye-theme] #LeftColumn .ListItem.Chat .ListItem-button:focus-visible {
+  --background-color: var(--shiye-pinned-selected) !important;
+  --color-text: #fff !important;
+  --color-text-secondary: #fff !important;
+  --color-text-meta: #fff !important;
+  --color-text-meta-colored: #fff !important;
+  --color-list-icon: #fff !important;
+  --color-chat-username: #fff !important;
+  background: var(--shiye-pinned-selected) !important;
+  outline: 1px solid var(--color-primary);
+  outline-offset: -1px;
+}
+/* Keep the existing three row backgrounds; only the actual keyboard target name turns red. */
+body[data-shiye-theme] {
+  --shiye-sidebar-focus-name: #ff9aa7;
+}
+body[data-shiye-theme='light'] {
+  --shiye-sidebar-focus-name: #ffd0d4;
+}
+body[data-shiye-theme] #LeftColumn .ListItem.Chat .fullName {
+  min-width: 0;
+  font-size: calc(1em + 2px);
+}
+body[data-shiye-theme] #LeftColumn .ListItem.Chat .ListItem-button:focus-visible .fullName {
+  color: var(--shiye-sidebar-focus-name) !important;
+}
+.shiye-room-settings {
+  position: absolute;
+  right: 0.45rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 0;
+  border-radius: 0.45rem;
+  padding: 0;
+  color: var(--color-text-secondary);
+  background: transparent;
+  opacity: 0.75;
+}
+.shiye-room-settings .icon {
+  font-size: 1.1rem;
+}
+.shiye-room-settings:hover,
+.shiye-room-settings:focus-visible {
+  background: #85a9aa18;
+  opacity: 1;
+}
+.shiye-room-settings:focus-visible {
+  outline: 1px solid #83b0b0;
+  outline-offset: 1px;
+}
+
+/* Compact text bubbles: single paragraphs share their last line with the time. */
+body[data-shiye-theme]
+  .Message
+  .message-content.has-solid-background:has(.shiye-markdown):not(:has(.media-inner)) {
+  padding: calc(4px / var(--shiye-ui-zoom, 1)) calc(8px / var(--shiye-ui-zoom, 1))
+    calc(5px / var(--shiye-ui-zoom, 1));
+}
+body[data-shiye-theme] .Message .text-content:has(.shiye-markdown) {
+  line-height: 1.42;
+}
+.shiye-markdown {
+  line-height: 1.42;
+}
+.shiye-markdown:has(> p:only-child):not(.shiye-emoji-message),
+.shiye-markdown:not(.shiye-emoji-message) > p:only-child {
+  display: inline;
+  margin: 0;
+}
+body[data-shiye-theme] .Message .text-content:has(.shiye-markdown) > .MessageMeta {
+  font-size: calc(11px / var(--shiye-ui-zoom, 1));
+  top: 3px;
+  margin-right: 0;
+  margin-left: 6px;
+}
+
+/* Thumbnail geometry stays independent of text zoom; the full image opens separately. */
+body[data-shiye-theme] .Message .media-inner[style*='--media-width']:not(.Album .media-inner) {
+  --media-min-width: 0px !important;
+  --media-min-height: 0px !important;
+  --media-max-height: 220px !important;
+  max-width: min(240px, 100%);
+}
+body[data-shiye-theme]
+  .Message
+  .media-inner[style*='--media-width']:not(.Album .media-inner)::before {
+  width: min(var(--media-width), 240px, calc(220px * var(--media-aspect-ratio))) !important;
+}
+body[data-shiye-theme] .Message .Album {
+  width: min(280px, 100%, calc(260px * var(--album-aspect-ratio)));
+}
+
+/* Chat workspace: quiet wallpaper, readable surfaces and stable footer space. */
+/* A pending view has no room identity yet. Do not paint the global default or
+   the previous room behind an asynchronously prepared target. */
+body[data-shiye-room-pending]:not([data-shiye-room-background-ready]) #MiddleColumn {
+  background-image: none;
+}
+body[data-shiye-room-pending] #MiddleColumn .MessageList,
+body[data-shiye-room-pending] #MiddleColumn .middle-column-footer {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+body[data-shiye-theme] {
+  --color-background-own: rgb(48 73 77 / var(--shiye-bubble, 0.98)) !important;
+}
+body[data-shiye-theme='light'] {
+  --color-background-own: rgb(224 239 235 / var(--shiye-bubble, 0.98)) !important;
+}
+body[data-shiye-theme] .Message .svg-appendix {
+  display: none !important;
+}
+body[data-shiye-theme] .Message {
+  margin-bottom: var(--shiye-message-gap, 10px) !important;
+}
+body[data-shiye-theme] .Message .message-content.has-solid-background {
+  border-radius: var(--shiye-radius, 14px) !important;
+  box-shadow:
+    0 1px 3px #0002,
+    inset 0 0 0 1px #b3d5d50b;
+}
+body[data-shiye-theme] .Message .text-content:has(.shiye-markdown) {
+  overflow: visible;
+  padding-bottom: 2px;
+}
+body[data-shiye-theme] .Message .text-content:has(.shiye-markdown) > .MessageMeta {
+  position: relative;
+  top: 0;
+  margin-left: 10px;
+  margin-bottom: 1px;
+  white-space: nowrap;
+}
+/* Equal text-bubble insets are a preference; compact keeps the original rules. */
+body[data-shiye-theme][data-shiye-bubble-spacing='comfortable']
+  .Message
+  .message-content.has-solid-background:has(.text-content):not(
+    :has(.media-inner, .shiye-emoji-message)
+  ) {
+  padding: var(--shiye-bubble-padding, 12px);
+}
+body[data-shiye-theme][data-shiye-bubble-spacing='comfortable']
+  .Message
+  .message-content.has-solid-background:not(:has(.media-inner, .shiye-emoji-message))
+  .text-content {
+  padding-bottom: 0;
+}
+body[data-shiye-align='left'] #Main {
+  flex-direction: row-reverse;
+}
+@media (min-width: 926px) {
+  body[data-shiye-align='left'][data-shiye-sidebar='expanded'] #Main {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  body[data-shiye-align='left'] #LeftColumn {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  body[data-shiye-align='left'] #MiddleColumn {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
+body[data-shiye-align='left'] #LeftColumn {
+  order: 2;
+  border-left: 1px solid var(--color-borders);
+  border-right: 0;
+}
+body[data-shiye-align='left'] #MiddleColumn {
+  order: 1;
+}
+body[data-shiye-align='left'] .shiye-sidebar-fallback {
+  left: auto !important;
+  right: 0.5rem;
+}
+body[data-shiye-align='left'] .shiye-sidebar-fallback svg {
+  transform: scaleX(-1);
+}
+body[data-shiye-sidebar='expanded'][data-shiye-align='right'] .shiye-left-header .left-header {
+  padding-left: 76px;
+}
+body[data-shiye-sidebar='expanded'][data-shiye-align='left'] .shiye-left-header .left-header {
+  padding-right: 76px;
+}
+body[data-shiye-theme] .MessageList {
+  mask-image: none !important;
+  /* The footer-aware follower owns positioning; browser snap otherwise animates it back. */
+  scroll-snap-type: none !important;
+  scroll-behavior: auto !important;
+  overflow-anchor: none;
+  scroll-padding-bottom: var(--shiye-footer-reserve, 90px);
+}
+body[data-shiye-theme] .MessageList .messages-container {
+  padding-bottom: max(
+    var(--message-list-bottom-inset, 0px),
+    var(--shiye-footer-reserve, 90px)
+  ) !important;
+}
+body[data-shiye-theme]
+  .MessageList[data-shiye-footer-layout='managed']:not(.no-footer):not(.select-mode-active) {
+  scroll-padding-bottom: calc(var(--shiye-footer-reserve, 90px) + 8px);
+}
+body[data-shiye-theme]
+  .MessageList[data-shiye-footer-layout='managed']:not(.no-footer):not(.select-mode-active)
+  .messages-container {
+  padding-bottom: calc(var(--shiye-footer-reserve, 90px) + 8px) !important;
+}
+body[data-shiye-theme] #MiddleColumn .middle-column-footer {
+  padding-top: 4px;
+}
+body[data-shiye-theme] #MiddleColumn .Composer.is-chat-composer:not(.rich-input-expanded) {
+  margin-bottom: 4px;
+}
+body[data-shiye-theme] #message-input-text {
+  --composer-text-size: var(--shiye-input-size, 16px);
+  --composer-input-line-height: 1.65;
+  --shiye-editor-min: max(40px, calc(var(--composer-text-size) * 1.65 + 12px));
+  --composer-input-padding-block: max(
+    6px,
+    calc((var(--shiye-editor-min) - var(--composer-text-size) * 1.65) / 2)
+  );
+}
+/* Only the new low manual range uses a tighter one-line row. */
+body[data-shiye-theme][data-shiye-input-tight]
+  .middle-column-footer[data-shiye-compact-input='true']
+  #message-input-text {
+  --shiye-editor-min: max(36px, calc(var(--composer-text-size) * 1.65 + 8px));
+  --composer-input-padding-block: 4px;
+}
+body[data-shiye-theme][data-shiye-input-tight]
+  .middle-column-footer[data-shiye-compact-input='true']
+  .Composer.is-chat-composer {
+  --composer-height: 44px;
+  --composer-main-button-height: 36px;
+  --composer-main-button-width: 36px;
+  --action-button-size: 36px;
+}
+/* A hidden record button reserves no width, including the tighter manual row. */
+body[data-shiye-theme][data-shiye-input-tight]
+  .middle-column-footer[data-shiye-compact-input='true']
+  .Composer.is-chat-composer:has(> .main-button.record) {
+  --composer-main-button-width: 0px;
+  --composer-main-button-gap: 0px;
+}
+body[data-shiye-theme]
+  .Composer:not(.rich-input-expanded)
+  #message-input-text
+  .input-scroller:not(.clone) {
+  height: var(--shiye-input-manual-height, auto) !important;
+  min-height: var(--shiye-editor-min) !important;
+  max-height: min(
+    var(--shiye-input-cap, 160px),
+    calc(55vh - var(--shiye-composer-tools-height, 0px))
+  ) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  transition: none !important;
+  scroll-padding-bottom: 18px;
+  overscroll-behavior: contain;
+}
+body[data-shiye-theme] #editable-message-text {
+  min-height: var(--shiye-editor-min) !important;
+  max-height: none !important;
+  height: auto !important;
+  overflow: visible !important;
+  padding-block: var(--composer-input-padding-block) !important;
+}
+body[data-shiye-theme] #message-input-text .placeholder-text {
+  top: var(--composer-input-padding-block) !important;
+  font-size: var(--composer-text-size);
+  line-height: 1.65;
+  /* Keep one stationary placeholder while the real editor clears/resizes. */
+  transition: none !important;
+  transform: none !important;
+}
+/* Media uses paste/drop (or /图片); unused controls take no layout or focus space. */
+body[data-shiye-theme] .Composer.is-chat-composer .message-input-wrapper {
+  padding-inline-start: 14px;
+}
+body[data-shiye-theme] .Composer.is-chat-composer .ai-composer-button,
+body[data-shiye-theme] .Composer.is-chat-composer .rich-editor-button,
+body[data-shiye-theme] .Composer.is-chat-composer .AttachMenu {
+  display: none !important;
+}
+body[data-shiye-theme] .Composer.is-chat-composer > .main-button.record {
+  display: none !important;
+}
+body[data-shiye-theme] .Composer.is-chat-composer:has(> .main-button.record) {
+  --composer-main-button-width: 0px;
+  --composer-main-button-gap: 0px;
+}
+/* Only the ordinary chat send state obeys the global input preference. */
+body[data-shiye-theme][data-shiye-show-send-button='false']
+  .Composer.is-chat-composer:not(:has(.ComposerEmbeddedMessage.open .embedded-left-icon .icon-forward)) > .main-button.send {
+  display: none !important;
+}
+body[data-shiye-theme][data-shiye-show-send-button='false']
+  .middle-column-footer .Composer.is-chat-composer:not(:has(.ComposerEmbeddedMessage.open .embedded-left-icon .icon-forward)):has(> .main-button.send) {
+  --composer-main-button-width: 0px;
+  --composer-main-button-gap: 0px;
+}
+/* Tall editors use a full-width text row and a separate bottom control row. */
+body[data-shiye-theme] .middle-column-footer[data-shiye-compact-input='false'] {
+  --shiye-composer-tools-height: 56px;
+}
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='false']
+  .Composer.is-chat-composer:not(.rich-input-expanded) {
+  position: relative;
+}
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='false']
+  .Composer.is-chat-composer:not(.rich-input-expanded)
+  .composer-wrapper {
+  flex-basis: 100%;
+  width: 100%;
+  max-width: none;
+}
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='false']
+  .Composer.is-chat-composer:not(.rich-input-expanded)
+  .message-input-wrapper {
+  flex-wrap: wrap;
+  gap: 8px 0;
+  padding-inline: 14px;
+}
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='false']
+  .Composer.is-chat-composer:not(.rich-input-expanded)
+  #message-input-text {
+  flex-basis: 100%;
+  width: 100%;
+}
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='false']
+  .Composer.is-chat-composer:not(.rich-input-expanded)
+  #message-input-text
+  .input-scroller {
+  --_scroller-right-gap: 0px;
+  margin-right: 0;
+  padding-right: 0;
+}
+body[data-shiye-theme] .Composer.is-chat-composer .shiye-symbol-button {
+  color: var(--color-text);
+}
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='false']
+  .Composer.is-chat-composer:not(.rich-input-expanded)
+  .shiye-symbol-button {
+  margin-inline-start: auto;
+  margin-inline-end: calc(var(--composer-main-button-width) + var(--composer-main-button-gap));
+}
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='false']
+  .Composer.is-chat-composer:not(.rich-input-expanded)
+  > .main-button {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+}
+.shiye-input-resizer {
+  position: absolute;
+  top: 0;
+  left: 25%;
+  width: 50%;
+  height: 12px;
+  cursor: ns-resize;
+  touch-action: none;
+  z-index: 12;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='true']
+  .Composer.is-chat-composer,
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='true']
+  .message-input-wrapper {
+  align-items: center;
+}
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='true']
+  .Composer
+  > .main-button {
+  align-self: center;
+}
+body[data-shiye-theme] .middle-column-footer[data-shiye-compact-input='true'] .AttachMenu,
+body[data-shiye-theme] .middle-column-footer[data-shiye-compact-input='true'] .shiye-symbol-button,
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='true']
+  .composer-action-button,
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='true']
+  .composer-action-buttons-container,
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='true']
+  .composer-action-buttons {
+  align-self: center;
+}
+/* U53: small manually sized composers keep the single input line centered. */
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='true']
+  .Composer.is-chat-composer:not(.rich-input-expanded):not(.with-embedded)
+  #message-input-text
+  .input-scroller:not(.clone)
+  .input-scroller-content {
+  min-height: var(--shiye-input-manual-height, var(--shiye-editor-min));
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+}
+body[data-shiye-theme]
+  .middle-column-footer[data-shiye-compact-input='true']
+  .Composer.is-chat-composer:not(.rich-input-expanded):not(.with-embedded)
+  #message-input-text
+  .placeholder-text {
+  top: calc(50% - var(--composer-text-size) * 1.65 / 2) !important;
+  bottom: auto !important;
+}
+.shiye-input-resizer::after {
+  content: '';
+  display: block;
+  height: 3px;
+  width: 36px;
+  margin: auto;
+  border-radius: 4px;
+  background: #91b3b36b;
+}
+.shiye-input-resizer:hover::after,
+.shiye-input-resizer:focus-visible::after {
+  background: #91c4c4;
+}
+.shiye-switch-progress {
+  height: 2px;
+  background: #83b0b0;
+  transform-origin: left;
+  transform: scaleX(1);
+}
+.shiye-room-switcher.counting .shiye-switch-progress {
+  transition: transform var(--shiye-switch-delay, 1200ms) linear;
+  transform: scaleX(0);
+}
+.shiye-emoji-grid button:focus-visible,
+.shiye-sticker-item > button:focus-visible {
+  outline: 2px solid #83b0b0;
+  outline-offset: 1px;
+  background: #83b0b020;
+}
+.shiye-ui-status {
+  position: fixed;
+  bottom: 6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90vw;
+  padding: 0.6rem 1rem;
+  border-radius: 0.6rem;
+  background: #20292ef5;
+  color: #e3ecee;
+  z-index: 10000;
+}
+body[data-shiye-media-drag='true'] #MiddleColumn {
+  outline: 2px solid #83b0b0;
+  outline-offset: -5px;
+}
+.shiye-room-order > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-block: 6px;
+}
+.shiye-room-order span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.shiye-room-order button {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+}
+@media (max-width: 925px) {
+  body[data-shiye-align='left'] #LeftColumn {
+    left: auto;
+    right: 0;
+    transform-origin: right center;
+  }
+}
+.shiye-markdown p {
+  margin: 0.3rem 0;
+}
+.shiye-markdown.shiye-emoji-message {
+  display: block;
+  line-height: 1.15;
+}
+
+.Message[data-shiye-sticker] .media-inner,
+.Message[data-shiye-sticker] .Photo,
+.Message[data-shiye-sticker] .Animation {
+  width: var(--shiye-sticker-width) !important;
+  height: var(--shiye-sticker-height) !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+.Message[data-shiye-sticker] .media-inner img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+.Message[data-shiye-sticker] .message-content {
+  width: auto !important;
+  max-width: none !important;
+}
+
+/* Local layout commits immediately; composer mode animates only the new content. */
+body:is([data-shiye-message-render-mode='instant'], [data-shiye-message-render-mode='smooth'])
+  .Message.own.is-just-added,
+body:is([data-shiye-message-render-mode='instant'], [data-shiye-message-render-mode='smooth'])
+  .Message.own.is-just-added
+  > .message-content-wrapper {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+body[data-shiye-message-render-mode='instant']
+  .Message.own.is-just-added
+  > .message-content-wrapper
+  > .message-content {
+  opacity: 1 !important;
+}
+/* A confirmed root may no longer carry is-just-added. Keep instant text solid
+   throughout that replacement, without taking over delete/selection motion. */
+body[data-shiye-message-render-mode='instant']
+  .MessageList
+  .Message.own:not(.is-deleting):not(.is-selected):not(.select-mode-active *),
+body[data-shiye-message-render-mode='instant']
+  .MessageList
+  .Message.own:not(.is-deleting):not(.is-selected):not(.select-mode-active *)
+  > .message-content-wrapper {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Settings pages keep parameters separate from navigation and actions. */
+.shiye-settings-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  width: min(520px, calc(100vw - 24px));
+  max-height: min(88dvh, 760px);
+  padding: 0;
+  overflow: hidden;
+}
+.shiye-settings-dialog > header {
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--color-borders);
+}
+.shiye-settings-dialog > header h2 {
+  flex: 1;
+  min-width: 0;
+}
+.shiye-settings-dialog [data-settings-body] {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 20px 16px;
+}
+.shiye-settings-dialog [data-settings-actions] {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-borders);
+  background: var(--color-background);
+}
+.shiye-settings-dialog .shiye-room-settings-form {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.shiye-settings-dialog .shiye-room-settings-actions .shiye-form-status {
+  flex: 1 0 100%;
+}
+.shiye-settings-dialog .shiye-settings-autosave {
+  margin-right: auto;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+.shiye-settings-dialog [data-settings-leave-confirm] {
+  flex: 1 0 100%;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-borders);
+}
+body[data-shiye-theme] #message-input-text .placeholder-text,
+body[data-shiye-theme] #caption-input-text .placeholder-text {
+  font-family: var(--font-family);
+  font-size: var(--shiye-input-size, 16px);
+  line-height: 1.65;
+}

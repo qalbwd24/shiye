@@ -1,3 +1,5 @@
+import { createDragAutoScroll } from './drag-scroll.js';
+
 export const SORT_MIME = 'application/x-shiye-sort';
 
 /** Pure operations also used by keyboard controls and regression tests. */
@@ -39,15 +41,32 @@ export function installDragSort(
     listeners.push([name, fn]);
   };
   const itemFor = (target) => {
-    const item = target.closest?.(itemSelector);
+    const item = target?.closest?.(itemSelector);
     return item && root.contains(item) ? item : null;
   };
+  const highlight = (item) => {
+    root.querySelectorAll('.sort-target').forEach((node) => node.classList.remove('sort-target'));
+    item?.classList.add('sort-target');
+  };
+  const scroll = createDragAutoScroll(root, ({ x, y }) =>
+    highlight(itemFor(root.ownerDocument.elementFromPoint(x, y))),
+  );
+  const trackDrag = (event) => {
+    if (source !== null && !busy) scroll.update(event);
+  };
+  root.ownerDocument?.addEventListener?.('dragover', trackDrag, true);
   const clear = () => {
+    scroll.stop();
     root
       .querySelectorAll('.sort-dragging, .sort-target')
       .forEach((node) => node.classList.remove('sort-dragging', 'sort-target'));
     source = null;
   };
+  const finishOutside = (event) => {
+    if (!root.contains(event.target)) clear();
+  };
+  root.ownerDocument?.addEventListener?.('dragend', clear, true);
+  root.ownerDocument?.addEventListener?.('drop', finishOutside);
   const apply = async (id, index) => {
     if (busy) return;
     const previous = getOrder(),
@@ -91,8 +110,7 @@ export function installDragSort(
     if (!item) return;
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
-    root.querySelectorAll('.sort-target').forEach((node) => node.classList.remove('sort-target'));
-    item.classList.add('sort-target');
+    highlight(item);
   });
   listen('drop', (event) => {
     if (source === null) return;
@@ -104,6 +122,13 @@ export function installDragSort(
     if (item) void apply(id, getOrder().indexOf(getId(item)));
   });
   listen('dragend', clear);
+  listen('keydown', (event) => {
+    if (event.key === 'Escape' && source !== null) {
+      event.preventDefault();
+      event.stopPropagation();
+      clear();
+    }
+  });
   listen('click', (event) => {
     const control = event.target.closest('[data-sort-step]');
     if (!control || control.disabled) return;
@@ -127,5 +152,8 @@ export function installDragSort(
   return () => {
     clear();
     for (const [name, fn] of listeners) root.removeEventListener(name, fn);
+    root.ownerDocument?.removeEventListener?.('dragover', trackDrag, true);
+    root.ownerDocument?.removeEventListener?.('dragend', clear, true);
+    root.ownerDocument?.removeEventListener?.('drop', finishOutside);
   };
 }

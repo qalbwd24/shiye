@@ -5,7 +5,58 @@ import {
   readGalleryPositions,
   rememberGalleryPosition,
   createGallery,
+  galleryAttachmentOrder,
+  mergeGalleryOrder,
 } from '../public/features/gallery.js';
+
+test('inline pictures stay in the body and retain original attachment associations', () => {
+  const body = {
+    format: 'shiye-richdoc',
+    version: 1,
+    content: [
+      {
+        type: 'image',
+        attrs: {
+          assetId: 'picture',
+          blockId: 'b1',
+          occurrenceId: 'o1',
+          widthRatio: 0.75,
+          align: 'center',
+          caption: '',
+          alt: '',
+          insertedAt: null,
+        },
+      },
+      {
+        type: 'image',
+        attrs: {
+          assetId: 'picture',
+          blockId: 'b2',
+          occurrenceId: 'o2',
+          widthRatio: 0.75,
+          align: 'center',
+          caption: '',
+          alt: '',
+          insertedAt: null,
+        },
+      },
+    ],
+  };
+  const entry = { contentFormat: 'richdoc', body, attachments: ['file', 'picture', 'audio'] };
+  const original = structuredClone(entry);
+  assert.deepEqual(galleryAttachmentOrder(entry), ['file', 'audio']);
+  assert.deepEqual(mergeGalleryOrder(entry, ['audio', 'file']), ['audio', 'picture', 'file']);
+  assert.throws(() => mergeGalleryOrder(entry, ['audio', 'audio']));
+  assert.deepEqual(entry, original);
+  entry.body = { ...body, content: [] };
+  assert.deepEqual(galleryAttachmentOrder(entry), entry.attachments);
+  entry.contentFormat = 'html';
+  entry.body = body;
+  assert.deepEqual(galleryAttachmentOrder(entry), entry.attachments);
+  entry.contentFormat = 'richdoc';
+  entry.body = null;
+  assert.deepEqual(galleryAttachmentOrder(entry), entry.attachments);
+});
 
 test('large galleries keep at most seven unique dots with first, current and last reachable', () => {
   for (const count of [1, 2, 7, 8, 9, 200, 1000, 100_000]) {

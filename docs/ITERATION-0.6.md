@@ -1,6 +1,6 @@
 # 0.6 工作交接
 
-基线：0.5.0 / 3da1d28。开发分支 codex/feature-boundaries-v0.6。开发工作区沿用 F:\我的奋斗\开发工作区\拾页-v0.5.0 目录名；其中应用实际版本以 package.json 和健康接口为准，目录名不是运行版本。
+基线：0.5.0 / 3da1d28。开发分支 codex/feature-boundaries-v0.6。开发工作区沿用 F:\<个人目录>\开发工作区\拾页-v0.5.0 目录名；其中应用实际版本以 package.json 和健康接口为准，目录名不是运行版本。
 
 本轮实现和限制以 FEATURE-PARITY.md、IMPORT-CONFLICTS.md 为准，不再把早期“已有入口”表述为“全部兼容”。现有 UI 风格保留，正文编辑引擎未替换。
 

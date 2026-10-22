@@ -6,6 +6,11 @@ import {
 } from '../domain/import-reconciliation.mjs';
 import { LIMITS } from '../../../public/shared/limits.js';
 import { normalizeAppearance, normalizeLayout } from '../../../public/shared/appearance.js';
+import { normalizeQuickAppearance } from '../../../public/shared/quick-appearance.js';
+import {
+  preserveMessageArchiveOwners,
+  reconcileMessageArchive,
+} from '../domain/message-store-archive.mjs';
 import { promises as fs, createReadStream } from 'node:fs';
 import path from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
@@ -184,6 +189,11 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
         !Array.isArray(manifest.files)
       )
         throw fail(400, '备份目录格式错误');
+      if (lib.conversationServices !== undefined && lib.conversationServices !== null)
+        throw fail(
+          422,
+          '备份含独立会话服务状态，暂不支持合并恢复；请保留完整备份，避免丢失规则、进度或评论',
+        );
       const id = randomUUID(),
         dir = path.join(staging, id),
         files = new Map();
@@ -317,6 +327,19 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
                 return { ...b, id };
               });
             }
+            if (source.quickAppearance) {
+              preferences.quickAppearance = normalizeQuickAppearance(source.quickAppearance);
+              const bg = preferences.quickAppearance.background;
+              if (bg) {
+                const id = remap.get('media/' + bg.id);
+                if (
+                  !id ||
+                  !lib.media.some((media) => media.id === bg.id && media.purpose === 'background')
+                )
+                  throw Error('备份中缺少快捷窗口背景图片');
+                bg.id = id;
+              }
+            }
             if (source.layout) preferences.layout = normalizeLayout(source.layout);
             if (['light', 'dark', 'system'].includes(source.theme))
               preferences.theme = source.theme;
@@ -328,7 +351,11 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
           await fs.copyFile(f.path, path.join(dataDir, f.folder, remap.get(key)));
         let reconciliation;
         await mutate((d) => {
-          const result = reconcileImport(d, { entries, media });
+          const result = reconcileImport(d, {
+            entries: preserveMessageArchiveOwners(d, lib, entries),
+            media,
+            chatJournal: lib.chatJournal,
+          });
           reconciliation = result.report;
           reconcileStickers(d, stickers, result.mediaMap);
           if (preferences.profile?.authorAvatarId)
@@ -338,8 +365,24 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
           if (preferences.appearance)
             for (const bg of preferences.appearance.backgrounds)
               bg.id = result.mediaMap.get(bg.id) || bg.id;
+          if (preferences.quickAppearance?.background) {
+            const bg = preferences.quickAppearance.background;
+            bg.id = result.mediaMap.get(bg.id) || bg.id;
+          }
           const oldEntryMap = new Map(
             lib.entries.map((old, i) => [old.id, result.entryMap.get(entries[i].id)]),
+          );
+          Object.assign(
+            reconciliation,
+            reconcileMessageArchive(d, lib, {
+              entryMap: oldEntryMap,
+              mediaMap: new Map(
+                lib.media.map((item) => [
+                  item.id,
+                  result.mediaMap.get(mediaIdMap.get(item.id)) || mediaIdMap.get(item.id),
+                ]),
+              ),
+            }),
           );
           for (const old of lib.conflicts || []) {
             const lookup = (id) =>
@@ -388,6 +431,10 @@ export function backupStore({ dataDir, getDb, mutate, body, reply, fail }) {
               .filter((t) => typeof t.name === 'string' && typeof t.content === 'string')
               .map((t) => ({ ...t, id: randomUUID() })),
           ];
+        }).catch(async (error) => {
+          for (const [key, file] of job.files)
+            await fs.unlink(path.join(dataDir, file.folder, remap.get(key))).catch(() => {});
+          throw error;
         });
         for (const id of reconciliation.redundantMedia)
           await fs.unlink(path.join(dataDir, 'media', id)).catch(() => {});

@@ -1,0 +1,752 @@
+{
+  "format": "shiye-quick-richdoc-inheritance",
+  "version": 1,
+  "updated": "2026-10-16",
+  "status": "audited-not-integrated",
+  "kind": "migration-acceptance-baseline-not-runtime-api",
+  "humanDocument": "docs/QUICK-RICHDOC-INHERITANCE.md",
+  "latestUserScope": "Retain the established quick long-form workflow; add inline image adaptation and bridge the unified document model without rewriting old diaries.",
+  "priorityIds": ["I01", "I02", "I03", "I04", "I05", "I07", "P01", "P02", "P03", "P04", "P05"],
+  "runtimeOrProductionChangesThisAudit": false,
+  "deferred": [
+    "nonlinear-columns",
+    "AI-business-implementation",
+    "revisit",
+    "cloud-and-Android-deployment"
+  ],
+  "requirements": [
+    {
+      "id": "I01",
+      "group": "writing",
+      "requirement": "时间命令遵守现有快捷键策略；缺省 Alt+T，其他扩展键仅显式开启，不擅改用户绑定",
+      "acceptanceOrEvidence": "新编辑器不能额外强启快捷键，候选确认/229/组合键不误执行",
+      "legacyCodeNotes": "shared/hotkeys.js 的 effectiveShortcuts/pausedShortcut，features/editor-input.js",
+      "codeReferences": [
+        "public/shared/hotkeys.js",
+        "public/features/editor-input.js",
+        "public/shared/date-time-edit.js",
+        "public/editor/rich-date-time.js",
+        "public/editor/markdown-transforms.js",
+        "public/features/title-navigation.js",
+        "public/editor/body-editor.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "I02",
+      "group": "writing",
+      "requirement": "句中/选中文字插时间，仅在真实光标/选区插入或替换，保留周围格式和后文",
+      "acceptanceOrEvidence": "标准段落、加粗嵌套与中文光标位置都正确；列表/引用/代码等结构仍原位插入",
+      "legacyCodeNotes": "shared/date-time-edit.js，editor/rich-date-time.js，body-editor.insertDateTime",
+      "codeReferences": [
+        "public/shared/hotkeys.js",
+        "public/features/editor-input.js",
+        "public/shared/date-time-edit.js",
+        "public/editor/rich-date-time.js",
+        "public/editor/markdown-transforms.js",
+        "public/features/title-navigation.js",
+        "public/editor/body-editor.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "I03",
+      "group": "writing",
+      "requirement": "普通段末插时间：空白分隔、缩进时间行、下一缩进行，光标可立即续写",
+      "acceptanceOrEvidence": "不重复空行/缩进；空行/全角缩进行复用；关闭缩进设置后不强加缩进；一次撤销整个时间命令",
+      "legacyCodeNotes": "dateTimeEdit、richDateTimeInsertion、autoIndentParagraph",
+      "codeReferences": [
+        "public/shared/hotkeys.js",
+        "public/features/editor-input.js",
+        "public/shared/date-time-edit.js",
+        "public/editor/rich-date-time.js",
+        "public/editor/markdown-transforms.js",
+        "public/features/title-navigation.js",
+        "public/editor/body-editor.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "I04",
+      "group": "writing",
+      "requirement": "时间格式/所选应用时区保留，默认为北京时间；手打时间仍是用户正文",
+      "acceptanceOrEvidence": "不替用户自动给所有段落加时间，不扫描旧时间猜精度/时区；图片 insertedAt 不是段落时间",
+      "legacyCodeNotes": "formatLocalDateTime、shared/time-zone.js",
+      "codeReferences": [
+        "public/shared/hotkeys.js",
+        "public/features/editor-input.js",
+        "public/shared/date-time-edit.js",
+        "public/editor/rich-date-time.js",
+        "public/editor/markdown-transforms.js",
+        "public/features/title-navigation.js",
+        "public/editor/body-editor.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "I05",
+      "group": "writing",
+      "requirement": "普通回车遵守自动段落缩进开关；初始两格全角缩进、模板优先，Shift+Enter/选区/结构块有原语义",
+      "acceptanceOrEvidence": "使用新编辑器事务实现，不能同时执行旧 DOM 缩进和新事务；中文候选 Enter 不生成额外段落",
+      "legacyCodeNotes": "paragraphIndentIntent、paragraphEnter、markdownStructureEnter",
+      "codeReferences": [
+        "public/shared/hotkeys.js",
+        "public/features/editor-input.js",
+        "public/shared/date-time-edit.js",
+        "public/editor/rich-date-time.js",
+        "public/editor/markdown-transforms.js",
+        "public/features/title-navigation.js",
+        "public/editor/body-editor.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "I06",
+      "group": "writing",
+      "requirement": "标题 Enter 仅回正文；标题末尾 ↓、正文起始 ↑ 的边界往返；已有正文返回原光标",
+      "acceptanceOrEvidence": "自动缩进开头仍能判定正文起点；选区/组词不误跳，Backspace 保持删除，初始标题/正文设置仍生效",
+      "legacyCodeNotes": "title-navigation.js、body-editor.atStart",
+      "codeReferences": [
+        "public/shared/hotkeys.js",
+        "public/features/editor-input.js",
+        "public/shared/date-time-edit.js",
+        "public/editor/rich-date-time.js",
+        "public/editor/markdown-transforms.js",
+        "public/features/title-navigation.js",
+        "public/editor/body-editor.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "I07",
+      "group": "writing",
+      "requirement": "新输入 `---` 或插线命令不把前文变大，不吞选中的前文",
+      "acceptanceOrEvidence": "在选区末尾插入分割，前文/后文完整，光标可在后续行写；代码示例不变；缩进开/关均验收",
+      "legacyCodeNotes": "transformMarkdown(insertHorizontalRule)、markdownStructureEnter",
+      "codeReferences": [
+        "public/shared/hotkeys.js",
+        "public/features/editor-input.js",
+        "public/shared/date-time-edit.js",
+        "public/editor/rich-date-time.js",
+        "public/editor/markdown-transforms.js",
+        "public/features/title-navigation.js",
+        "public/editor/body-editor.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "partial-content-prototype-only"
+    },
+    {
+      "id": "I08",
+      "group": "writing",
+      "requirement": "既有 Markdown 内容、结构化回车、源码/预览及原文查看不因升级无故失效",
+      "acceptanceOrEvidence": "旧 HTML/Markdown 用原路径；新 richdoc 不经有损 Markdown 来回覆盖。独立“Markdown 输入”弹窗不能当作旧源码编辑能力已继承",
+      "legacyCodeNotes": "body-editor.toggleSource、live-preview.js、editor-document.js",
+      "codeReferences": [
+        "public/shared/hotkeys.js",
+        "public/features/editor-input.js",
+        "public/shared/date-time-edit.js",
+        "public/editor/rich-date-time.js",
+        "public/editor/markdown-transforms.js",
+        "public/features/title-navigation.js",
+        "public/editor/body-editor.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "P01",
+      "group": "pictures",
+      "requirement": "保留粘贴/拖入/选择文件后的本地预览和确认/取消",
+      "acceptanceOrEvidence": "默认确认，Enter 添加，←取消、→确认、Esc 取消；控件方向键不被抢，组词保护，取消不上传、不改正文和附件",
+      "codeReferences": [
+        "public/features/media-batch.js",
+        "public/features/media-import.js",
+        "public/core/media-compression.js",
+        "public/features/gallery.js",
+        "public/shared/image-viewport.js",
+        "public/features/rich-text-lab.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "P02",
+      "group": "pictures",
+      "requirement": "保留原件/压缩质量选择；增加文中图片显示宽度",
+      "acceptanceOrEvidence": "按既有或用户选定质量处理；原件模式字节一致。改变显示尺寸/对齐不重新压缩，不能把缩略图当原件或承诺恢复已被旧压缩丢失的细节",
+      "codeReferences": [
+        "public/features/media-batch.js",
+        "public/features/media-import.js",
+        "public/core/media-compression.js",
+        "public/features/gallery.js",
+        "public/shared/image-viewport.js",
+        "public/features/rich-text-lab.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "partial-content-prototype-only"
+    },
+    {
+      "id": "P03",
+      "group": "pictures",
+      "requirement": "在原光标位置插图，保留前后文并就地预览",
+      "acceptanceOrEvidence": "等待文件校验/上传期间光标变化可正确映射；换篇不能插入另一篇，不能总追加到末尾；同图重复出现可独立排版",
+      "codeReferences": [
+        "public/features/media-batch.js",
+        "public/features/media-import.js",
+        "public/core/media-compression.js",
+        "public/features/gallery.js",
+        "public/shared/image-viewport.js",
+        "public/features/rich-text-lab.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "partial-content-prototype-only"
+    },
+    {
+      "id": "P04",
+      "group": "pictures",
+      "requirement": "widthRatio/align/caption/alt 与稳定 blockId/occurrenceId",
+      "acceptanceOrEvidence": "图片文件 ID 与这次出现 ID 分开；排版保存/重开/恢复一致，图注安全显示，引用以后能指向这次出现",
+      "codeReferences": [
+        "public/features/media-batch.js",
+        "public/features/media-import.js",
+        "public/core/media-compression.js",
+        "public/features/gallery.js",
+        "public/shared/image-viewport.js",
+        "public/features/rich-text-lab.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "partial-content-prototype-only"
+    },
+    {
+      "id": "P05",
+      "group": "pictures",
+      "requirement": "保留双击/点击查看、图片独立放大缩小、拖动/原始像素",
+      "acceptanceOrEvidence": "图片弹窗截获自己的缩放按键和滚轮，快捷窗宿主不再同时放大；关闭后返回原正文位置",
+      "codeReferences": [
+        "public/features/media-batch.js",
+        "public/features/media-import.js",
+        "public/core/media-compression.js",
+        "public/features/gallery.js",
+        "public/shared/image-viewport.js",
+        "public/features/rich-text-lab.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "partial-content-prototype-only"
+    },
+    {
+      "id": "P06",
+      "group": "pictures",
+      "requirement": "保留附件队列和完成/失败语义",
+      "acceptanceOrEvidence": "全部处理且日记关联保存成功才自动收起；部分失败仍可重试/移除失败项；不会重复上传或切错目标",
+      "codeReferences": [
+        "public/features/media-batch.js",
+        "public/features/media-import.js",
+        "public/core/media-compression.js",
+        "public/features/gallery.js",
+        "public/shared/image-viewport.js",
+        "public/features/rich-text-lab.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "P07",
+      "group": "pictures",
+      "requirement": "旧图片与未知原位置不做推断",
+      "acceptanceOrEvidence": "老附件仍能查看/插入，不自动猜到正文某处，不批量转旧日记；缺文件有明确占位，不能保存成空白或伪造原件",
+      "codeReferences": [
+        "public/features/media-batch.js",
+        "public/features/media-import.js",
+        "public/core/media-compression.js",
+        "public/features/gallery.js",
+        "public/shared/image-viewport.js",
+        "public/features/rich-text-lab.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "W01",
+      "group": "window",
+      "requirement": "原快捷 EXE/热键/统一托盘作为入口；每次外部唤回请求中文，同次停留可手动英文",
+      "acceptanceOrEvidence": "QuickHost.cs/QuickCapture.cs；不把 lang=zh-CN 当系统 IME 切换已实现，不新开第二套热键后台",
+      "codeReferences": [
+        "public/features/quick-capture-window.js",
+        "public/features/quick-window-settings.js",
+        "public/features/category-picker.js",
+        "public/features/category-order.js",
+        "public/features/quick-appearance.js",
+        "public/features/quick-resume-position.js",
+        "public/features/window-refresh.js",
+        "desktop/QuickCapture.cs",
+        "desktop/QuickHost.cs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "W02",
+      "group": "window",
+      "requirement": "可选 F13–F24/修饰键与现有设置，用户自行映射 Caps；长按不重复切换，不自动改开机启动",
+      "acceptanceOrEvidence": "保留当前配置。快捷窗缺省未绑定与聊天 F15 默认不是同一件事，不擅自占新键",
+      "codeReferences": [
+        "public/features/quick-capture-window.js",
+        "public/features/quick-window-settings.js",
+        "public/features/category-picker.js",
+        "public/features/category-order.js",
+        "public/features/quick-appearance.js",
+        "public/features/quick-resume-position.js",
+        "public/features/window-refresh.js",
+        "desktop/QuickCapture.cs",
+        "desktop/QuickHost.cs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "W03",
+      "group": "window",
+      "requirement": "外部唤回 MRU，前台切换键保存后收起当前窗；确认可设、Enter 确认，取消留窗",
+      "acceptanceOrEvidence": "保存/冲突/IME 未完成不能销毁；选择页/锁定页/弹窗合理获焦，不跳过选择",
+      "codeReferences": [
+        "public/features/quick-capture-window.js",
+        "public/features/quick-window-settings.js",
+        "public/features/category-picker.js",
+        "public/features/category-order.js",
+        "public/features/quick-appearance.js",
+        "public/features/quick-resume-position.js",
+        "public/features/window-refresh.js",
+        "desktop/QuickCapture.cs",
+        "desktop/QuickHost.cs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "W04",
+      "group": "window",
+      "requirement": "成功保存并隐藏后默认五小时内同篇/焦点/选区/滚动恢复，0–168 小时可调",
+      "acceptanceOrEvidence": "不是按消息闲置分篇，也不是午夜切篇；前台不因超时被关；期限外回上一篇/分类页、不提前创建空篇；完整退出不承诺恢复光标",
+      "codeReferences": [
+        "public/features/quick-capture-window.js",
+        "public/features/quick-window-settings.js",
+        "public/features/category-picker.js",
+        "public/features/category-order.js",
+        "public/features/quick-appearance.js",
+        "public/features/quick-resume-position.js",
+        "public/features/window-refresh.js",
+        "desktop/QuickCapture.cs",
+        "desktop/QuickHost.cs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "W05",
+      "group": "window",
+      "requirement": "普通双击/托盘共用恢复入口；明确“新开独立窗口”才能另开，支持多窗独立编辑",
+      "acceptanceOrEvidence": "旧窗口退后台不影响别窗。格式升级不能把 MRU 换成最近服务端更新时间",
+      "codeReferences": [
+        "public/features/quick-capture-window.js",
+        "public/features/quick-window-settings.js",
+        "public/features/category-picker.js",
+        "public/features/category-order.js",
+        "public/features/quick-appearance.js",
+        "public/features/quick-resume-position.js",
+        "public/features/window-refresh.js",
+        "desktop/QuickCapture.cs",
+        "desktop/QuickHost.cs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "W06",
+      "group": "window",
+      "requirement": "顶部仅新一篇/上一篇/下一篇/主页面/设置，低频项进入设置",
+      "acceptanceOrEvidence": "附件、外观字体、分类排序、热键、比例、置顶、保存收起和彻底关闭仍可达；不搬试验页整排工具栏和右侧预览进去",
+      "codeReferences": [
+        "public/features/quick-capture-window.js",
+        "public/features/quick-window-settings.js",
+        "public/features/category-picker.js",
+        "public/features/category-order.js",
+        "public/features/quick-appearance.js",
+        "public/features/quick-resume-position.js",
+        "public/features/window-refresh.js",
+        "desktop/QuickCapture.cs",
+        "desktop/QuickHost.cs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "W07",
+      "group": "window",
+      "requirement": "选择页首项上一篇默认高亮，↑↓/Enter/Esc、搜索、IME；读取中 Enter 只执行一次",
+      "acceptanceOrEvidence": "按钮失焦/取消组词后仍可导航；没有历史不能先新建空篇；普通主窗新建保留自己的选择行为",
+      "codeReferences": [
+        "public/features/quick-capture-window.js",
+        "public/features/quick-window-settings.js",
+        "public/features/category-picker.js",
+        "public/features/category-order.js",
+        "public/features/quick-appearance.js",
+        "public/features/quick-resume-position.js",
+        "public/features/window-refresh.js",
+        "desktop/QuickCapture.cs",
+        "desktop/QuickHost.cs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "W08",
+      "group": "window",
+      "requirement": "上下篇按成功快捷编辑历史，跳过空白/删除/缺失；最新篇下一篇用原选择页，取消保留当前",
+      "acceptanceOrEvidence": "切换前保存成功，新 ID 已写历史；主窗口打开同一个已保存 ID，不复制文章",
+      "codeReferences": [
+        "public/features/quick-capture-window.js",
+        "public/features/quick-window-settings.js",
+        "public/features/category-picker.js",
+        "public/features/category-order.js",
+        "public/features/quick-appearance.js",
+        "public/features/quick-resume-position.js",
+        "public/features/window-refresh.js",
+        "desktop/QuickCapture.cs",
+        "desktop/QuickHost.cs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "W09",
+      "group": "window",
+      "requirement": "分类全局同一排序、默认分类标记不改顺序、无拖动上移/下移/首尾/序号与并发校验",
+      "acceptanceOrEvidence": "分类管理返回原篇与原滚动；拖动边缘识别当前可滚容器，取消/返回/正常编辑的 Esc 区分",
+      "codeReferences": [
+        "public/features/quick-capture-window.js",
+        "public/features/quick-window-settings.js",
+        "public/features/category-picker.js",
+        "public/features/category-order.js",
+        "public/features/quick-appearance.js",
+        "public/features/quick-resume-position.js",
+        "public/features/window-refresh.js",
+        "desktop/QuickCapture.cs",
+        "desktop/QuickHost.cs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "W10",
+      "group": "window",
+      "requirement": "Ctrl+滚轮/加减/设置共用 4 个百分点，Ctrl+0=100%，已有 50%–250% 范围及多窗记忆",
+      "acceptanceOrEvidence": "不常驻显示底角比例；旧窗关闭不覆盖别人较新比例。试验页 60%–200% 是临时差异，不能迁入后缩窄原范围",
+      "codeReferences": [
+        "public/features/quick-capture-window.js",
+        "public/features/quick-window-settings.js",
+        "public/features/category-picker.js",
+        "public/features/category-order.js",
+        "public/features/quick-appearance.js",
+        "public/features/quick-resume-position.js",
+        "public/features/window-refresh.js",
+        "desktop/QuickCapture.cs",
+        "desktop/QuickHost.cs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "W11",
+      "group": "window",
+      "requirement": "独立壁纸/透明度/铺放/模糊、字体/字号/字重/行距、置顶和几何偏好",
+      "acceptanceOrEvidence": "原偏好/恢复规则及主题启动颜色保留，深色悬浮不刺眼；旧截图或 API 测试不证明真实多屏/DPI 已验收",
+      "codeReferences": [
+        "public/features/quick-capture-window.js",
+        "public/features/quick-window-settings.js",
+        "public/features/category-picker.js",
+        "public/features/category-order.js",
+        "public/features/quick-appearance.js",
+        "public/features/quick-resume-position.js",
+        "public/features/window-refresh.js",
+        "desktop/QuickCapture.cs",
+        "desktop/QuickHost.cs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "W12",
+      "group": "window",
+      "requirement": "末行后仍能自由下拉的留白、标题和字数/保存状态",
+      "acceptanceOrEvidence": "留白为 CSS/布局，不序列化为大量空段落；正文/标题实际修改仍触发正确计数和保存",
+      "codeReferences": [
+        "public/features/quick-capture-window.js",
+        "public/features/quick-window-settings.js",
+        "public/features/category-picker.js",
+        "public/features/category-order.js",
+        "public/features/quick-appearance.js",
+        "public/features/quick-resume-position.js",
+        "public/features/window-refresh.js",
+        "desktop/QuickCapture.cs",
+        "desktop/QuickHost.cs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "D01",
+      "group": "data",
+      "requirement": "同一个篇目 ID、标题/日期/分类/标签及既有状态不变；旧数据读写保留原字段",
+      "acceptanceOrEvidence": "原 `category` 名称不在启动时批量迁成 ID；未来 Category/Record/Conversation 映射在适配层处理",
+      "codeReferences": [
+        "public/shared/editor-document.js",
+        "public/shared/quick-capture.js",
+        "public/editor/persistence.js",
+        "public/app/main.js",
+        "src/server/domain/entries.mjs",
+        "src/server/domain/quick-entry.mjs",
+        "src/server/domain/import-reconciliation.mjs",
+        "src/server/routes/backups.mjs",
+        "public/shared/open-data.js",
+        "public/editor/content.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "D02",
+      "group": "data",
+      "requirement": "为新篇定义版本化 richdoc 权威正文；HTML 是安全、可重建的阅读/搜索投影",
+      "acceptanceOrEvidence": "当前服务 contentFormat 只认 html/markdown，须扩校验和读取选择；不能把新 JSON 硬塞进旧 content 字符串或丢成 HTML",
+      "codeReferences": [
+        "public/shared/editor-document.js",
+        "public/shared/quick-capture.js",
+        "public/editor/persistence.js",
+        "public/app/main.js",
+        "src/server/domain/entries.mjs",
+        "src/server/domain/quick-entry.mjs",
+        "src/server/domain/import-reconciliation.mjs",
+        "src/server/routes/backups.mjs",
+        "public/shared/open-data.js",
+        "public/editor/content.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "partial-content-prototype-only"
+    },
+    {
+      "id": "D03",
+      "group": "data",
+      "requirement": "编辑脏状态、空内容、三方比较/冲突/幂等请求均认识 richdoc",
+      "acceptanceOrEvidence": "图片尺寸、图注/位置等也是变更；自动生成缩进/渲染/默认值不创建空篇。只图/只标题有效；同正文不同 HTML 缓存不制造假冲突",
+      "codeReferences": [
+        "public/shared/editor-document.js",
+        "public/shared/quick-capture.js",
+        "public/editor/persistence.js",
+        "public/app/main.js",
+        "src/server/domain/entries.mjs",
+        "src/server/domain/quick-entry.mjs",
+        "src/server/domain/import-reconciliation.mjs",
+        "src/server/routes/backups.mjs",
+        "public/shared/open-data.js",
+        "public/editor/content.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "D04",
+      "group": "data",
+      "requirement": "复用共享保存队列和 native close 握手，提交时取最后编辑/IME 快照",
+      "acceptanceOrEvidence": "保存失败/冲突留文留窗；请求结果未知重试不新建多篇；标题先保存导致 draft-ID→正式 ID 后正文/字数/图片仍正确归属",
+      "codeReferences": [
+        "public/shared/editor-document.js",
+        "public/shared/quick-capture.js",
+        "public/editor/persistence.js",
+        "public/app/main.js",
+        "src/server/domain/entries.mjs",
+        "src/server/domain/quick-entry.mjs",
+        "src/server/domain/import-reconciliation.mjs",
+        "src/server/routes/backups.mjs",
+        "public/shared/open-data.js",
+        "public/editor/content.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "D05",
+      "group": "data",
+      "requirement": "显式区分编辑器自己管理文档与旧 HTML 回调，按模式分派 input/composition/命令",
+      "acceptanceOrEvidence": "现在 main.js 只用 isMarkdown 排除 legacy innerHTML 同步。新 Tiptap 不能落入旧分支写错正文；不能将其假装为 Markdown 来掩盖缺口",
+      "codeReferences": [
+        "public/shared/editor-document.js",
+        "public/shared/quick-capture.js",
+        "public/editor/persistence.js",
+        "public/app/main.js",
+        "src/server/domain/entries.mjs",
+        "src/server/domain/quick-entry.mjs",
+        "src/server/domain/import-reconciliation.mjs",
+        "src/server/routes/backups.mjs",
+        "public/shared/open-data.js",
+        "public/editor/content.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "D06",
+      "group": "data",
+      "requirement": "新图片节点 assetId 通过正式媒体解析，sha256 用于完整性/去重；不改变既有 media.id",
+      "acceptanceOrEvidence": "assetId/occurrenceId/blockId 分工，原件/压缩/预览不混淆，附件清单和正文可达引用一致；不以浏览器 Blob URL 或盘符作为持久引用",
+      "codeReferences": [
+        "public/shared/editor-document.js",
+        "public/shared/quick-capture.js",
+        "public/editor/persistence.js",
+        "public/app/main.js",
+        "src/server/domain/entries.mjs",
+        "src/server/domain/quick-entry.mjs",
+        "src/server/domain/import-reconciliation.mjs",
+        "src/server/routes/backups.mjs",
+        "public/shared/open-data.js",
+        "public/editor/content.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "D07",
+      "group": "data",
+      "requirement": "所有导出/恢复/备份路径遍历新正文及历史/评论等资源引用，处理媒体 ID 映射",
+      "acceptanceOrEvidence": "现有 remapEntryMedia 仅处理旧串字段/附件/评论/chatJournal；新节点需递归适配。JSON 往返不等于 `.syvault2` 全量恢复/旧安卓同步兼容",
+      "codeReferences": [
+        "public/shared/editor-document.js",
+        "public/shared/quick-capture.js",
+        "public/editor/persistence.js",
+        "public/app/main.js",
+        "src/server/domain/entries.mjs",
+        "src/server/domain/quick-entry.mjs",
+        "src/server/domain/import-reconciliation.mjs",
+        "src/server/routes/backups.mjs",
+        "public/shared/open-data.js",
+        "public/editor/content.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "D08",
+      "group": "data",
+      "requirement": "新字段后端白名单/串行 mutate/版本校验，旧客户端缺能力时拒绝覆盖新正文",
+      "acceptanceOrEvidence": "前端只读不足以保护新数据；未知节点/格式可保留/只读或明确拒绝，不自动降级后保存。安全清洗保留允许的图片布局/图注",
+      "codeReferences": [
+        "public/shared/editor-document.js",
+        "public/shared/quick-capture.js",
+        "public/editor/persistence.js",
+        "public/app/main.js",
+        "src/server/domain/entries.mjs",
+        "src/server/domain/quick-entry.mjs",
+        "src/server/domain/import-reconciliation.mjs",
+        "src/server/routes/backups.mjs",
+        "public/shared/open-data.js",
+        "public/editor/content.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "D09",
+      "group": "data",
+      "requirement": "与统一 Record/Document/Asset/JournalPage 方向一致，为评论锚点留稳定身份",
+      "acceptanceOrEvidence": "手打时间是正文；eventTime 与图片 insertedAt/createdAt 区分，旧时间不造精度。同图不同出现不串评论；聊天归篇仍只读",
+      "codeReferences": [
+        "public/shared/editor-document.js",
+        "public/shared/quick-capture.js",
+        "public/editor/persistence.js",
+        "public/app/main.js",
+        "src/server/domain/entries.mjs",
+        "src/server/domain/quick-entry.mjs",
+        "src/server/domain/import-reconciliation.mjs",
+        "src/server/routes/backups.mjs",
+        "public/shared/open-data.js",
+        "public/editor/content.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "partial-content-prototype-only"
+    },
+    {
+      "id": "D10",
+      "group": "data",
+      "requirement": "独立草稿原件/导入恢复机制不直接套到聊天撤回",
+      "acceptanceOrEvidence": "长篇可编辑；聊天撤回长期仅留提示，原文不进入持久副本/导出/索引，重发新 ID/时间。回看和 AI 不因此自动接入",
+      "codeReferences": [
+        "public/shared/editor-document.js",
+        "public/shared/quick-capture.js",
+        "public/editor/persistence.js",
+        "public/app/main.js",
+        "src/server/domain/entries.mjs",
+        "src/server/domain/quick-entry.mjs",
+        "src/server/domain/import-reconciliation.mjs",
+        "src/server/routes/backups.mjs",
+        "public/shared/open-data.js",
+        "public/editor/content.js"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "T01",
+      "group": "time-provenance",
+      "requirement": "手打/快捷键时间保留原文；日记日期、保存时间不覆盖用户写出的时间",
+      "acceptanceOrEvidence": "不强制自动插可见时间，不把一篇所有段落统一归为最后编辑时刻；为后续多个时间锚点留位置，但不猜全文含义",
+      "codeReferences": [
+        "public/features/editor-input.js",
+        "public/shared/date-time-edit.js",
+        "public/shared/time-zone.js",
+        "public/features/rich-text-lab.js",
+        "public/editor/rich-document-editor.js",
+        "src/server/routes/media.mjs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    },
+    {
+      "id": "T02",
+      "group": "time-provenance",
+      "requirement": "图片每次出现的插入时间与文件拍摄/修改/上传时间、篇目时间分开",
+      "acceptanceOrEvidence": "新文件插入自动写隐藏 UTC insertedAt，显示可用北京/系统时区；同图可有多次出现。旧图未记录时用未知，不以导入或当前保存时间补造",
+      "codeReferences": [
+        "public/features/editor-input.js",
+        "public/shared/date-time-edit.js",
+        "public/shared/time-zone.js",
+        "public/features/rich-text-lab.js",
+        "public/editor/rich-document-editor.js",
+        "src/server/routes/media.mjs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "partial-content-prototype-only"
+    },
+    {
+      "id": "T03",
+      "group": "time-provenance",
+      "requirement": "时间精度和依据必须保留，历史缺日期/时区或内容歧义不得变成伪精确时间",
+      "acceptanceOrEvidence": "仅有日期不能冒充秒级；只写时分不无提示补日期；推定与明确标识区分。图片缺时间不影响原图/正文读取",
+      "codeReferences": [
+        "public/features/editor-input.js",
+        "public/shared/date-time-edit.js",
+        "public/shared/time-zone.js",
+        "public/features/rich-text-lab.js",
+        "public/editor/rich-document-editor.js",
+        "src/server/routes/media.mjs"
+      ],
+      "newEditorAcceptance": "not-accepted",
+      "prototypeState": "not-integrated-with-quick-window"
+    }
+  ],
+  "acceptanceRule": "Each requirement needs evidence in the isolated integrated quick window; legacy tests and lab JSON roundtrips do not count as new-editor acceptance."
+}

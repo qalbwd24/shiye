@@ -1,11 +1,15 @@
 data/
 var/
+tmp/
+outputs/
+config/deployment.local.json
 node_modules/
 build/
 coverage/
 tests/ui-test-data/
 public/vendor/
 resources/
+previews/telegram-chat/vendor/
 docs/archive/
 tools/manual/archive/
 package-lock.json

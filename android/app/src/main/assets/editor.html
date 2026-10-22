@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="theme-color" content="#B6DEF0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>思绪 · 拾页</title>
+    <link rel="stylesheet" href="/public/styles/rich-quick-editor.css" />
+    <link rel="stylesheet" href="/editor.css" />
+    <script src="/editor.js" defer></script>
+  </head>
+  <body>
+    <div id="editorPage" class="editor-page header-frozen" aria-busy="true">
+      <div class="paper-layer" aria-hidden="true"></div>
+      <header class="page-header entry-context-header" aria-label="本篇信息">
+        <div class="entry-top-row">
+          <button id="backButton" class="icon-button" type="button" aria-label="保存并返回">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
+          </button>
+          <div class="entry-meta">
+            <div class="entry-meta-date">
+              <label class="date-control" for="entryDate"
+                ><svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="4" y="6" width="16" height="15" rx="3" />
+                  <path d="M8 3v6m8-6v6M4 12h16" /></svg
+                ><span id="entryDateDisplay" aria-hidden="true"></span
+                ><input id="entryDate" type="date" aria-label="日记日期" disabled
+              /></label>
+              <span id="weekday" class="weekday"></span>
+            </div>
+            <span id="entryMetaTime" class="entry-meta-time" hidden></span>
+            <span id="entryMetaPlace" class="entry-meta-place" hidden></span>
+            <span id="wordCount" class="entry-meta-count">0 字</span>
+            <div class="entry-category-shortcut">
+              <button id="entryCategoryButton" type="button" aria-label="选择本篇写作分类">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                  /></svg
+                ><span id="entryCategoryName">未分类</span>
+              </button>
+            </div>
+          </div>
+          <button id="diarySearchButton" class="icon-button" type="button" aria-label="查找本篇正文" title="查找本篇正文">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 6 6"/></svg>
+          </button>
+          <button
+            id="moreButton"
+            class="icon-button"
+            type="button"
+            aria-label="日记设置"
+            title="日记设置"
+            disabled
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="m10 3-.6 2.4-2 .9-2.2-.7-2 3.4 1.6 1.7-.2 2.3L3 15l2 3.4 2.2-.7 2 .9.8 2.4h4l.6-2.4 2-.9 2.2.7 2-3.4-1.6-1.7.2-2.3L21 9l-2-3.4-2.2.7-2-.9L14 3z"
+              />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
+        </div>
+        <div class="page-heading">
+          <span id="pageModeLabel" hidden></span>
+          <input
+            id="entryTitle"
+            class="entry-title"
+            type="text"
+            placeholder="标题"
+            aria-label="日记标题"
+            autocomplete="off"
+            maxlength="500"
+            disabled
+          />
+          <h1 id="readingTitle" class="entry-title reading-title" hidden></h1>
+          <button
+            id="saveStatus"
+            class="save-status"
+            type="button"
+            aria-live="polite"
+            aria-label="保存状态"
+          >
+            正在打开…
+          </button>
+        </div>
+        <button id="modeButton" class="mode-button" type="button" disabled hidden>阅读</button>
+        <div class="reading-date">
+          <span id="readingDay" class="reading-day"></span>
+          <span class="reading-date-detail"
+            ><span id="readingMonth"></span><span id="readingYear"></span
+          ></span>
+        </div>
+        <div class="page-divider" aria-hidden="true"></div>
+      </header>
+      <nav id="diarySearchBar" class="diary-search-bar" aria-label="篇内查找" hidden>
+        <input id="diarySearchInput" type="search" autocomplete="off" aria-label="查找正文关键词" placeholder="查找正文" />
+        <span id="diarySearchStatus" role="status" aria-live="polite"></span>
+        <button id="diarySearchPrevious" type="button" aria-label="上一个命中">‹</button>
+        <button id="diarySearchNext" type="button" aria-label="下一个命中">›</button>
+        <button id="diarySearchClose" type="button" aria-label="关闭查找">×</button>
+      </nav>
+      <main id="pageScroll" class="page-scroll">
+        <article class="diary-page">
+          <div id="entryNotice" class="entry-notice" role="alert" hidden></div>
+          <div id="bodyEditor" class="body-editor" aria-label="日记正文"></div>
+          <div id="emptyHint" class="empty-hint" hidden>正文</div>
+          <section id="attachmentSection" class="attachment-section" aria-label="图片附件">
+            <span id="attachmentCount" hidden>0</span>
+            <div id="attachmentGrid" class="attachment-grid"></div>
+            <p id="attachmentEmpty" hidden></p>
+          </section>
+        </article>
+      </main>
+
+      <aside id="formatBar" class="format-bar" aria-label="写作工具">
+        <div id="richToolsPanel" class="rich-tools-panel" aria-label="正文格式工具" hidden></div>
+        <button
+          id="timestampButton"
+          class="timestamp-button"
+          type="button"
+          aria-label="插入日期和时间"
+          title="时间戳使用北京时间，与电脑默认一致"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8" />
+            <path d="M12 7v5l3 2M9 2h6" />
+          </svg>
+        </button>
+        <button id="indentButton" type="button" aria-label="插入两格缩进" title="插入两格缩进">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h16M11 10h9m-9 5h9M4 20h16m-16-11 4 3-4 3" />
+          </svg>
+        </button>
+        <button id="imageButton" type="button" aria-label="插入图片" title="插入图片">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16" rx="3" />
+            <circle cx="8" cy="9" r="1.5" />
+            <path d="m4 18 5-5 4 4 3-3 5 5" />
+          </svg>
+        </button>
+        <button
+          id="richToolsButton"
+          type="button"
+          aria-label="展开正文格式工具"
+          aria-expanded="false"
+          aria-controls="richToolsPanel"
+          title="正文格式"
+        >
+          <span aria-hidden="true">Aa</span>
+        </button>
+        <div id="toolbarRightTools" class="toolbar-right-tools" aria-label="右侧写作工具"></div>
+        <div id="toolbarInfoSlot" class="diary-info-slot" aria-label="本篇信息"></div>
+      </aside>
+      <button id="continueButton" class="continue-button" type="button" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m15 4 5 5M4 20l5-1L20 8a2 2 0 0 0-5-5L4 14z" />
+        </svg>
+        继续编辑
+      </button>
+    </div>
+
+    <dialog id="formatDialog" class="sheet-dialog format-dialog" aria-labelledby="formatHeading">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <div class="dialog-heading">
+        <h2 id="formatHeading">正文格式</h2>
+        <button type="button" data-close="formatDialog" class="icon-button" aria-label="关闭">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg>
+        </button>
+      </div>
+      <div class="format-scroll">
+        <button type="button" data-command="undo" aria-label="撤销" title="撤销">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m8 5-5 5 5 5M3 10h11a6 6 0 0 1 0 12" transform="translate(0 -2)" />
+          </svg>
+        </button>
+        <button type="button" data-command="redo" aria-label="重做" title="重做">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m16 5 5 5-5 5m5-5H10a6 6 0 0 0 0 12" transform="translate(0 -2)" />
+          </svg>
+        </button>
+        <span class="tool-divider"></span>
+        <button type="button" data-command="bold" aria-label="粗体" title="粗体">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 4h6a4 4 0 0 1 0 8H7zm0 8h7a4 4 0 0 1 0 8H7z" />
+          </svg>
+        </button>
+        <button type="button" data-command="italic" aria-label="斜体" title="斜体">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4h9M5 20h9M15 4 9 20" /></svg>
+        </button>
+        <button type="button" data-command="underline" aria-label="下划线" title="下划线">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 4v7a6 6 0 0 0 12 0V4M4 21h16" />
+          </svg>
+        </button>
+        <button type="button" data-command="hiliteColor" aria-label="高亮" title="高亮">
+          <span class="highlight-tool">标记</span>
+        </button>
+        <button type="button" data-command="strikeThrough" aria-label="删除线" title="删除线">
+          <s>删</s>
+        </button>
+        <button
+          type="button"
+          data-command="formatBlock"
+          data-value="h2"
+          aria-label="二级标题"
+          title="二级标题"
+          class="heading-tool"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5v14M13 5v14M4 12h9M17 14c0-3 5-3 5 0 0 2-5 3-5 6h5" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          data-command="formatBlock"
+          data-value="p"
+          aria-label="普通段落"
+          title="普通段落"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14 5H9a4 4 0 0 0 0 8h3M12 5v15M17 5v15M10 5h10" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          data-command="insertUnorderedList"
+          aria-label="项目列表"
+          title="项目列表"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10 6h10M10 12h10M10 18h10" />
+            <circle cx="4" cy="6" r="1" />
+            <circle cx="4" cy="12" r="1" />
+            <circle cx="4" cy="18" r="1" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          data-command="insertOrderedList"
+          aria-label="编号列表"
+          title="编号列表"
+          class="list-tool"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10 6h10M10 12h10M10 18h10M3 4h1v5M3 9h3M3 14c3-2 4 1 1 3l-1 2h3" />
+          </svg>
+        </button>
+        <span class="tool-divider"></span>
+        <button
+          type="button"
+          data-command="formatBlock"
+          data-value="blockquote"
+          aria-label="引用"
+          title="引用"
+        >
+          ❞
+        </button>
+        <button
+          type="button"
+          data-command="formatBlock"
+          data-value="pre"
+          aria-label="代码块"
+          title="代码块"
+        >
+          <span class="code-tool">&lt;/&gt;</span>
+        </button>
+        <button
+          type="button"
+          data-command="insertHorizontalRule"
+          aria-label="插入分割线"
+          title="插入分割线"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16" /></svg>
+        </button>
+        <button type="button" data-command="removeFormat" aria-label="清除格式" title="清除格式">
+          <span class="clear-tool">清格式</span>
+        </button>
+        <button
+          id="imageInfoButton"
+          type="button"
+          aria-label="编辑所选图片信息"
+          title="图片信息"
+          hidden
+        >
+          图注
+        </button>
+      </div>
+    </dialog>
+
+    <dialog
+      id="moreDialog"
+      class="sheet-dialog more-dialog settings-dialog"
+      aria-labelledby="moreHeading"
+    >
+      <div class="dialog-heading">
+        <h2 id="moreHeading">日记设置</h2>
+        <button
+          type="button"
+          data-close="moreDialog"
+          class="icon-button"
+          aria-label="返回日记，保留未保存设置"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg>
+        </button>
+      </div>
+      <div class="settings-scroll">
+        <section class="entry-properties" aria-label="本篇属性">
+          <button
+            id="metadataButton"
+            class="metadata-button"
+            type="button"
+            aria-label="展开标签属性"
+            aria-expanded="false"
+            aria-controls="entryDetails"
+            disabled
+          >
+            <span id="metadataSummary">标签属性</span
+            ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4" /></svg>
+          </button>
+          <div id="entryDetails" class="entry-details" hidden>
+            <button id="categoryButton" class="meta-chip" type="button" disabled hidden>
+              未分类
+            </button>
+            <div class="tags-row">
+              <div id="tagList" class="tag-list"></div>
+              <button id="tagsButton" class="tags-button" type="button" disabled>＋ 标签</button>
+            </div>
+          </div>
+        </section>
+        <button id="editEntryTitleButton" class="appearance-button preference-row" type="button">
+          <span>修改本篇标题<small>标题隐藏时也可修改，沿原自动保存</small></span
+          ><span aria-hidden="true">›</span>
+        </button>
+        <button id="titleFormatButton" class="appearance-button preference-row" type="button">
+          <span>新篇自动命名<small>全局格式与本分类独立格式</small></span><span aria-hidden="true">›</span>
+        </button>
+        <button id="infoPlacementButton" class="appearance-button preference-row" type="button">
+          <span>信息显示位置<small>逐项设置 · 单独保存到本机</small></span
+          ><span aria-hidden="true">›</span>
+        </button>
+        <button id="typographyButton" class="appearance-button preference-row" type="button">
+          <span>正文排版<small id="typographySummary">18px · 1.85倍行高 · 系统字体</small></span
+          ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </button>
+        <button id="categorySettingsButton" class="appearance-button preference-row" type="button">
+          <span>本篇分类<small id="settingsCategoryName">未分类</small></span
+          ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </button>
+        <label class="preference-row" for="entryLocation">
+          <span>手填地点<small>仅保存本篇文字，不读取手机定位</small></span>
+          <input id="entryLocation" type="text" maxlength="100" placeholder="可留空" />
+        </label>
+        <button
+          id="readingModeButton"
+          class="appearance-button preference-row"
+          type="button"
+          hidden
+        >
+          <span>阅读本篇</span
+          ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </button>
+        <label class="preference-row" for="showTitle" hidden
+          ><span>显示标题<small id="titlePreferenceHint">无标题时，直接从正文开始</small></span
+          ><input id="showTitle" type="checkbox"
+        /></label>
+        <label class="preference-row" for="showMetadata" hidden
+          ><span>展开标签属性<small>仅在此设置页显示，不占正文区域</small></span
+          ><input id="showMetadata" type="checkbox"
+        /></label>
+        <label class="preference-row" for="chooseCategoryOnCreate"
+          ><span>新建时选择分类<small>打开新日记时先选分类，可直接返回正文</small></span
+          ><input id="chooseCategoryOnCreate" type="checkbox"
+        /></label>
+        <button
+          id="formatButton"
+          class="appearance-button preference-row"
+          type="button"
+          aria-label="更多正文格式"
+        >
+          <span>正文格式<small>缩进、撤销与已有文字样式</small></span
+          ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </button>
+        <button id="appearanceButton" class="appearance-button preference-row" type="button">
+          <span>思绪外观<small>背景图片、填充与模糊</small></span
+          ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </button>
+        <button id="appSettingsButton" class="appearance-button preference-row" type="button">
+          <span>应用设置<small>默认新篇分类与全局选项</small></span
+          ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </button>
+        <p id="entryInfo" class="entry-info"></p>
+        <p class="entry-info">时间戳使用北京时间，与电脑默认一致。</p>
+        <button id="saveNowButton" type="button" class="text-button">立即保存日记</button>
+      </div>
+      <div class="settings-footer">
+        <p id="settingsStatus" role="status">设置会即时预览，保存后记住。</p>
+        <div class="dialog-actions">
+          <button id="discardSettingsButton" type="button" class="text-button">取消修改</button
+          ><button id="saveSettingsButton" type="button" class="primary-button">保存设置</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog
+      id="infoPlacementDialog"
+      class="sheet-dialog settings-dialog info-placement-dialog"
+      aria-labelledby="infoPlacementHeading"
+    >
+      <div class="dialog-heading">
+        <button
+          type="button"
+          data-close="infoPlacementDialog"
+          class="icon-button"
+          aria-label="取消位置预览并返回日记设置"
+        >
+          ‹
+        </button>
+        <h2 id="infoPlacementHeading">信息显示位置</h2>
+        <span class="heading-balance"></span>
+      </div>
+      <div class="settings-scroll">
+        <p class="entry-info">
+          每项独立设置。顶部标题在下排，其余信息在上排。缺失的地点和时间不占位。
+        </p>
+        <div id="infoPlacementRows"></div>
+        <button id="resetInfoPlacement" class="text-button" type="button">恢复位置默认</button
+        ><button id="inspectAllInfo" class="text-button" type="button">查看本篇完整信息</button>
+      </div>
+      <div class="settings-footer">
+        <p id="infoPlacementStatus" role="status">仅预览信息位置；保存到本机后记住。</p>
+        <div class="dialog-actions">
+          <button id="cancelInfoPlacement" type="button" class="text-button">取消位置修改</button
+          ><button id="saveInfoPlacement" type="button" class="primary-button">
+            保存位置到本机
+          </button>
+        </div>
+      </div>
+    </dialog>
+    <dialog
+      id="infoValueDialog"
+      class="sheet-dialog settings-dialog"
+      aria-labelledby="infoValueHeading"
+    >
+      <div class="dialog-heading">
+        <button type="button" data-close="infoValueDialog" class="icon-button" aria-label="返回">
+          ‹
+        </button>
+        <h2 id="infoValueHeading">本篇信息</h2>
+      </div>
+      <div class="settings-scroll"><dl id="infoFullValues"></dl></div>
+    </dialog>
+    <dialog
+      id="entryTitleEditDialog"
+      class="sheet-dialog settings-dialog"
+      aria-labelledby="entryTitleEditHeading"
+    >
+      <div class="dialog-heading">
+        <button
+          type="button"
+          data-close="entryTitleEditDialog"
+          class="icon-button"
+          aria-label="取消标题修改并返回"
+        >
+          ‹
+        </button>
+        <h2 id="entryTitleEditHeading">修改本篇标题</h2>
+      </div>
+      <div class="settings-scroll">
+        <label class="field-label" for="entryTitleDraftInput">标题</label
+        ><input id="entryTitleDraftInput" type="text" maxlength="500" autocomplete="off" />
+        <p id="entryTitleEditStatus" class="entry-info" role="status">
+          确认后沿原日记自动保存；取消不改标题。
+        </p>
+      </div>
+      <div class="settings-footer">
+        <div class="dialog-actions">
+          <button type="button" data-close="entryTitleEditDialog" class="text-button">取消</button
+          ><button id="applyEntryTitleEdit" type="button" class="primary-button">
+            应用标题修改
+          </button>
+        </div>
+      </div>
+    </dialog>
+    <dialog
+      id="typographyDialog"
+      class="sheet-dialog typography-dialog settings-dialog"
+      aria-labelledby="typographyHeading"
+    >
+      <div class="dialog-heading">
+        <button
+          type="button"
+          data-close="typographyDialog"
+          class="icon-button"
+          aria-label="返回日记设置"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
+        </button>
+        <h2 id="typographyHeading">正文排版</h2>
+        <span class="heading-balance"></span>
+      </div>
+      <div class="settings-scroll">
+        <label class="preference-row" for="bodyFontSize"
+          ><span>正文字号<small>8–40px</small></span
+          ><span class="numeric-setting"
+            ><input
+              id="bodyFontSize"
+              type="number"
+              min="8"
+              max="40"
+              step="1"
+              inputmode="numeric"
+            /><span>px</span></span
+          ></label
+        >
+        <label class="preference-row" for="bodyFontWeight"
+          ><span>正文字重<small>400–700</small></span
+          ><span class="numeric-setting"
+            ><input
+              id="bodyFontWeight"
+              type="number"
+              min="400"
+              max="700"
+              step="100"
+              inputmode="numeric" /></span
+        ></label>
+        <label class="preference-row" for="bodyParagraphSpacing"
+          ><span>段落间距<small>独立于行高，0–2倍字号</small></span
+          ><span class="numeric-setting"
+            ><input
+              id="bodyParagraphSpacing"
+              type="number"
+              min="0"
+              max="2"
+              step="0.1"
+              inputmode="decimal"
+            /><span>倍</span></span
+          ></label
+        >
+        <label class="preference-row" for="bodyLineHeight"
+          ><span>正文行高<small>字号的1.2–2.5倍</small></span
+          ><span class="numeric-setting"
+            ><input
+              id="bodyLineHeight"
+              type="number"
+              min="1.2"
+              max="2.5"
+              step="0.05"
+              inputmode="decimal"
+            /><span>倍</span></span
+          ></label
+        >
+        <label class="preference-row" for="serifFont"
+          ><span>衬线字体<small>关闭后使用系统字体</small></span
+          ><input id="serifFont" type="checkbox"
+        /></label>
+        <p id="typographyStatus" class="entry-info" role="status">
+          正在预览。返回后点“保存设置”记住排版。
+        </p>
+      </div>
+      <div class="settings-footer">
+        <div class="dialog-actions">
+          <button type="button" data-close="typographyDialog" class="primary-button">
+            完成并返回
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog
+      id="categoryDialog"
+      class="sheet-dialog settings-dialog"
+      aria-labelledby="categoryHeading"
+    >
+      <div class="dialog-heading">
+        <h2 id="categoryHeading">本篇分类</h2>
+        <button type="button" data-close="categoryDialog" class="icon-button" aria-label="返回">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg>
+        </button>
+      </div>
+      <div id="categoryChoices" class="category-choices settings-scroll"></div>
+      <div class="category-other-action" id="previousEntrySection" hidden>
+        <button id="previousEntryButton" type="button" disabled>上一篇日记</button>
+      </div>
+    </dialog>
+
+    <dialog id="tagsDialog" class="sheet-dialog" aria-labelledby="tagsHeading">
+      <form id="tagsForm">
+        <div class="dialog-heading">
+          <h2 id="tagsHeading">日记标签</h2>
+          <button type="button" data-close="tagsDialog" class="icon-button" aria-label="关闭">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg>
+          </button>
+        </div>
+        <label class="field-label" for="tagsInput">用逗号或换行分隔</label
+        ><textarea
+          id="tagsInput"
+          rows="3"
+          placeholder="生活，灵感，今天"
+          maxlength="2000"
+        ></textarea>
+        <div class="dialog-actions">
+          <button type="button" data-close="tagsDialog" class="text-button">取消</button
+          ><button type="submit" class="primary-button">完成</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="imageDialog" class="sheet-dialog" aria-labelledby="imageHeading">
+      <form id="imageForm">
+        <div class="dialog-heading">
+          <h2 id="imageHeading">图片信息</h2>
+          <button type="button" data-close="imageDialog" class="icon-button" aria-label="关闭">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg>
+          </button>
+        </div>
+        <label class="field-label" for="imageCaption">图注</label
+        ><input id="imageCaption" type="text" maxlength="2000" placeholder="写一点与图片有关的事" />
+        <label class="field-label" for="imageAlt">替代文字</label
+        ><input id="imageAlt" type="text" maxlength="2000" placeholder="简短描述画面" />
+        <div class="image-layout-fields">
+          <label class="field-label" for="imageWidth"
+            >正文显示宽度 <output id="imageWidthValue" for="imageWidth">75%</output
+            ><input id="imageWidth" type="range" min="10" max="100" step="5" /></label
+          ><label class="field-label" for="imageAlign"
+            >对齐<select id="imageAlign">
+              <option value="left">靠左</option>
+              <option value="center">居中</option>
+              <option value="right">靠右</option>
+            </select></label
+          >
+        </div>
+        <p id="imageTimestamp" class="image-timestamp"></p>
+        <div class="dialog-actions">
+          <button id="removeImageButton" type="button" class="text-button">移除本篇引用</button>
+          <button id="viewImageButton" type="button" class="text-button">查看原图</button
+          ><button type="submit" class="primary-button">完成</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="emptyCloseDialog" class="sheet-dialog" aria-labelledby="emptyCloseHeading">
+      <div class="dialog-heading"><h2 id="emptyCloseHeading">本次修改已清空内容</h2></div>
+      <p class="entry-info">
+        原已保存的日记会保留。可以继续编辑，或放弃本次正文、标题、分类和标签等全部修改并返回。
+      </p>
+      <p id="emptyCloseError" class="entry-info" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" data-close="emptyCloseDialog" class="text-button">继续编辑</button>
+        <button id="discardEmptyChangesButton" type="button" class="primary-button">
+          放弃修改并返回
+        </button>
+      </div>
+    </dialog>
+    <dialog id="titleFormatDialog" class="sheet-dialog settings-dialog" aria-labelledby="titleFormatHeading">
+      <div class="dialog-heading"><button type="button" data-close="titleFormatDialog" class="text-button">取消</button><h2 id="titleFormatHeading">新篇自动命名</h2></div>
+      <div class="settings-scroll">
+        <p class="entry-info">{category} 分类名 · {sequence} 中文序号 · {number} 数字序号 · {date} 八位日期。格式须含分类、序号与日期。</p>
+        <label class="field-label" for="titleFormatGlobal">全局默认格式</label><input id="titleFormatGlobal" type="text" maxlength="120" aria-label="全局自动标题格式" />
+        <label id="titleFormatCategoryLabel" class="field-label" for="titleFormatCategory">本分类独立格式</label><input id="titleFormatCategory" type="text" maxlength="120" aria-label="本分类自动标题格式" />
+      </div>
+      <div class="settings-footer"><p id="titleFormatStatus" role="status"></p><button id="saveTitleFormatsButton" type="button" class="primary-button">保存命名格式</button></div>
+    </dialog>
+    <div id="toast" class="toast" role="status" hidden></div>
+  </body>
+</html>

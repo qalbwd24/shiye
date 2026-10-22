@@ -1,0 +1,42 @@
+.qq-recommendations {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding: 5px 9px 6px;
+  touch-action: pan-x;
+}
+.qq-recommendations[hidden] {
+  display: none;
+}
+.qq-recommendations button {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  padding: 3px;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.qq-recommendations button:focus-visible {
+  outline: 2px solid #35b8ef;
+  outline-offset: 1px;
+}
+.qq-recommendations button:disabled {
+  opacity: 0.45;
+}
+.qq-recommendations img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.qq-recommendations button {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-x;
+}

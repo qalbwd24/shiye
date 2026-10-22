@@ -1,0 +1,98 @@
+.shiye-compact-sticker-panel[open] {
+  padding: 4px 8px 8px;
+}
+.shiye-compact-sticker-panel > header {
+  display: flex;
+  gap: 2px;
+  height: 36px;
+  margin: 0 0 4px;
+}
+.shiye-compact-sticker-panel > header > button,
+.shiye-compact-sticker-panel .shiye-panel-import {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  min-height: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  font-size: 20px;
+  color: var(--shiye-ink);
+  background: transparent;
+}
+.shiye-compact-sticker-panel > header > button:last-child {
+  margin-inline-start: auto;
+}
+.shiye-compact-sticker-panel .shiye-panel-import input {
+  display: none;
+}
+.shiye-compact-sticker-panel .shiye-sticker-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  max-height: min(248px, calc(45dvh - 48px));
+}
+.shiye-compact-sticker-panel .shiye-sticker-item > button:first-child {
+  width: 100%;
+  height: 58px;
+  padding: 3px;
+  background: transparent;
+}
+.shiye-compact-sticker-panel .shiye-sticker-item img {
+  width: 100%;
+  height: 52px;
+  object-fit: contain;
+}
+.shiye-compact-sticker-panel .shiye-sticker-remove[hidden] {
+  display: none;
+}
+.shiye-compact-sticker-panel > [role='status']:empty {
+  display: none;
+}
+.shiye-compact-sticker-panel [data-panel-sort][aria-pressed='true'],
+.shiye-compact-sticker-panel .shiye-panel-dragging {
+  background: var(--shiye-selection);
+}
+.shiye-compact-sticker-panel.shiye-panel-sort-mode .shiye-sticker-item {
+  outline: 1px solid var(--shiye-line);
+  border-radius: 6px;
+}
+.shiye-compact-sticker-panel.shiye-panel-sort-mode [data-sticker-id] {
+  touch-action: none;
+}
+.shiye-sticker-panel-manager {
+  width: min(300px, calc(100vw - 28px));
+  padding: 16px;
+  border: 1px solid var(--shiye-line);
+  border-radius: 14px;
+  color: var(--shiye-ink);
+  background: var(--shiye-surface);
+  backdrop-filter: blur(12px);
+}
+.shiye-sticker-panel-manager > strong {
+  display: block;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  margin-bottom: 10px;
+}
+.shiye-sticker-panel-manager > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.shiye-sticker-panel-manager button {
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  color: inherit;
+  background: var(--shiye-surface-soft);
+  font-size: 13px;
+}
+.shiye-sticker-panel-manager p {
+  font-size: 12px;
+}
+.shiye-sticker-panel-manager p:empty {
+  display: none;
+}

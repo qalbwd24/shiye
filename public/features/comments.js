@@ -2,6 +2,7 @@ import { uploadMediaFile } from '../core/api.js';
 import { compressUpload } from '../core/media-compression.js';
 import { chooseMediaBatch } from './media-batch.js';
 import { avatarStyle } from '../shared/profile.js';
+import { formatZoned } from '../shared/time-zone.js';
 
 /** Local social-style comments. Identity is snapshotted by the server on creation. */
 export function createComments(c) {
@@ -16,7 +17,16 @@ export function createComments(c) {
   const profile = () => c.library.settings?.preferences?.profile || {};
   const key = () => shown + ':' + (editing || 'reply-' + (replying || 'new'));
   const current = () => c.library.entries.find((e) => e.id === shown);
-  const stamp = (v) => new Date(v).toLocaleString('zh-CN', { hour12: false });
+  const stamp = (v) =>
+    formatZoned(v, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+    });
   function draft() {
     if (!drafts.has(key())) {
       const old = current()?.comments?.find((v) => v.id === editing);

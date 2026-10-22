@@ -19,6 +19,7 @@ export function createEditorCommands(c) {
   function command(cmd, value) {
     if (!c.current() || c.current().deleted) return;
     recoverRange();
+    if (cmd === 'insertHorizontalRule') getSelection().collapseToEnd();
     document.execCommand(cmd, false, value);
     c.current().content = sanitize($('#bodyEditor').innerHTML);
     c.markDirty();

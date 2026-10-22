@@ -5,6 +5,7 @@ import path from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import { extractZip } from '../imports/zip-stream.mjs';
 import { decodeLegacy } from '../imports/legacy.mjs';
+import { legacySourceOptions } from '../imports/one-diary-source.mjs';
 export function largeImporter({ dataDir, getDb, mutate, reply, fail }) {
   const uploads = new Map(),
     root = path.resolve(dataDir, 'import-staging');
@@ -20,6 +21,7 @@ export function largeImporter({ dataDir, getDb, mutate, reply, fail }) {
   };
   return async (req, res, p) => {
     if (p === '/api/import-upload' && req.method === 'POST') {
+      const sourceOptions = legacySourceOptions(req.headers);
       const id = randomUUID(),
         dir = path.join(root, id),
         name = decodeURIComponent(req.headers['x-file-name'] || 'backup.zip').slice(0, 250);
@@ -44,7 +46,7 @@ export function largeImporter({ dataDir, getDb, mutate, reply, fail }) {
         await cleanup(dir);
         throw e;
       }
-      uploads.set(id, { dir, file, name, size, hash: hash.digest('hex') });
+      uploads.set(id, { dir, file, name, size, hash: hash.digest('hex'), sourceOptions });
       reply(res, 201, { id, bytes: size });
       return true;
     }
@@ -69,10 +71,14 @@ export function largeImporter({ dataDir, getDb, mutate, reply, fail }) {
       let imported;
       if (head.readUInt32LE(0) === 0x04034b50) {
         const members = await extractZip(job.file, job.dir);
-        imported = await decodeLegacy(head, job.name, { members, sha256: job.hash });
+        imported = await decodeLegacy(head, job.name, {
+          members,
+          sha256: job.hash,
+          ...job.sourceOptions,
+        });
       } else {
         if (job.size > LIMITS.legacyBundleBytes) throw fail(413, '非 ZIP 日记元数据超过 128 MB');
-        imported = await decodeLegacy(await fs.readFile(job.file), job.name);
+        imported = await decodeLegacy(await fs.readFile(job.file), job.name, job.sourceOptions);
       }
       await space(
         job.size + imported.media.reduce((n, m) => n + (m.size ?? m.data?.length ?? 0), 0),

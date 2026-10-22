@@ -18,16 +18,12 @@ export function memoryDeck(entries, categories = [], random = Math.random) {
 
 // Recollection eligibility is rechecked against the live library at every render.
 export function recollectionEntries(entries, options = {}, now = new Date()) {
-  const day = (value) => {
-    const d = new Date(value);
-    return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000;
-  };
-  const start = options.start ? day(options.start + 'T12:00:00') : -Infinity;
-  const end = options.end ? day(options.end + 'T12:00:00') : Infinity;
-  const cutoff = day(now) - 7;
+  const start = options.start ? ordinal(options.start) : -Infinity;
+  const end = options.end ? ordinal(options.end) : Infinity;
+  const cutoff = ordinal(now) - 7;
   const seen = new Set();
   return entries.filter((e) => {
-    const date = day(e.date);
+    const date = ordinal(e.date);
     if (
       !e.id ||
       seen.has(e.id) ||
@@ -139,3 +135,4 @@ export function restartRecollection(session, ids, random = Math.random) {
   session.round++;
   return session;
 }
+import { ordinal } from './entry-state.js';

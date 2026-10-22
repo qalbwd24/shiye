@@ -1,4 +1,33 @@
 import { installDragSort } from '../core/drag-sort.js';
+import { installImageViewport, imageZoomControls } from '../shared/image-viewport.js';
+import { richMediaReferences } from '../shared/rich-document.js';
+
+/** Inline occurrences render in the body; the attachment strip shows remaining resources. */
+export function galleryAttachmentOrder(entry) {
+  if (entry?._readingProjection) return [];
+  const order = entry?.attachments || [];
+  if (entry?.contentFormat !== 'richdoc') return order;
+  try {
+    const inline = new Set(richMediaReferences(entry.body).map((image) => image.assetId));
+    return order.filter((id) => !inline.has(id));
+  } catch {
+    // A damaged/unknown body must not hide the original media references.
+    return order;
+  }
+}
+
+export function mergeGalleryOrder(entry, next) {
+  const visible = galleryAttachmentOrder(entry);
+  if (
+    next.length !== visible.length ||
+    new Set(next).size !== next.length ||
+    next.some((id) => !visible.includes(id))
+  )
+    throw Error('附件列表已变化，请重新调整');
+  const visibleIds = new Set(visible);
+  let index = 0;
+  return (entry.attachments || []).map((id) => (visibleIds.has(id) ? next[index++] : id));
+}
 
 export function galleryDots(count, active) {
   if (count <= 7) return Array.from({ length: count }, (_, index) => index);
@@ -59,8 +88,26 @@ export function createGallery(c, options = {}) {
     navigation = 0,
     pendingId = null,
     pointer = null,
+    disposeViewport = () => {},
     suppressClickUntil = 0;
-  const currentEntry = () => c.library.entries.find((entry) => entry.id === entryId);
+  function projectedEntry(entry) {
+    if (!entry) return entry;
+    const projection = c.readingProjection?.();
+    if (!entry || !projection || projection.source?.id !== entry.id) return entry;
+    let references = [];
+    try {
+      references = richMediaReferences(projection.body).map((media) => media.assetId);
+    } catch {
+      /* Compatibility may retain a non-canonical body. */
+    }
+    return {
+      ...entry,
+      attachments: [...new Set([...(entry.attachments || []), ...references])],
+      _readingProjection: true,
+    };
+  }
+  const currentEntry = () =>
+    projectedEntry(c.library.entries.find((entry) => entry.id === entryId));
   const reducedMotion = () =>
     doc?.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   function preview(id) {
@@ -76,7 +123,7 @@ export function createGallery(c, options = {}) {
     return `<a href="${src}" download="${esc(media.name)}">下载 ${esc(media.name)}</a>`;
   }
   function updateNavigation() {
-    const order = currentEntry()?.attachments || [],
+    const order = galleryAttachmentOrder(currentEntry()),
       index = order.indexOf(activeId);
     const counter = host.querySelector('[data-gallery-counter]');
     if (counter) counter.textContent = `${index + 1} / ${order.length}`;
@@ -110,7 +157,7 @@ export function createGallery(c, options = {}) {
   }
   async function navigate(index) {
     const entry = currentEntry(),
-      order = entry?.attachments || [];
+      order = galleryAttachmentOrder(entry);
     if (isEditing() || isDeferred() || index < 0 || index >= order.length) return;
     if (order[index] === activeId) {
       navigation++;
@@ -158,7 +205,7 @@ export function createGallery(c, options = {}) {
         { duration: 190, easing: 'cubic-bezier(.2,.7,.2,1)' },
       );
   }
-  const stepFrom = () => (currentEntry()?.attachments || []).indexOf(pendingId || activeId);
+  const stepFrom = () => galleryAttachmentOrder(currentEntry()).indexOf(pendingId || activeId);
   function closeViewer() {
     if (viewer?.open) viewer.close();
   }
@@ -178,15 +225,18 @@ export function createGallery(c, options = {}) {
         if (event.target === viewer) closeViewer();
       });
       viewer.addEventListener('close', () => {
+        disposeViewport();
         viewer.innerHTML = '';
       });
     }
     let index = images.indexOf(id);
     if (index < 0) return;
     function show() {
+      disposeViewport();
       const media = c.library.media.find((m) => m.id === images[index]);
       if (!media) return closeViewer();
-      viewer.innerHTML = `<header><span>${esc(media.name)} · ${index + 1} / ${images.length}</span><button class="secondary" data-gallery-close autofocus>关闭</button></header><div class="gallery-full-image"><img src="/media/${encodeURIComponent(media.id)}" alt="${esc(media.name)}" draggable="false"></div><footer><button class="secondary" data-gallery-prev ${index === 0 ? 'disabled' : ''}>上一张</button><a class="secondary" href="/media/${encodeURIComponent(media.id)}" download="${esc(media.name)}">保存原图</a><button class="secondary" data-gallery-next ${index === images.length - 1 ? 'disabled' : ''}>下一张</button></footer>`;
+      viewer.innerHTML = `<header><span>${esc(media.name)} · ${index + 1} / ${images.length}</span><button class="secondary" data-gallery-close autofocus>关闭</button></header><div class="gallery-full-image" data-image-stage><img src="/media/${encodeURIComponent(media.id)}" alt="${esc(media.name)}" draggable="false"></div>${imageZoomControls}<footer><button class="secondary" data-gallery-prev ${index === 0 ? 'disabled' : ''}>上一张</button><a class="secondary" href="/media/${encodeURIComponent(media.id)}" download="${esc(media.name)}">保存原图</a><button class="secondary" data-gallery-next ${index === images.length - 1 ? 'disabled' : ''}>下一张</button></footer>`;
+      disposeViewport = installImageViewport(viewer);
       viewer.querySelector('[data-gallery-close]').onclick = closeViewer;
       viewer.querySelector('[data-gallery-prev]').onclick = () => {
         index--;
@@ -222,6 +272,7 @@ export function createGallery(c, options = {}) {
   host.addEventListener('click', blockAccidentalActivation, true);
   host.addEventListener('dblclick', blockAccidentalActivation, true);
   host.addEventListener('click', (event) => {
+    if (!isEditing() && event.target.matches('.gallery-slide img')) view(activeId, event.target);
     const button = event.target.closest('[data-view-media]');
     if (button) view(button.dataset.viewMedia, button);
     const step = event.target.closest('[data-gallery-step]');
@@ -251,7 +302,7 @@ export function createGallery(c, options = {}) {
       event.key === 'Home'
         ? 0
         : event.key === 'End'
-          ? (currentEntry()?.attachments.length || 1) - 1
+          ? (galleryAttachmentOrder(currentEntry()).length || 1) - 1
           : stepFrom() + (event.key === 'ArrowLeft' ? -1 : 1);
     void navigate(index);
   });
@@ -261,7 +312,7 @@ export function createGallery(c, options = {}) {
       isDeferred() ||
       event.button !== 0 ||
       event.isPrimary === false ||
-      (currentEntry()?.attachments.length || 0) < 2
+      galleryAttachmentOrder(currentEntry()).length < 2
     )
       return;
     if (!event.target.closest('.gallery-slide img')) return;
@@ -301,6 +352,7 @@ export function createGallery(c, options = {}) {
   host.addEventListener('pointerup', finishSwipe);
   host.addEventListener('pointercancel', finishSwipe);
   function render(entry) {
+    entry = projectedEntry(entry);
     if (entry && entry.id === entryId && isDeferred()) {
       navigation++;
       pendingId = null;
@@ -330,7 +382,12 @@ export function createGallery(c, options = {}) {
       host.innerHTML = '';
       return;
     }
-    const order = entry.attachments || [];
+    const order = galleryAttachmentOrder(entry);
+    if ((entry.contentFormat === 'richdoc' || entry._readingProjection) && !order.length) {
+      host.innerHTML = '';
+      appendLegacy(entry);
+      return;
+    }
     if (!order.includes(activeId)) activeId = order[0] || null;
     if (!lastEditing && order.length) {
       host.innerHTML = `<section class="gallery-carousel" role="region" aria-roledescription="轮播" aria-label="日记附件"><div class="gallery-stage" tabindex="0" aria-label="使用左右方向键或横向滑动切换"><div class="gallery-slide" data-media-id="${esc(activeId)}">${preview(activeId)}</div>${order.length > 1 ? '<button class="gallery-arrow gallery-arrow-prev" data-gallery-step="-1" aria-label="上一张">‹</button><button class="gallery-arrow gallery-arrow-next" data-gallery-step="1" aria-label="下一张">›</button><span class="gallery-counter" data-gallery-counter></span>' : ''}<button class="gallery-expand" data-view-media="${esc(activeId)}" aria-label="查看完整大图" title="查看完整大图">⛶</button></div>${order.length > 1 ? '<nav class="gallery-dots" aria-label="选择附件"></nav>' : ''}<span class="gallery-announcement" aria-live="polite" aria-atomic="true"></span></section>`;
@@ -365,13 +422,13 @@ export function createGallery(c, options = {}) {
     disposeSort = installDragSort(host, {
       itemSelector: '[data-media-id]',
       getId: (node) => node.dataset.mediaId,
-      getOrder: () => currentEntry()?.attachments || [],
+      getOrder: () => galleryAttachmentOrder(currentEntry()),
       label: '日记附件',
       onError: (error) => toast(error.message),
       onReorder: async (next) => {
         const live = currentEntry();
         if (!live || live.deleted || live.id !== renderedId) return;
-        live.attachments = next;
+        live.attachments = mergeGalleryOrder(live, next);
         c.markDirty(live);
         render(live);
         await c.flush();
@@ -389,5 +446,10 @@ export function createGallery(c, options = {}) {
       `<p class="legacy-note">旧备份媒体：${missing} 项未匹配。已显示的附件按文件名匹配，仍需核对原图和排版。</p>`,
     );
   }
+  doc.addEventListener?.('dblclick', (event) => {
+    const image = event.target.closest?.('img[src^="/media/"]');
+    if (!image || image.closest('.gallery-viewer, .entry-gallery')) return;
+    view(decodeURIComponent(image.getAttribute('src').slice(7)), image);
+  });
   return { render, closeViewer };
 }

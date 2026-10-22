@@ -28,6 +28,7 @@ const roots = [
 const destination = path.join(APP_ROOT, 'var', 'packages', `shiye-source-${VERSION}-${Date.now()}`),
   files = [];
 async function copy(relative) {
+  if (relative.replaceAll('\\', '/') === 'config/deployment.local.json') return;
   const source = path.join(APP_ROOT, relative),
     stat = await fs.lstat(source);
   if (stat.isSymbolicLink()) throw Error('Source package contains symlink: ' + relative);

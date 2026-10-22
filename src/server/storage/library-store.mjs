@@ -1,8 +1,11 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { prepareSharedCommit } from '../shared-sync/replication.mjs';
+import { renameLibraryFile } from './library-commit.mjs';
+import { purgeSourceMessageConflicts } from '../shared-sync/source-message-conflicts.mjs';
 /** Serializes copy-on-write updates. Never mutate the result of getDb directly. */
-export async function createLibraryStore({ dataDir, seed = true }) {
+export async function createLibraryStore({ dataDir, seed = true, sharedSync = false }) {
   await fs.mkdir(path.join(dataDir, 'media'), { recursive: true });
   await fs.mkdir(path.join(dataDir, 'originals'), { recursive: true });
   const dbFile = path.join(dataDir, 'diary.json');
@@ -87,12 +90,25 @@ export async function createLibraryStore({ dataDir, seed = true }) {
   db.templates ||= [];
   db.settings ||= { shortcuts: {} };
   let queue = Promise.resolve();
-  async function mutate(fn) {
+  async function mutate(fn, { preflight } = {}) {
     const work = queue.then(async () => {
+      // Trusted synchronous read-only check, inside the same queue as every writer.
+      // undefined means continue; { result } proves this operation needs no commit.
+      if (preflight) {
+        const decision = preflight(db);
+        if (decision?.then) throw new TypeError('存储预检必须同步完成');
+        if (decision !== undefined) {
+          if (!decision || !Object.hasOwn(decision, 'result'))
+            throw new TypeError('存储预检结果不正确');
+          return structuredClone(decision.result);
+        }
+      }
       const next = structuredClone(db);
       const result = fn(next);
+      purgeSourceMessageConflicts(next);
+      prepareSharedCommit(db, next, { enabled: sharedSync });
       await fs.writeFile(dbFile + '.tmp', JSON.stringify(next, null, 2), 'utf8');
-      await fs.rename(dbFile + '.tmp', dbFile);
+      await renameLibraryFile(dbFile + '.tmp', dbFile);
       db = next;
       return result;
     });
@@ -100,5 +116,6 @@ export async function createLibraryStore({ dataDir, seed = true }) {
     return work;
   }
 
+  if (sharedSync && !db._sharedSync) await mutate(() => null);
   return { getDb: () => db, mutate };
 }

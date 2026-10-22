@@ -1,0 +1,184 @@
+:root {
+  color-scheme: dark;
+  font-family: 'Microsoft YaHei UI', 'PingFang SC', system-ui, sans-serif;
+  background: #1b2326;
+  color: #dfe8e8;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 1100px;
+  margin: auto;
+  padding: 24px;
+}
+header,
+.row,
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+header {
+  justify-content: space-between;
+}
+h1 {
+  font-size: 22px;
+}
+h2 {
+  font-size: 18px;
+}
+p {
+  line-height: 1.7;
+}
+.hint {
+  color: #a6b8bb;
+  font-size: 13px;
+}
+section,
+details {
+  min-width: 0;
+}
+details {
+  border: 1px solid #46575c;
+  border-radius: 10px;
+  padding: 16px;
+  margin: 16px 0;
+}
+summary,
+button {
+  cursor: pointer;
+}
+label {
+  display: block;
+  margin: 12px 0;
+  flex: 1;
+  min-width: 160px;
+  font-size: 14px;
+}
+input,
+select,
+textarea,
+button {
+  font: inherit;
+  color: inherit;
+  border: 1px solid #53676d;
+  border-radius: 7px;
+  background: #242e32;
+}
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+}
+textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+button {
+  padding: 9px 13px;
+}
+button:hover {
+  background: #344449;
+  border-color: #84aeb2;
+}
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #8bc4c7;
+  outline-offset: 2px;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+a {
+  color: #acd4d8;
+}
+.primary {
+  background: #356269;
+}
+.toolbar {
+  margin: 20px 0;
+}
+.columns {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(280px, 2fr);
+  gap: 28px;
+}
+#records {
+  display: grid;
+  gap: 8px;
+  max-height: 700px;
+  overflow: auto;
+}
+.record {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.record.selected {
+  background: #365257;
+}
+.record small {
+  display: block;
+  color: #b4c8ca;
+  margin-top: 6px;
+}
+#notice {
+  color: #edc49c;
+  white-space: pre-wrap;
+}
+#pair-code {
+  display: block;
+  color: #b9e3db;
+  font-size: 22px;
+  letter-spacing: 3px;
+  margin-top: 12px;
+}
+.asset {
+  border: 1px solid #46575c;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.asset img,
+.asset video {
+  display: block;
+  max-width: 100%;
+  max-height: 240px;
+  margin: 8px 0;
+  object-fit: contain;
+}
+.history {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  padding: 12px 0;
+  border-bottom: 1px solid #46575c;
+}
+[hidden] {
+  display: none !important;
+}
+@media (max-width: 650px) {
+  main {
+    padding: 14px;
+  }
+  .columns {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  #records {
+    max-height: 260px;
+  }
+  .toolbar button {
+    flex: 1;
+  }
+}

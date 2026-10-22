@@ -1,9 +1,10 @@
 import { normalizeAvatarCrop } from '../../../public/shared/profile.js';
 import { randomUUID } from 'node:crypto';
 import { LIMITS } from '../../../public/shared/limits.js';
+import { commitCommentUnit, validateCommentTargets } from '../domain/message-comments.mjs';
 
 /** Private entry annotations. Authors and quoted replies are creation-time snapshots. */
-export function createRoutes({ mutate, body, reply, fail }) {
+export function createRoutes({ mutate, body, reply, fail, messageUnitsEnabled }) {
   const imageIds = (value, db) => {
     if (!Array.isArray(value) || value.some((id) => typeof id !== 'string'))
       throw fail(400, '评论图片须为有效附件列表');
@@ -38,6 +39,7 @@ export function createRoutes({ mutate, body, reply, fail }) {
         const now = new Date().toISOString();
         const attachments =
           input.attachments === undefined ? undefined : imageIds(input.attachments, db);
+        let changedComment;
         if (match[2]) {
           const comment = comments.find((c) => c.id === match[2]);
           if (!comment) throw fail(404, '评论不存在');
@@ -59,6 +61,7 @@ export function createRoutes({ mutate, body, reply, fail }) {
           if (typeof input.deleted === 'boolean') comment.deleted = input.deleted;
           comment.revision++;
           comment.updatedAt = now;
+          changedComment = comment;
         } else {
           if (!value && !attachments?.length) throw fail(400, '请填写评论或添加图片');
           const profile = db.settings?.preferences?.profile || {};
@@ -110,9 +113,18 @@ export function createRoutes({ mutate, body, reply, fail }) {
             updatedAt: now,
             revision: 1,
             deleted: false,
+            commentOn: validateCommentTargets(input.commentOn, entry, db),
           });
+          changedComment = comments.at(-1);
         }
+        // Annotation and taxonomy changes must never become the diary's content clock.
+        if (
+          !Object.hasOwn(entry, 'contentEditedAt') &&
+          Number.isFinite(Date.parse(entry.updatedAt))
+        )
+          entry.contentEditedAt = entry.updatedAt;
         entry.comments = comments;
+        commitCommentUnit(db, entry, changedComment, { messageUnitsEnabled });
         entry.revision++;
         entry.updatedAt = now;
         entry.history = [previous, ...(entry.history || [])].slice(0, LIMITS.historyEntries);

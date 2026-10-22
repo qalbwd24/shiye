@@ -28,15 +28,42 @@ export function createOrganization(c) {
     }
   }
   function render(view, root) {
-    if (view !== 'organization') return false;
+    if (view !== 'organization') {
+      disposeSort();
+      return false;
+    }
+    const scrollTop = $('#taxRows')?.scrollTop || 0;
+    const outerScroll = root.scrollTop;
     disposeSort();
     const items = sortedTaxonomy(c.library, kind);
+    const defaultCategory = c.library.settings?.preferences?.defaultCategory;
     if (selected && !items.some((i) => i.name === selected)) selected = null;
     root.innerHTML = `<section id="taxonomyWorkspace" class="taxonomy-workspace">
-      <div class="alt-heading"><div><h2>分类与标签</h2><p>整理日记的归属，顺序同步到左侧导航。</p></div><button class="primary" id="taxNew">新建${label()}</button></div>
+      <div class="alt-heading taxonomy-heading"><div><h2>分类与标签</h2><p>设置 → 分类与排序 → 分类与标签管理</p></div><div class="taxonomy-heading-actions"><button class="primary" id="taxNew">新建${label()}</button><button class="secondary" id="taxExit">返回日记</button></div></div>
       <div class="filter-row"><select id="taxKind" aria-label="管理类型"><option value="category">分类</option><option value="tag">标签</option></select><input class="field" id="taxSearch" placeholder="搜索名称" aria-label="搜索分类或标签" value="${esc(search)}"><select id="taxSort" aria-label="排列方式"><option value="manual">手动顺序</option><option value="name">按名称</option><option value="count">按日记篇数</option></select></div>
-      <div class="taxonomy-columns"><div><p class="taxonomy-hint">篇数排除隐藏、草稿和回收站。拖动 ⠿、点击 ↑ ↓ 或按 Alt 加方向键调整，自动保存为手动顺序。</p><div id="taxRows"></div></div><section class="taxonomy-detail" id="taxDetail" aria-label="管理详情"></section></div>
+      <div class="taxonomy-columns"><div><p class="taxonomy-hint">拖动靠近列表上下边缘可自动滚动；也可点 ↑ ↓ 或按 Alt 加方向键，顺序自动保存。篇数排除隐藏、草稿和回收站。</p><div id="taxRows" tabindex="0" aria-label="分类与标签列表"></div></div><section class="taxonomy-detail" id="taxDetail" aria-label="管理详情"></section></div>
     </section>`;
+    const exit = () => {
+      if (busy) return;
+      disposeSort();
+      Promise.resolve(c.returnToEditor ? c.returnToEditor() : c.changeView('all')).catch((error) =>
+        toast(error.message),
+      );
+    };
+    $('#taxExit').onclick = exit;
+    $('#taxonomyWorkspace').onkeydown = (event) => {
+      if (
+        event.key !== 'Escape' ||
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.keyCode === 229 ||
+        event.target.closest('input,textarea,select') ||
+        document.querySelector('dialog[open]')
+      )
+        return;
+      event.preventDefault();
+      exit();
+    };
     $('#taxKind').value = kind;
     $('#taxSort').value = c.library.settings?.preferences?.[kind + 'Sort'] || 'manual';
     $('#taxKind').onchange = () => {
@@ -59,12 +86,13 @@ export function createOrganization(c) {
       $('#taxName').focus();
     };
     function rows() {
+      const rowScroll = $('#taxRows').scrollTop;
       $('#taxRows').innerHTML =
         items
           .filter((i) => i.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()))
           .map((i) => {
             const index = items.indexOf(i);
-            return `<div class="taxonomy-row ${selected === i.name ? 'selected' : ''}" data-sort-name="${esc(i.name)}" draggable="true"><button class="gallery-drag-handle" data-sort-handle draggable="true" aria-label="拖动${esc(i.name)}调整顺序，或按 Alt 加方向键">⠿</button><button class="taxonomy-select" data-tax-index="${index}"><strong>${esc(i.name)}</strong><small>${i.count} 篇</small></button><button class="secondary" data-sort-step="-1" aria-label="上移${esc(i.name)}" ${index === 0 ? 'disabled' : ''}>↑</button><button class="secondary" data-sort-step="1" aria-label="下移${esc(i.name)}" ${index === items.length - 1 ? 'disabled' : ''}>↓</button></div>`;
+            return `<div class="taxonomy-row ${selected === i.name ? 'selected' : ''}" data-sort-name="${esc(i.name)}" draggable="true"><button class="gallery-drag-handle" data-sort-handle draggable="true" aria-label="拖动${esc(i.name)}调整顺序，或按 Alt 加方向键">⠿</button><button class="taxonomy-select" data-tax-index="${index}"><strong>${esc(i.name)}</strong><small>${i.count} 篇${kind === 'category' && i.name === defaultCategory ? ' · 默认' : ''}</small></button><button class="secondary" data-sort-step="-1" aria-label="上移${esc(i.name)}" ${index === 0 ? 'disabled' : ''}>↑</button><button class="secondary" data-sort-step="1" aria-label="下移${esc(i.name)}" ${index === items.length - 1 ? 'disabled' : ''}>↓</button></div>`;
           })
           .join('') || '<p class="empty">没有匹配的名称。</p>';
       $('#taxRows').onclick = (event) => {
@@ -87,10 +115,14 @@ export function createOrganization(c) {
           Array.from($('#taxRows')?.querySelectorAll('[data-sort-name]') || [])
             .find((node) => node.dataset.sortName === name)
             ?.querySelector('[data-sort-handle]')
-            ?.focus();
+            ?.focus({ preventScroll: true });
+          Array.from($('#taxRows')?.querySelectorAll('[data-sort-name]') || [])
+            .find((node) => node.dataset.sortName === name)
+            ?.scrollIntoView({ block: 'nearest' });
         },
         onError: (error) => toast(error.message),
       });
+      $('#taxRows').scrollTop = rowScroll;
     }
     function detail(create = false) {
       const item = items.find((i) => i.name === selected);
@@ -126,6 +158,20 @@ export function createOrganization(c) {
         submit(create ? 'create' : 'rename', to);
       };
       if (!item) return;
+      if (kind === 'category') {
+        const explanation = document.createElement('p');
+        explanation.textContent = '主页与思绪新建时预选此分类；默认标记不改变排列顺序。';
+        const button = document.createElement('button');
+        button.id = 'taxSetDefault';
+        button.className = 'secondary';
+        button.textContent = item.name === defaultCategory ? '当前默认分类' : '设为默认分类';
+        button.disabled = item.name === defaultCategory;
+        button.onclick = () =>
+          mutate(() =>
+            api('/api/preferences', { method: 'PUT', data: { defaultCategory: item.name } }),
+          );
+        $('#taxBrowse').after(explanation, button);
+      }
       $('#taxBrowse').onclick = () => c.filterView({ [kind]: selected });
       const confirm = (message, action) => {
         $('#taxConfirm').innerHTML =
@@ -149,6 +195,8 @@ export function createOrganization(c) {
     }
     rows();
     detail();
+    $('#taxRows').scrollTop = scrollTop;
+    root.scrollTop = outerScroll;
     return true;
   }
   return { manage, render };

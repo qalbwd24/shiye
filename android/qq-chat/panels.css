@@ -1,0 +1,477 @@
+:host {
+  --panel-surface: #fff;
+  --panel-text: #17212d;
+  --panel-muted: #5b6876;
+  --panel-cell: #f2f2f4;
+  --panel-active: #eeeef0;
+  --panel-accent: #087dd1;
+  color-scheme: light;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+  color: var(--panel-text);
+}
+:host-context(body[data-shiye-chat-theme='dark']) {
+  --panel-surface: #252f39;
+  --panel-text: #e6f0f7;
+  --panel-muted: #acb9c4;
+  --panel-cell: #303c47;
+  --panel-active: #3b4956;
+  --panel-accent: #8ecbff;
+  color-scheme: dark;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+button,
+input {
+  font: inherit;
+}
+button {
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+  touch-action: manipulation;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+button:focus-visible {
+  outline: 2px solid #168dea;
+  outline-offset: -2px;
+}
+button:active {
+  background: var(--panel-active);
+}
+dialog {
+  color: var(--panel-text);
+}
+dialog::backdrop {
+  background: rgb(15 29 42 / 28%);
+}
+.qq-panel {
+  position: fixed;
+  inset: auto 0 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: min(66dvh, 530px);
+  margin: 0;
+  padding: 0 10px max(10px, env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: 14px 14px 0 0;
+  background: var(--panel-surface);
+  box-shadow: 0 -3px 18px rgb(30 52 73 / 10%);
+  overflow: hidden;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+}
+.toolbar > .icon:last-of-type {
+  margin-inline-start: auto;
+}
+.toolbar .icon {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  font-size: 23px;
+  border-radius: 9px;
+}
+.toolbar [aria-label='关闭'] {
+  margin-inline-start: auto;
+}
+.toolbar [aria-pressed='true'] {
+  background: color-mix(in srgb, var(--panel-accent) 12%, var(--panel-surface));
+  color: var(--panel-accent);
+}
+.send,
+.save {
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: var(--panel-accent);
+  font-weight: 600;
+}
+.send[hidden] {
+  display: none;
+}
+.media-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.original-note {
+  margin: 1px 2px 9px;
+  color: var(--panel-muted);
+  font-size: 12px;
+}
+input[type='range'] {
+  touch-action: pan-y;
+}
+.attachment {
+  position: relative;
+}
+.selection-order {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: var(--panel-accent);
+  color: var(--panel-surface);
+  font-size: 12px;
+  font-weight: 700;
+}
+.panel-body {
+  max-height: calc(66dvh - 94px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.status {
+  margin: 5px 2px 0;
+  color: var(--panel-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.status:empty {
+  display: none;
+}
+.attachment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+.attachment {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  min-width: 0;
+}
+.attachment img,
+.attachment video {
+  width: 100%;
+  height: 95px;
+  object-fit: contain;
+  border-radius: 5px;
+  background: var(--panel-cell);
+}
+.filename {
+  display: block;
+  max-width: 100%;
+  margin: 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.minor {
+  align-self: center;
+  min-height: 30px;
+  padding: 3px 10px;
+  color: var(--panel-muted);
+  font-size: 12px;
+}
+.file-icon {
+  display: grid;
+  place-items: center;
+  height: 95px;
+  background: var(--panel-cell);
+}
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+  min-height: 58px;
+  padding: 3px 0 6px;
+}
+.sticker-ordering {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 0 7px;
+}
+.sticker-ordering .sort-mode {
+  min-height: 34px;
+  padding: 5px 11px;
+  border-radius: 8px;
+  background: var(--panel-cell);
+}
+.sticker-ordering .sort-mode[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--panel-accent) 16%, var(--panel-surface));
+  color: var(--panel-accent);
+}
+.sticker-ordering .new-weight {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  color: var(--panel-muted);
+  font-size: 12px;
+}
+.sticker-ordering .new-weight[hidden] {
+  display: none;
+}
+.sticker-ordering .new-weight input {
+  flex: 1;
+  min-width: 0;
+}
+.sticker-cell {
+  min-width: 0;
+}
+.thumbnail {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 60px;
+  padding: 3px;
+  border-radius: 7px;
+  touch-action: pan-y;
+}
+.thumbnail img {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  max-height: 54px;
+  object-fit: contain;
+  pointer-events: none;
+}
+.order-actions {
+  display: flex;
+  justify-content: center;
+}
+.order-actions button {
+  min-height: 32px;
+  padding: 0 2px;
+  font-size: 10px;
+}
+.qq-manager {
+  width: min(300px, calc(100vw - 28px));
+  max-height: 70dvh;
+  margin: auto;
+  padding: 16px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--panel-surface);
+  overflow: auto;
+}
+.qq-manager strong {
+  display: block;
+  margin-bottom: 12px;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.manager-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.manager-actions button {
+  min-height: 38px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: var(--panel-cell);
+  font-size: 13px;
+}
+.qq-viewer {
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  border-radius: 0;
+  background: #10161e;
+  color: #fff;
+}
+.qq-viewer:not([open]) {
+  display: none;
+}
+.qq-viewer .panel-body {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  max-height: calc(100dvh - 92px);
+}
+.qq-viewer .full-media {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(100dvh - 100px);
+  object-fit: contain;
+}
+.qq-viewer .save {
+  color: #add8ff;
+}
+.qq-viewer .status {
+  color: #bfccda;
+}
+
+/* Nonmodal sheets share the viewport and keep focus in the composer. */
+:is(.qq-sticker-dock, .qq-file-retry-dock)[open] {
+  z-index: 20100;
+  display: flex;
+  flex-direction: column;
+  padding: 0 10px 7px;
+  border: 1px solid color-mix(in srgb, var(--panel-muted) 12%, transparent);
+}
+.qq-sticker-dock .toolbar {
+  flex: none;
+  min-height: 42px;
+  gap: 4px;
+}
+.panel-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 650;
+}
+.qq-sticker-dock .toolbar .manage-toggle {
+  width: 46px;
+  font-size: 12px;
+}
+.qq-sticker-dock .panel-body {
+  min-height: 0;
+  max-height: none;
+  flex: 1;
+  overflow: auto;
+}
+.qq-sticker-dock .sticker-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 5px;
+  padding: 5px 0;
+}
+.qq-sticker-dock .thumbnail {
+  position: relative;
+  height: 62px;
+  background: var(--panel-cell);
+  border-radius: 10px;
+}
+.sticker-name {
+  display: block;
+  font-size: 10px;
+  line-height: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  color: var(--panel-muted);
+}
+.gif-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+  font-size: 8px;
+  color: var(--panel-muted);
+  background: var(--panel-surface);
+  padding: 0 2px;
+  border-radius: 3px;
+}
+.qq-sticker-dock .sticker-ordering {
+  flex: none;
+  position: relative;
+  gap: 3px;
+  padding: 0 0 6px;
+}
+.qq-sticker-dock .sort-mode {
+  flex: 1;
+  min-height: 34px;
+  background: transparent;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.weight-details {
+  font-size: 11px;
+  color: var(--panel-muted);
+}
+.weight-details[hidden] {
+  display: none;
+}
+.weight-details summary {
+  padding: 9px 5px;
+  cursor: pointer;
+  list-style: none;
+}
+.weight-details[open] {
+  width: 100%;
+  order: 2;
+}
+.weight-details[open] summary {
+  padding: 4px 5px;
+}
+.weight-details .new-weight {
+  padding: 2px 5px 4px;
+}
+.qq-sticker-dock button,
+.qq-sticker-dock summary {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.qq-sticker-dock .sticker-preview[open] {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  max-height: 100%;
+  height: 100%;
+  margin: 0;
+  border-radius: 12px;
+  padding: 10px;
+  background: var(--panel-surface);
+}
+.manager-preview {
+  display: block;
+  width: 100%;
+  height: 90px;
+  object-fit: contain;
+  margin: 0 auto 5px;
+}
+.sticker-preview strong {
+  margin-bottom: 3px;
+  font-size: 13px;
+}
+.preview-note {
+  font-size: 11px;
+  color: var(--panel-muted);
+  margin: 2px 0 7px;
+}
+.sticker-preview .manager-actions button {
+  font-size: 12px;
+  min-height: 36px;
+}
+
+/* Do not expose broken-image chrome or repeat the caption while lazy previews load. */
+.thumbnail[data-preview]:not([data-preview='ready']) img {
+  visibility: hidden;
+}
+.thumbnail[data-preview='loading']::before {
+  content: '';
+  width: 22px;
+  height: 18px;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  opacity: 0.18;
+}
+.thumbnail[data-preview='failed']::before {
+  content: '暂不可预览';
+  font-size: 9px;
+  color: var(--panel-muted);
+  opacity: 0.75;
+}
+.thumbnail[data-preview]:not([data-preview='ready']) img {
+  position: absolute;
+}

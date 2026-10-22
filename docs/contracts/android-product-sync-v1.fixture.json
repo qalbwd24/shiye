@@ -1,0 +1,1452 @@
+{
+  "contract": "shiye.android-product-sync.v1",
+  "synthetic": true,
+  "protocol": 1,
+  "note": "独立DTO示例，不是可直接导入的完整数据库；不使用任何私人资料或真实凭据。",
+  "identityExample": {
+    "libraryId": "2f04968b-f91d-42f8-93bb-6ca20db2b647",
+    "epoch": "fixture-epoch-1"
+  },
+  "records": [
+    {
+      "entityType": "taxonomy",
+      "entityId": "taxonomy:fixture-category",
+      "data": {
+        "id": "taxonomy:fixture-category",
+        "kind": "category",
+        "name": "日常",
+        "_product": {
+          "schema": 1,
+          "kind": "taxonomy",
+          "refs": {}
+        }
+      }
+    },
+    {
+      "entityType": "taxonomy",
+      "entityId": "taxonomy:fixture-tag",
+      "data": {
+        "id": "taxonomy:fixture-tag",
+        "kind": "tag",
+        "name": "合成",
+        "_product": {
+          "schema": 1,
+          "kind": "taxonomy",
+          "refs": {}
+        }
+      }
+    },
+    {
+      "entityType": "order",
+      "entityId": "order:fixture:category",
+      "data": {
+        "kind": "category",
+        "ids": ["taxonomy:fixture-category"],
+        "_product": {
+          "schema": 1,
+          "kind": "order",
+          "refs": {}
+        }
+      }
+    },
+    {
+      "entityType": "relation",
+      "entityId": "fixture-image",
+      "data": {
+        "id": "fixture-image",
+        "name": "合成.gif",
+        "type": "image/gif",
+        "size": 34,
+        "sha256": "1e85ec81b9800b4c443d39caca0d0926089a3ac201120db1ceb45b93789480b8",
+        "importedAt": "2025-10-17T00:32:00.000Z",
+        "lastModified": 1760661120000,
+        "_product": {
+          "schema": 1,
+          "kind": "media",
+          "refs": {
+            "asset": "fixture-image"
+          }
+        }
+      }
+    },
+    {
+      "entityType": "conversation",
+      "entityId": "room:b49710638663e0140754ec8863f2d89bb1e977b500572ff986abbd3fb6ea5491",
+      "data": {
+        "sourceId": "2f04968b-f91d-42f8-93bb-6ca20db2b647",
+        "id": "6604109365671001",
+        "title": "合成随想",
+        "category": "日常",
+        "idleHours": 5,
+        "configuration": {
+          "wallpaperAssetId": "fixture-image",
+          "avatarAssetId": "fixture-image",
+          "messageAlign": "right",
+          "bubbleOpacity": 0.8
+        },
+        "_product": {
+          "schema": 1,
+          "kind": "conversation",
+          "refs": {
+            "category": "taxonomy:fixture-category",
+            "assets": ["fixture-image"],
+            "origin": {
+              "sourceId": "2f04968b-f91d-42f8-93bb-6ca20db2b647",
+              "roomId": "6604109365671001"
+            }
+          }
+        }
+      }
+    },
+    {
+      "entityType": "sticker",
+      "entityId": "fixture-sticker",
+      "data": {
+        "id": "fixture-sticker",
+        "mediaId": "fixture-image",
+        "name": "合成收藏",
+        "note": "保留备注",
+        "futureExtension": {
+          "keepUnknown": true
+        },
+        "_product": {
+          "schema": 1,
+          "kind": "sticker",
+          "refs": {
+            "assets": ["fixture-image"]
+          }
+        }
+      }
+    },
+    {
+      "entityType": "journalAggregate",
+      "entityId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79",
+      "data": {
+        "id": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79",
+        "title": "合成图文日记",
+        "date": "2025-10-17T00:00:00.000Z",
+        "createdAt": "2025-10-17T00:00:00.000Z",
+        "updatedAt": "2025-10-17T01:00:00.000Z",
+        "contentEditedAt": "2025-10-17T01:00:00.000Z",
+        "revision": 3,
+        "category": "日常",
+        "tags": ["合成"],
+        "attachments": ["fixture-image"],
+        "contentFormat": "richdoc",
+        "body": {
+          "format": "shiye-richdoc",
+          "version": 1,
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "[2025/10/17 08:30:00]"
+                }
+              ],
+              "attrs": {
+                "blockId": "fixture-block-1"
+              }
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "  合成中文，保留空格和换行。",
+                  "marks": [
+                    {
+                      "type": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "hardBreak",
+                  "attrs": {
+                    "blockId": "fixture-block-3"
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "第二行",
+                  "marks": [
+                    {
+                      "type": "italic"
+                    }
+                  ]
+                }
+              ],
+              "attrs": {
+                "blockId": "fixture-block-2"
+              }
+            },
+            {
+              "type": "image",
+              "attrs": {
+                "assetId": "fixture-image",
+                "occurrenceId": "fixture-occurrence",
+                "insertedAt": "2025-10-17T00:31:00.000Z",
+                "alt": "合成原图",
+                "caption": "图注",
+                "align": "center",
+                "widthRatio": 0.5,
+                "blockId": "fixture-block-4"
+              }
+            }
+          ]
+        },
+        "history": [],
+        "futureExtension": {
+          "keepUnknown": true,
+          "idLikeNumber": "9007199254740993"
+        },
+        "content": "<p style=\"white-space:pre-wrap\">[2025/10/17 08:30:00]</p><p style=\"white-space:pre-wrap\"><strong>  合成中文，保留空格和换行。</strong><br><em>第二行</em></p><figure data-rich-image=\"fixture-occurrence\" data-align=\"center\" style=\"width:50%\"><img src=\"/media/fixture-image\" alt=\"合成原图\"><figcaption>图注</figcaption></figure>",
+        "messageUnits": {
+          "version": 1,
+          "ids": ["fixture-unit-1", "fixture-unit-2"],
+          "authority": "messageStore"
+        },
+        "_product": {
+          "schema": 1,
+          "kind": "entry",
+          "refs": {
+            "category": "taxonomy:fixture-category",
+            "tags": ["taxonomy:fixture-tag"],
+            "assets": ["fixture-image"]
+          }
+        },
+        "_canonical": {
+          "units": [
+            {
+              "id": "fixture-unit-1",
+              "body": {
+                "format": "shiye-richdoc",
+                "version": 1,
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "[2025/10/17 08:30:00]"
+                      }
+                    ],
+                    "attrs": {
+                      "blockId": "fixture-block-1:fragment:0:0"
+                    }
+                  },
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "  合成中文，保留空格和换行。",
+                        "marks": [
+                          {
+                            "type": "bold"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "hardBreak",
+                        "attrs": {
+                          "blockId": "fixture-block-3"
+                        }
+                      },
+                      {
+                        "type": "text",
+                        "text": "第二行",
+                        "marks": [
+                          {
+                            "type": "italic"
+                          }
+                        ]
+                      }
+                    ],
+                    "attrs": {
+                      "blockId": "fixture-block-2:fragment:1:0"
+                    }
+                  }
+                ]
+              },
+              "eventTime": {
+                "instant": "2025-10-17T00:30:00.000Z",
+                "local": "2025-10-17T08:30:00",
+                "timeZone": "Asia/Shanghai",
+                "precision": "second",
+                "source": "manual-marker",
+                "assumedZone": true,
+                "sourceField": "body"
+              },
+              "origin": {
+                "kind": "diary",
+                "entryId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79"
+              },
+              "replyTo": null,
+              "state": "active",
+              "revision": 1,
+              "sourceSpans": [
+                {
+                  "blockId": "fixture-block-1",
+                  "range": {
+                    "from": 0,
+                    "to": 21
+                  }
+                },
+                {
+                  "blockId": "fixture-block-2",
+                  "range": {
+                    "from": 0,
+                    "to": 15
+                  }
+                },
+                {
+                  "blockId": "fixture-block-2",
+                  "range": {
+                    "from": 15,
+                    "to": 16
+                  }
+                },
+                {
+                  "blockId": "fixture-block-2",
+                  "range": {
+                    "from": 16,
+                    "to": 19
+                  }
+                }
+              ],
+              "identityKey": "anchor:fixture-block-1:2025-10-17T08:30:00:Asia/Shanghai"
+            },
+            {
+              "id": "fixture-unit-2",
+              "body": {
+                "format": "shiye-richdoc",
+                "version": 1,
+                "content": [
+                  {
+                    "type": "image",
+                    "attrs": {
+                      "assetId": "fixture-image",
+                      "occurrenceId": "fixture-occurrence",
+                      "insertedAt": "2025-10-17T00:31:00.000Z",
+                      "alt": "合成原图",
+                      "caption": "图注",
+                      "align": "center",
+                      "widthRatio": 0.5,
+                      "blockId": "fixture-block-4"
+                    }
+                  }
+                ]
+              },
+              "eventTime": {
+                "instant": "2025-10-17T00:31:00.000Z",
+                "timeZone": "UTC",
+                "precision": "millisecond",
+                "source": "media-inserted",
+                "sourceField": "insertedAt"
+              },
+              "origin": {
+                "kind": "diary",
+                "entryId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79"
+              },
+              "replyTo": null,
+              "state": "active",
+              "revision": 1,
+              "sourceSpans": [
+                {
+                  "blockId": "fixture-block-4",
+                  "range": {
+                    "from": 0,
+                    "to": 0
+                  },
+                  "occurrenceId": "fixture-occurrence"
+                }
+              ],
+              "identityKey": "media:fixture-occurrence"
+            }
+          ],
+          "layout": {
+            "layout": {
+              "format": "shiye-message-layout",
+              "version": 1,
+              "entryId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79",
+              "sourceRevision": 3,
+              "content": [
+                {
+                  "shell": {
+                    "type": "paragraph",
+                    "attrs": {
+                      "blockId": "fixture-block-1"
+                    }
+                  },
+                  "content": [
+                    {
+                      "shell": {
+                        "type": "text"
+                      },
+                      "textRefs": [
+                        {
+                          "unitId": "fixture-unit-1",
+                          "path": [0, 0],
+                          "textRange": {
+                            "from": 0,
+                            "to": 21
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "shell": {
+                    "type": "paragraph",
+                    "attrs": {
+                      "blockId": "fixture-block-2"
+                    }
+                  },
+                  "content": [
+                    {
+                      "shell": {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "bold"
+                          }
+                        ]
+                      },
+                      "textRefs": [
+                        {
+                          "unitId": "fixture-unit-1",
+                          "path": [1, 0],
+                          "textRange": {
+                            "from": 0,
+                            "to": 15
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "ref": {
+                        "unitId": "fixture-unit-1",
+                        "path": [1, 1]
+                      }
+                    },
+                    {
+                      "shell": {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "italic"
+                          }
+                        ]
+                      },
+                      "textRefs": [
+                        {
+                          "unitId": "fixture-unit-1",
+                          "path": [1, 2],
+                          "textRange": {
+                            "from": 0,
+                            "to": 3
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "ref": {
+                    "unitId": "fixture-unit-2",
+                    "path": [0]
+                  }
+                }
+              ]
+            },
+            "mappings": [
+              {
+                "kind": "created",
+                "from": [],
+                "to": ["fixture-unit-1"]
+              },
+              {
+                "kind": "created",
+                "from": [],
+                "to": ["fixture-unit-2"]
+              }
+            ],
+            "issues": [],
+            "revision": 3
+          }
+        }
+      }
+    },
+    {
+      "entityType": "chatMessage",
+      "entityId": "chat:b1c594d46c3314fd89ff389ee7872c9ef17ed615c06ef9fd9430aa29e73cd1db",
+      "data": {
+        "id": "18446744073709551614",
+        "sentAt": "2025-10-17T00:33:00.000Z",
+        "text": "**合成加粗**\n第二行",
+        "attachments": [],
+        "_product": {
+          "schema": 1,
+          "kind": "message",
+          "refs": {
+            "conversation": "room:b49710638663e0140754ec8863f2d89bb1e977b500572ff986abbd3fb6ea5491",
+            "origin": {
+              "sourceId": "2f04968b-f91d-42f8-93bb-6ca20db2b647",
+              "roomId": "6604109365671001"
+            },
+            "assets": []
+          }
+        }
+      }
+    },
+    {
+      "entityType": "chatMessage",
+      "entityId": "chat:a2e4a741f66fafeab03f9bbc530e1c727ec676bcfa3cb7a936ee2901ee8b0e21",
+      "data": {
+        "id": "18446744073709551615",
+        "sentAt": "2025-10-17T00:34:00.000Z",
+        "text": "合成图文回复",
+        "attachments": ["fixture-image"],
+        "replyTo": "18446744073709551614",
+        "_product": {
+          "schema": 1,
+          "kind": "message",
+          "refs": {
+            "conversation": "room:b49710638663e0140754ec8863f2d89bb1e977b500572ff986abbd3fb6ea5491",
+            "origin": {
+              "sourceId": "2f04968b-f91d-42f8-93bb-6ca20db2b647",
+              "roomId": "6604109365671001"
+            },
+            "assets": ["fixture-image"]
+          }
+        }
+      }
+    }
+  ],
+  "transportExample": {
+    "entityType": "journalAggregate",
+    "entityId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79",
+    "data": {
+      "id": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79",
+      "title": "合成图文日记",
+      "date": "2025-10-17T00:00:00.000Z",
+      "createdAt": "2025-10-17T00:00:00.000Z",
+      "updatedAt": "2025-10-17T01:00:00.000Z",
+      "contentEditedAt": "2025-10-17T01:00:00.000Z",
+      "revision": 3,
+      "category": "日常",
+      "tags": ["合成"],
+      "attachments": ["fixture-image"],
+      "contentFormat": "richdoc",
+      "body": {
+        "format": "shiye-richdoc",
+        "version": 1,
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "[2025/10/17 08:30:00]"
+              }
+            ],
+            "attrs": {
+              "blockId": "fixture-block-1"
+            }
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "  合成中文，保留空格和换行。",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ]
+              },
+              {
+                "type": "hardBreak",
+                "attrs": {
+                  "blockId": "fixture-block-3"
+                }
+              },
+              {
+                "type": "text",
+                "text": "第二行",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ]
+              }
+            ],
+            "attrs": {
+              "blockId": "fixture-block-2"
+            }
+          },
+          {
+            "type": "image",
+            "attrs": {
+              "assetId": "fixture-image",
+              "occurrenceId": "fixture-occurrence",
+              "insertedAt": "2025-10-17T00:31:00.000Z",
+              "alt": "合成原图",
+              "caption": "图注",
+              "align": "center",
+              "widthRatio": 0.5,
+              "blockId": "fixture-block-4"
+            }
+          }
+        ]
+      },
+      "history": [],
+      "futureExtension": {
+        "keepUnknown": true,
+        "idLikeNumber": "9007199254740993"
+      },
+      "content": "<p style=\"white-space:pre-wrap\">[2025/10/17 08:30:00]</p><p style=\"white-space:pre-wrap\"><strong>  合成中文，保留空格和换行。</strong><br><em>第二行</em></p><figure data-rich-image=\"fixture-occurrence\" data-align=\"center\" style=\"width:50%\"><img src=\"/media/fixture-image\" alt=\"合成原图\"><figcaption>图注</figcaption></figure>",
+      "messageUnits": {
+        "version": 1,
+        "ids": ["fixture-unit-1", "fixture-unit-2"],
+        "authority": "messageStore"
+      },
+      "_product": {
+        "schema": 1,
+        "kind": "entry",
+        "refs": {
+          "category": "taxonomy:fixture-category",
+          "tags": ["taxonomy:fixture-tag"],
+          "assets": ["fixture-image"]
+        }
+      },
+      "_canonical": {
+        "units": [
+          {
+            "id": "fixture-unit-1",
+            "body": {
+              "format": "shiye-richdoc",
+              "version": 1,
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "[2025/10/17 08:30:00]"
+                    }
+                  ],
+                  "attrs": {
+                    "blockId": "fixture-block-1:fragment:0:0"
+                  }
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "  合成中文，保留空格和换行。",
+                      "marks": [
+                        {
+                          "type": "bold"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "hardBreak",
+                      "attrs": {
+                        "blockId": "fixture-block-3"
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": "第二行",
+                      "marks": [
+                        {
+                          "type": "italic"
+                        }
+                      ]
+                    }
+                  ],
+                  "attrs": {
+                    "blockId": "fixture-block-2:fragment:1:0"
+                  }
+                }
+              ]
+            },
+            "eventTime": {
+              "instant": "2025-10-17T00:30:00.000Z",
+              "local": "2025-10-17T08:30:00",
+              "timeZone": "Asia/Shanghai",
+              "precision": "second",
+              "source": "manual-marker",
+              "assumedZone": true,
+              "sourceField": "body"
+            },
+            "origin": {
+              "kind": "diary",
+              "entryId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79"
+            },
+            "replyTo": null,
+            "state": "active",
+            "revision": 1,
+            "sourceSpans": [
+              {
+                "blockId": "fixture-block-1",
+                "range": {
+                  "from": 0,
+                  "to": 21
+                }
+              },
+              {
+                "blockId": "fixture-block-2",
+                "range": {
+                  "from": 0,
+                  "to": 15
+                }
+              },
+              {
+                "blockId": "fixture-block-2",
+                "range": {
+                  "from": 15,
+                  "to": 16
+                }
+              },
+              {
+                "blockId": "fixture-block-2",
+                "range": {
+                  "from": 16,
+                  "to": 19
+                }
+              }
+            ],
+            "identityKey": "anchor:fixture-block-1:2025-10-17T08:30:00:Asia/Shanghai"
+          },
+          {
+            "id": "fixture-unit-2",
+            "body": {
+              "format": "shiye-richdoc",
+              "version": 1,
+              "content": [
+                {
+                  "type": "image",
+                  "attrs": {
+                    "assetId": "fixture-image",
+                    "occurrenceId": "fixture-occurrence",
+                    "insertedAt": "2025-10-17T00:31:00.000Z",
+                    "alt": "合成原图",
+                    "caption": "图注",
+                    "align": "center",
+                    "widthRatio": 0.5,
+                    "blockId": "fixture-block-4"
+                  }
+                }
+              ]
+            },
+            "eventTime": {
+              "instant": "2025-10-17T00:31:00.000Z",
+              "timeZone": "UTC",
+              "precision": "millisecond",
+              "source": "media-inserted",
+              "sourceField": "insertedAt"
+            },
+            "origin": {
+              "kind": "diary",
+              "entryId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79"
+            },
+            "replyTo": null,
+            "state": "active",
+            "revision": 1,
+            "sourceSpans": [
+              {
+                "blockId": "fixture-block-4",
+                "range": {
+                  "from": 0,
+                  "to": 0
+                },
+                "occurrenceId": "fixture-occurrence"
+              }
+            ],
+            "identityKey": "media:fixture-occurrence"
+          }
+        ],
+        "layout": {
+          "layout": {
+            "format": "shiye-message-layout",
+            "version": 1,
+            "entryId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79",
+            "sourceRevision": 3,
+            "content": [
+              {
+                "shell": {
+                  "type": "paragraph",
+                  "attrs": {
+                    "blockId": "fixture-block-1"
+                  }
+                },
+                "content": [
+                  {
+                    "shell": {
+                      "type": "text"
+                    },
+                    "textRefs": [
+                      {
+                        "unitId": "fixture-unit-1",
+                        "path": [0, 0],
+                        "textRange": {
+                          "from": 0,
+                          "to": 21
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "shell": {
+                  "type": "paragraph",
+                  "attrs": {
+                    "blockId": "fixture-block-2"
+                  }
+                },
+                "content": [
+                  {
+                    "shell": {
+                      "type": "text",
+                      "marks": [
+                        {
+                          "type": "bold"
+                        }
+                      ]
+                    },
+                    "textRefs": [
+                      {
+                        "unitId": "fixture-unit-1",
+                        "path": [1, 0],
+                        "textRange": {
+                          "from": 0,
+                          "to": 15
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "ref": {
+                      "unitId": "fixture-unit-1",
+                      "path": [1, 1]
+                    }
+                  },
+                  {
+                    "shell": {
+                      "type": "text",
+                      "marks": [
+                        {
+                          "type": "italic"
+                        }
+                      ]
+                    },
+                    "textRefs": [
+                      {
+                        "unitId": "fixture-unit-1",
+                        "path": [1, 2],
+                        "textRange": {
+                          "from": 0,
+                          "to": 3
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "ref": {
+                  "unitId": "fixture-unit-2",
+                  "path": [0]
+                }
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "kind": "created",
+              "from": [],
+              "to": ["fixture-unit-1"]
+            },
+            {
+              "kind": "created",
+              "from": [],
+              "to": ["fixture-unit-2"]
+            }
+          ],
+          "issues": [],
+          "revision": 3
+        }
+      }
+    },
+    "revision": 1,
+    "state": "active",
+    "updatedAt": "2025-10-17T01:01:00.000Z"
+  },
+  "original": {
+    "assetId": "fixture-image",
+    "base64": "R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==",
+    "sha256": "1e85ec81b9800b4c443d39caca0d0926089a3ac201120db1ceb45b93789480b8",
+    "size": 34
+  },
+  "wireExamples": {
+    "pushCreate": {
+      "operations": [
+        {
+          "entityType": "taxonomy",
+          "entityId": "taxonomy:fixture-category",
+          "data": {
+            "id": "taxonomy:fixture-category",
+            "kind": "category",
+            "name": "日常",
+            "_product": {
+              "schema": 1,
+              "kind": "taxonomy",
+              "refs": {}
+            }
+          },
+          "operationId": "fixture-create-0",
+          "command": "create",
+          "baseRevision": 0
+        },
+        {
+          "entityType": "taxonomy",
+          "entityId": "taxonomy:fixture-tag",
+          "data": {
+            "id": "taxonomy:fixture-tag",
+            "kind": "tag",
+            "name": "合成",
+            "_product": {
+              "schema": 1,
+              "kind": "taxonomy",
+              "refs": {}
+            }
+          },
+          "operationId": "fixture-create-1",
+          "command": "create",
+          "baseRevision": 0
+        },
+        {
+          "entityType": "order",
+          "entityId": "order:fixture:category",
+          "data": {
+            "kind": "category",
+            "ids": ["taxonomy:fixture-category"],
+            "_product": {
+              "schema": 1,
+              "kind": "order",
+              "refs": {}
+            }
+          },
+          "operationId": "fixture-create-2",
+          "command": "create",
+          "baseRevision": 0
+        },
+        {
+          "entityType": "relation",
+          "entityId": "fixture-image",
+          "data": {
+            "id": "fixture-image",
+            "name": "合成.gif",
+            "type": "image/gif",
+            "size": 34,
+            "sha256": "1e85ec81b9800b4c443d39caca0d0926089a3ac201120db1ceb45b93789480b8",
+            "importedAt": "2025-10-17T00:32:00.000Z",
+            "lastModified": 1760661120000,
+            "_product": {
+              "schema": 1,
+              "kind": "media",
+              "refs": {
+                "asset": "fixture-image"
+              }
+            }
+          },
+          "operationId": "fixture-create-3",
+          "command": "create",
+          "baseRevision": 0
+        },
+        {
+          "entityType": "sticker",
+          "entityId": "fixture-sticker",
+          "data": {
+            "id": "fixture-sticker",
+            "mediaId": "fixture-image",
+            "name": "合成收藏",
+            "note": "保留备注",
+            "futureExtension": {
+              "keepUnknown": true
+            },
+            "_product": {
+              "schema": 1,
+              "kind": "sticker",
+              "refs": {
+                "assets": ["fixture-image"]
+              }
+            }
+          },
+          "operationId": "fixture-create-4",
+          "command": "create",
+          "baseRevision": 0
+        },
+        {
+          "entityType": "journalAggregate",
+          "entityId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79",
+          "data": {
+            "id": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79",
+            "title": "合成图文日记",
+            "date": "2025-10-17T00:00:00.000Z",
+            "createdAt": "2025-10-17T00:00:00.000Z",
+            "updatedAt": "2025-10-17T01:00:00.000Z",
+            "contentEditedAt": "2025-10-17T01:00:00.000Z",
+            "revision": 3,
+            "category": "日常",
+            "tags": ["合成"],
+            "attachments": ["fixture-image"],
+            "contentFormat": "richdoc",
+            "body": {
+              "format": "shiye-richdoc",
+              "version": 1,
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "[2025/10/17 08:30:00]"
+                    }
+                  ],
+                  "attrs": {
+                    "blockId": "fixture-block-1"
+                  }
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "  合成中文，保留空格和换行。",
+                      "marks": [
+                        {
+                          "type": "bold"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "hardBreak",
+                      "attrs": {
+                        "blockId": "fixture-block-3"
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": "第二行",
+                      "marks": [
+                        {
+                          "type": "italic"
+                        }
+                      ]
+                    }
+                  ],
+                  "attrs": {
+                    "blockId": "fixture-block-2"
+                  }
+                },
+                {
+                  "type": "image",
+                  "attrs": {
+                    "assetId": "fixture-image",
+                    "occurrenceId": "fixture-occurrence",
+                    "insertedAt": "2025-10-17T00:31:00.000Z",
+                    "alt": "合成原图",
+                    "caption": "图注",
+                    "align": "center",
+                    "widthRatio": 0.5,
+                    "blockId": "fixture-block-4"
+                  }
+                }
+              ]
+            },
+            "history": [],
+            "futureExtension": {
+              "keepUnknown": true,
+              "idLikeNumber": "9007199254740993"
+            },
+            "content": "<p style=\"white-space:pre-wrap\">[2025/10/17 08:30:00]</p><p style=\"white-space:pre-wrap\"><strong>  合成中文，保留空格和换行。</strong><br><em>第二行</em></p><figure data-rich-image=\"fixture-occurrence\" data-align=\"center\" style=\"width:50%\"><img src=\"/media/fixture-image\" alt=\"合成原图\"><figcaption>图注</figcaption></figure>",
+            "messageUnits": {
+              "version": 1,
+              "ids": ["fixture-unit-1", "fixture-unit-2"],
+              "authority": "messageStore"
+            },
+            "_product": {
+              "schema": 1,
+              "kind": "entry",
+              "refs": {
+                "category": "taxonomy:fixture-category",
+                "tags": ["taxonomy:fixture-tag"],
+                "assets": ["fixture-image"]
+              }
+            },
+            "_canonical": {
+              "units": [
+                {
+                  "id": "fixture-unit-1",
+                  "body": {
+                    "format": "shiye-richdoc",
+                    "version": 1,
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "[2025/10/17 08:30:00]"
+                          }
+                        ],
+                        "attrs": {
+                          "blockId": "fixture-block-1:fragment:0:0"
+                        }
+                      },
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "  合成中文，保留空格和换行。",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "hardBreak",
+                            "attrs": {
+                              "blockId": "fixture-block-3"
+                            }
+                          },
+                          {
+                            "type": "text",
+                            "text": "第二行",
+                            "marks": [
+                              {
+                                "type": "italic"
+                              }
+                            ]
+                          }
+                        ],
+                        "attrs": {
+                          "blockId": "fixture-block-2:fragment:1:0"
+                        }
+                      }
+                    ]
+                  },
+                  "eventTime": {
+                    "instant": "2025-10-17T00:30:00.000Z",
+                    "local": "2025-10-17T08:30:00",
+                    "timeZone": "Asia/Shanghai",
+                    "precision": "second",
+                    "source": "manual-marker",
+                    "assumedZone": true,
+                    "sourceField": "body"
+                  },
+                  "origin": {
+                    "kind": "diary",
+                    "entryId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79"
+                  },
+                  "replyTo": null,
+                  "state": "active",
+                  "revision": 1,
+                  "sourceSpans": [
+                    {
+                      "blockId": "fixture-block-1",
+                      "range": {
+                        "from": 0,
+                        "to": 21
+                      }
+                    },
+                    {
+                      "blockId": "fixture-block-2",
+                      "range": {
+                        "from": 0,
+                        "to": 15
+                      }
+                    },
+                    {
+                      "blockId": "fixture-block-2",
+                      "range": {
+                        "from": 15,
+                        "to": 16
+                      }
+                    },
+                    {
+                      "blockId": "fixture-block-2",
+                      "range": {
+                        "from": 16,
+                        "to": 19
+                      }
+                    }
+                  ],
+                  "identityKey": "anchor:fixture-block-1:2025-10-17T08:30:00:Asia/Shanghai"
+                },
+                {
+                  "id": "fixture-unit-2",
+                  "body": {
+                    "format": "shiye-richdoc",
+                    "version": 1,
+                    "content": [
+                      {
+                        "type": "image",
+                        "attrs": {
+                          "assetId": "fixture-image",
+                          "occurrenceId": "fixture-occurrence",
+                          "insertedAt": "2025-10-17T00:31:00.000Z",
+                          "alt": "合成原图",
+                          "caption": "图注",
+                          "align": "center",
+                          "widthRatio": 0.5,
+                          "blockId": "fixture-block-4"
+                        }
+                      }
+                    ]
+                  },
+                  "eventTime": {
+                    "instant": "2025-10-17T00:31:00.000Z",
+                    "timeZone": "UTC",
+                    "precision": "millisecond",
+                    "source": "media-inserted",
+                    "sourceField": "insertedAt"
+                  },
+                  "origin": {
+                    "kind": "diary",
+                    "entryId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79"
+                  },
+                  "replyTo": null,
+                  "state": "active",
+                  "revision": 1,
+                  "sourceSpans": [
+                    {
+                      "blockId": "fixture-block-4",
+                      "range": {
+                        "from": 0,
+                        "to": 0
+                      },
+                      "occurrenceId": "fixture-occurrence"
+                    }
+                  ],
+                  "identityKey": "media:fixture-occurrence"
+                }
+              ],
+              "layout": {
+                "layout": {
+                  "format": "shiye-message-layout",
+                  "version": 1,
+                  "entryId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79",
+                  "sourceRevision": 3,
+                  "content": [
+                    {
+                      "shell": {
+                        "type": "paragraph",
+                        "attrs": {
+                          "blockId": "fixture-block-1"
+                        }
+                      },
+                      "content": [
+                        {
+                          "shell": {
+                            "type": "text"
+                          },
+                          "textRefs": [
+                            {
+                              "unitId": "fixture-unit-1",
+                              "path": [0, 0],
+                              "textRange": {
+                                "from": 0,
+                                "to": 21
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "shell": {
+                        "type": "paragraph",
+                        "attrs": {
+                          "blockId": "fixture-block-2"
+                        }
+                      },
+                      "content": [
+                        {
+                          "shell": {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ]
+                          },
+                          "textRefs": [
+                            {
+                              "unitId": "fixture-unit-1",
+                              "path": [1, 0],
+                              "textRange": {
+                                "from": 0,
+                                "to": 15
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "ref": {
+                            "unitId": "fixture-unit-1",
+                            "path": [1, 1]
+                          }
+                        },
+                        {
+                          "shell": {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "italic"
+                              }
+                            ]
+                          },
+                          "textRefs": [
+                            {
+                              "unitId": "fixture-unit-1",
+                              "path": [1, 2],
+                              "textRange": {
+                                "from": 0,
+                                "to": 3
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "ref": {
+                        "unitId": "fixture-unit-2",
+                        "path": [0]
+                      }
+                    }
+                  ]
+                },
+                "mappings": [
+                  {
+                    "kind": "created",
+                    "from": [],
+                    "to": ["fixture-unit-1"]
+                  },
+                  {
+                    "kind": "created",
+                    "from": [],
+                    "to": ["fixture-unit-2"]
+                  }
+                ],
+                "issues": [],
+                "revision": 3
+              }
+            }
+          },
+          "operationId": "fixture-create-5",
+          "command": "create",
+          "baseRevision": 0
+        }
+      ]
+    },
+    "pushTitleOnly": {
+      "operations": [
+        {
+          "operationId": "fixture-title-only",
+          "entityType": "journalAggregate",
+          "entityId": "b53bd1b6-4439-4506-8659-fe9c5b1fbe79",
+          "command": "updateFields",
+          "baseRevision": 1,
+          "changes": {
+            "title": "只改标题的合成示例"
+          }
+        }
+      ]
+    },
+    "initialSnapshot": {
+      "cursor": null,
+      "limit": 50
+    }
+  },
+  "requests": {
+    "saveRoom": {
+      "sourceId": "2f04968b-f91d-42f8-93bb-6ca20db2b647",
+      "id": "6604109365671001",
+      "title": "合成随想",
+      "category": "日常",
+      "idleHours": 5,
+      "configuration": {
+        "wallpaperAssetId": "fixture-image",
+        "messageAlign": "right"
+      }
+    },
+    "sendMessages": {
+      "sourceId": "2f04968b-f91d-42f8-93bb-6ca20db2b647",
+      "roomId": "6604109365671001",
+      "messages": [
+        {
+          "id": "18446744073709551614",
+          "sentAt": "2025-10-17T00:33:00.000Z",
+          "text": "**合成加粗**\n第二行",
+          "attachments": []
+        },
+        {
+          "id": "18446744073709551615",
+          "sentAt": "2025-10-17T00:34:00.000Z",
+          "text": "合成图文回复",
+          "attachments": ["fixture-image"],
+          "replyTo": "18446744073709551614"
+        }
+      ]
+    },
+    "withdrawMessage": {
+      "sourceId": "2f04968b-f91d-42f8-93bb-6ca20db2b647",
+      "roomId": "6604109365671001",
+      "messageId": "18446744073709551614",
+      "sentAt": "2025-10-17T00:33:00.000Z"
+    },
+    "defaultSingleComment": {
+      "operationId": "fixture-default-comment",
+      "batchId": "batch:fixture",
+      "deliveryId": "revisit:fixture",
+      "text": "合成默认单条回复"
+    },
+    "explicitGroupComment": {
+      "operationId": "fixture-group-comment",
+      "batchId": "batch:fixture",
+      "text": "合成组评论"
+    },
+    "mediaComment": {
+      "operationId": "fixture-media-comment",
+      "batchId": "batch:fixture",
+      "deliveryId": "revisit:fixture",
+      "occurrenceId": "fixture-occurrence",
+      "text": "合成图片评论"
+    }
+  },
+  "expected": {
+    "conversationId": "room:b49710638663e0140754ec8863f2d89bb1e977b500572ff986abbd3fb6ea5491",
+    "messageIds": [
+      "chat:b1c594d46c3314fd89ff389ee7872c9ef17ed615c06ef9fd9430aa29e73cd1db",
+      "chat:a2e4a741f66fafeab03f9bbc530e1c727ec676bcfa3cb7a936ee2901ee8b0e21"
+    ],
+    "manualTime": "2025-10-17T00:30:00.000Z",
+    "mediaTime": "2025-10-17T00:31:00.000Z",
+    "businessRevision": 3,
+    "transportRevision": 1
+  }
+}

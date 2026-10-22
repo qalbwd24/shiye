@@ -1,0 +1,54 @@
+.shiye-sticker-suggestions {
+  position: fixed;
+  z-index: 60;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(400px, calc(100vw - 16px));
+  padding: 5px;
+  border: 1px solid var(--shiye-line, #cadfee);
+  border-radius: 12px;
+  background: var(--shiye-surface, #f5fafee6);
+  color: var(--shiye-ink, #111827);
+  box-shadow: 0 2px 10px var(--shiye-shadow, #254b6a20);
+  backdrop-filter: blur(10px);
+}
+.shiye-sticker-suggestion-items {
+  display: flex;
+  gap: 3px;
+}
+.shiye-sticker-suggestion {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 54px;
+  padding: 2px;
+  align-items: center;
+  flex-direction: column;
+  gap: 2px;
+  border: 0;
+  border-radius: 7px;
+  color: inherit;
+  background: transparent;
+}
+.shiye-sticker-suggestion:active {
+  background: var(--shiye-pressed, #dceefa);
+}
+.shiye-sticker-suggestion img {
+  width: 40px;
+  height: 38px;
+  object-fit: contain;
+}
+.shiye-sticker-suggestion span {
+  max-width: 100%;
+  font: 10px/12px sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shiye-sticker-suggestion-status {
+  display: block;
+  font: 11px/15px sans-serif;
+}
+.shiye-sticker-suggestion-status:empty {
+  display: none;
+}

@@ -1,0 +1,44 @@
+.category-order__list {
+  max-height: 32dvh;
+  overflow: auto;
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.category-order__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: transparent;
+}
+.category-order__item[aria-selected='true'] {
+  background: var(--mint);
+  color: var(--accent-dark);
+}
+.category-order__controls {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 0;
+  background: var(--paper);
+}
+.category-order__buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.category-order__buttons label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+#modalBody #orderPosition {
+  width: 76px;
+  margin: 0;
+  flex: none;
+}

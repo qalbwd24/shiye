@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'"
+    />
+    <meta name="color-scheme" content="dark light" />
+    <title>拾页 · 便签</title>
+    <link rel="stylesheet" href="/styles/notes-workspace.css" />
+    <link rel="stylesheet" href="/styles/notes-markdown-preview.css" />
+  </head>
+  <body data-theme="dark">
+    <svg class="icon-library" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <symbol id="i-note" viewBox="0 0 24 24">
+          <path d="M6 3h12a2 2 0 0 1 2 2v11l-5 5H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+          <path d="M15 21v-5h5M8 8h8M8 12h6" />
+        </symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+        <symbol id="i-list" viewBox="0 0 24 24">
+          <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" />
+        </symbol>
+        <symbol id="i-outline" viewBox="0 0 24 24">
+          <path d="M4 5h16M8 10h12M8 15h12M12 20h8M4 10h.01M4 15h.01M8 20h.01" />
+        </symbol>
+        <symbol id="i-outline-side" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M9 4v16m7-11-3 3 3 3" />
+        </symbol>
+        <symbol id="i-pin" viewBox="0 0 24 24">
+          <path d="m16 3 5 5-4 1-4 5-1 5-7-7 5-1 5-4 1-4ZM3 21l5-5" />
+        </symbol>
+        <symbol id="i-theme" viewBox="0 0 24 24">
+          <path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" />
+        </symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24">
+          <path
+            d="m9 4 1-2h4l1 2 2 1 2-.2 2 3.4-1.2 1.8v3.8l1.2 1.8-2 3.4-2-.2-2 1-1 2h-4l-1-2-2-1-2 .2-2-3.4L4.2 14v-3.8L3 8.4 5 5l2 .2 2-1.2Z"
+          />
+          <circle cx="12" cy="12" r="3" />
+        </symbol>
+        <symbol id="i-task" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="16" rx="3" />
+          <path d="m7 12 3 3 7-7" />
+        </symbol>
+        <symbol id="i-bold" viewBox="0 0 24 24">
+          <path d="M7 4h6a4 4 0 0 1 0 8H7V4Zm0 8h7a4 4 0 0 1 0 8H7v-8Z" />
+        </symbol>
+        <symbol id="i-italic" viewBox="0 0 24 24"><path d="M11 4h8M5 20h8M15 4 9 20" /></symbol>
+        <symbol id="i-image" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="3" />
+          <circle cx="8" cy="8" r="1.5" />
+          <path d="m21 16-5-5-8 10M3 16l4-4 4 4" />
+        </symbol>
+        <symbol id="i-line" viewBox="0 0 24 24"><path d="M4 12h16" /></symbol>
+        <symbol id="i-undo" viewBox="0 0 24 24">
+          <path d="m8 5-5 5 5 5M3 10h11a6 6 0 0 1 0 12" />
+        </symbol>
+        <symbol id="i-redo" viewBox="0 0 24 24">
+          <path d="m16 5 5 5-5 5M21 10H10a6 6 0 0 0 0 12" />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></symbol>
+        <symbol id="i-search" viewBox="0 0 24 24">
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path d="m16 16 5 5" />
+        </symbol>
+        <symbol id="i-download" viewBox="0 0 24 24">
+          <path d="M12 3v12m-5-5 5 5 5-5M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <header class="window-header">
+      <div class="brand" title="拾页 · 便签">
+        <span class="brand-mark"
+          ><svg><use href="#i-note" /></svg></span
+        ><span class="sr-only">拾页 · 便签</span>
+      </div>
+      <nav class="tab-strip" aria-label="打开的便签">
+        <div id="tabs" role="tablist" aria-label="便签标签"></div>
+        <button
+          id="add-note"
+          class="icon-button add-note"
+          type="button"
+          title="新建便签"
+          aria-label="新建便签"
+        >
+          <svg><use href="#i-plus" /></svg>
+        </button>
+      </nav>
+      <div class="header-actions">
+        <button
+          id="outline-toggle"
+          class="icon-button"
+          type="button"
+          title="目录"
+          aria-label="目录"
+          aria-controls="notes-outline"
+          aria-expanded="false"
+        >
+          <svg><use href="#i-outline" /></svg>
+        </button>
+        <button
+          id="notes-list"
+          class="icon-button"
+          type="button"
+          title="全部便签"
+          aria-label="全部便签"
+        >
+          <svg><use href="#i-list" /></svg>
+        </button>
+        <button
+          id="pin-window"
+          class="icon-button"
+          type="button"
+          title="窗口置顶"
+          aria-label="窗口置顶"
+          aria-pressed="false"
+          hidden
+        >
+          <svg><use href="#i-pin" /></svg>
+        </button>
+        <button
+          id="theme-toggle"
+          class="icon-button"
+          type="button"
+          title="切换明暗外观"
+          aria-label="切换明暗外观"
+          hidden
+        >
+          <svg><use href="#i-theme" /></svg>
+        </button>
+        <button
+          id="settings"
+          class="icon-button"
+          type="button"
+          title="便签设置"
+          aria-label="便签设置"
+        >
+          <svg><use href="#i-settings" /></svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="error-banner" class="error-banner" role="alert" hidden>
+      <span id="error-message"></span>
+      <div class="error-actions">
+        <button id="retry-save" type="button">重试保存</button
+        ><button id="rescue-export" type="button">导出草稿</button>
+      </div>
+    </div>
+
+    <main class="notes-workspace" aria-label="便签编辑区">
+      <div class="format-menu">
+        <button
+          id="format-toggle"
+          class="format-button"
+          type="button"
+          aria-controls="format-toolbar"
+          aria-expanded="false"
+        >
+          格式
+        </button>
+        <div id="format-toolbar" class="editor-toolbar" role="toolbar" aria-label="正文格式" hidden>
+          <div class="toolbar-group">
+            <button
+              class="icon-button ordered-list-button"
+              type="button"
+              data-action="orderedList"
+              title="编号列表"
+              aria-label="编号列表"
+              aria-pressed="false"
+            >
+              <span aria-hidden="true">1.</span>
+            </button>
+            <button
+              class="format-button"
+              type="button"
+              data-action="taskList"
+              title="待办清单"
+              aria-label="待办清单"
+              aria-pressed="false"
+            >
+              <svg><use href="#i-task" /></svg><span>待办</span>
+            </button>
+            <button
+              class="icon-button"
+              type="button"
+              data-action="bulletList"
+              title="项目符号"
+              aria-label="项目符号"
+              aria-pressed="false"
+            >
+              <svg><use href="#i-list" /></svg>
+            </button>
+          </div>
+          <span class="action-divider" aria-hidden="true"></span>
+          <div class="toolbar-group">
+            <button
+              class="icon-button"
+              type="button"
+              data-action="bold"
+              title="粗体（Ctrl+B）"
+              aria-label="粗体"
+              aria-pressed="false"
+            >
+              <svg><use href="#i-bold" /></svg>
+            </button>
+            <button
+              class="icon-button"
+              type="button"
+              data-action="italic"
+              title="斜体（Ctrl+I）"
+              aria-label="斜体"
+              aria-pressed="false"
+            >
+              <svg><use href="#i-italic" /></svg>
+            </button>
+          </div>
+          <span class="action-divider" aria-hidden="true"></span>
+          <div class="toolbar-group">
+            <button
+              class="icon-button"
+              type="button"
+              data-action="image"
+              title="插入图片，也可直接粘贴或拖入"
+              aria-label="插入图片"
+            >
+              <svg><use href="#i-image" /></svg>
+            </button>
+            <button
+              class="icon-button"
+              type="button"
+              data-action="horizontalRule"
+              title="分割线"
+              aria-label="分割线"
+            >
+              <svg><use href="#i-line" /></svg>
+            </button>
+          </div>
+          <div class="toolbar-group toolbar-history">
+            <button
+              class="icon-button"
+              type="button"
+              data-action="undo"
+              title="撤销（Ctrl+Z）"
+              aria-label="撤销"
+            >
+              <svg><use href="#i-undo" /></svg>
+            </button>
+            <button
+              class="icon-button"
+              type="button"
+              data-action="redo"
+              title="重做（Ctrl+Shift+Z）"
+              aria-label="重做"
+            >
+              <svg><use href="#i-redo" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="editor-scroll" class="editor-scroll">
+        <div class="writing-surface">
+          <div class="document-heading">
+            <label class="sr-only" for="note-title">便签标题</label>
+            <input
+              id="note-title"
+              type="text"
+              placeholder="未命名便签"
+              autocomplete="off"
+              maxlength="240"
+            />
+            <span id="modified-at" hidden></span>
+          </div>
+          <div id="editors"></div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="status-bar">
+      <div class="status-left">
+        <output id="save-status" role="status">正在准备草稿</output><span id="word-count">0 字</span
+        ><span id="task-count" hidden></span>
+      </div>
+      <div class="zoom-controls" aria-label="正文缩放">
+        <button id="zoom-out" type="button" title="缩小正文" aria-label="缩小正文">−</button
+        ><button id="zoom-reset" type="button" title="恢复默认缩放">100%</button
+        ><button id="zoom-in" type="button" title="放大正文" aria-label="放大正文">+</button>
+      </div>
+    </footer>
+
+    <aside id="notes-outline" class="notes-outline" aria-labelledby="outline-title" hidden>
+      <div
+        id="outline-resizer"
+        role="separator"
+        tabindex="0"
+        aria-label="调整目录宽度"
+        aria-orientation="vertical"
+        aria-valuemin="180"
+        aria-valuemax="360"
+      ></div>
+      <div class="outline-heading">
+        <h2 id="outline-title">目录</h2>
+        <div class="outline-actions">
+          <button
+            id="outline-side"
+            class="icon-button"
+            type="button"
+            aria-label="目录移到左侧"
+            title="目录移到左侧"
+          >
+            <svg><use href="#i-outline-side" /></svg>
+          </button>
+          <button
+            id="outline-pin"
+            class="icon-button"
+            type="button"
+            aria-label="常驻目录"
+            title="常驻目录"
+            aria-pressed="false"
+          >
+            <svg><use href="#i-pin" /></svg>
+          </button>
+          <button id="outline-close" class="icon-button" type="button" aria-label="关闭目录">
+            <svg><use href="#i-close" /></svg>
+          </button>
+        </div>
+      </div>
+      <label class="sr-only" for="outline-mode">目录内容</label>
+      <select id="outline-mode">
+        <option value="headings">仅标题</option>
+        <option value="indentation">智能层级</option>
+      </select>
+      <div id="outline-items" class="outline-items" role="tree" aria-label="正文目录"></div>
+    </aside>
+
+    <input id="image-file" type="file" accept="image/*" multiple hidden />
+
+    <dialog id="notes-dialog" aria-labelledby="notes-dialog-title">
+      <div class="dialog-heading">
+        <div>
+          <h1 id="notes-dialog-title">全部便签</h1>
+        </div>
+        <button id="notes-close" class="icon-button" type="button" aria-label="关闭便签列表">
+          <svg><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <label class="search-field"
+        ><svg aria-hidden="true"><use href="#i-search" /></svg
+        ><input
+          id="notes-search"
+          type="search"
+          placeholder="搜索便签标题与内容"
+          aria-label="搜索便签"
+      /></label>
+      <div id="notes-items" class="notes-items" aria-label="已保存的便签"></div>
+      <p class="dialog-footnote">关闭标签只收起便签，之后可从这里继续编辑。</p>
+    </dialog>
+
+    <dialog id="settings-dialog" aria-labelledby="settings-dialog-title">
+      <div class="dialog-heading">
+        <div>
+          <h1 id="settings-dialog-title">便签设置</h1>
+        </div>
+        <button id="settings-close" class="icon-button" type="button" aria-label="关闭设置">
+          <svg><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <div class="settings-body">
+        <div class="settings-fields">
+          <label class="setting-row" for="theme"
+            ><span><strong>外观</strong></span
+            ><select id="theme">
+              <option value="system">跟随系统</option>
+              <option value="dark">深色</option>
+              <option value="light">浅色</option>
+            </select></label
+          >
+          <label class="setting-row" for="frame-material"
+            ><span><strong>窗口边框</strong><small>标题栏与边框柔和取色</small></span
+            ><select id="frame-material">
+              <option value="wallpaper">壁纸融合（取色）</option>
+              <option value="gray">中性灰</option>
+            </select></label
+          >
+          <label class="setting-row" for="font-size"
+            ><span><strong>正文字号</strong><small>标题与工具栏保持原大小</small></span
+            ><select id="font-size">
+              <option value="15">15 px</option>
+              <option value="17" selected>17 px</option>
+              <option value="19">19 px</option>
+              <option value="21">21 px</option>
+            </select></label
+          >
+          <label class="setting-row" for="notes-shortcuts-enabled">
+            <span><strong>启用便签标签快捷键</strong></span>
+            <input id="notes-shortcuts-enabled" type="checkbox" />
+          </label>
+          <label class="setting-row" for="notes-smart-indent">
+            <span><strong>自然缩进</strong><small>换行延续层级，冒号后进入子步骤</small></span>
+            <input id="notes-smart-indent" type="checkbox" checked />
+          </label>
+        </div>
+        <section class="background-settings" aria-labelledby="background-heading">
+          <h2 id="background-heading">背景图片</h2>
+          <div class="background-buttons">
+            <button id="background-upload" class="secondary-button" type="button">选择图片</button>
+            <button id="background-remove" class="text-button" type="button" disabled>移除</button>
+            <input
+              id="background-file"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+              hidden
+            />
+          </div>
+          <div id="background-preview" class="background-preview"><span>未设置背景</span></div>
+          <div class="background-options">
+            <label for="background-opacity"
+              ><span>不透明度 <output id="background-opacity-value">20%</output></span>
+              <input
+                id="background-opacity"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value="20"
+                disabled
+              />
+            </label>
+            <label for="background-blur"
+              ><span>模糊 <output id="background-blur-value">0 px</output></span>
+              <input
+                id="background-blur"
+                type="range"
+                min="0"
+                max="20"
+                step="1"
+                value="0"
+                disabled
+              />
+            </label>
+            <label for="background-fill"
+              ><span>填充</span
+              ><select id="background-fill" disabled>
+                <option value="cover">铺满</option>
+                <option value="contain">完整显示</option>
+                <option value="tile">平铺</option>
+              </select></label
+            >
+            <label for="background-position"
+              ><span>位置</span
+              ><select id="background-position" disabled>
+                <option value="center">居中</option>
+                <option value="top">靠上</option>
+                <option value="bottom">靠下</option>
+              </select></label
+            >
+          </div>
+          <p id="background-status" class="background-status" role="status">
+            PNG / JPG / WebP / GIF / AVIF，最大 20 MiB。
+          </p>
+        </section>
+        <div class="draft-info">
+          <span class="info-dot" aria-hidden="true"></span>
+          <div>
+            <strong>当前为独立便签界面试用</strong>
+            <p>
+              草稿仅保存在当前浏览器的本机空间，尚未接入正式存储。数据格式仍在设计中，需要留存的内容请主动导出。
+            </p>
+          </div>
+        </div>
+        <button id="export-drafts" class="secondary-button export-button" type="button">
+          <svg aria-hidden="true"><use href="#i-download" /></svg>导出全部草稿
+        </button>
+        <details class="keyboard-help">
+          <summary>常用快捷键（标签操作需启用）</summary>
+          <dl>
+            <div>
+              <dt>编号 / 下一项</dt>
+              <dd>输入 <kbd>1.</kbd> + 空格，<kbd>Enter</kbd> 续写</dd>
+            </div>
+            <div>
+              <dt>缩进 / 减少缩进</dt>
+              <dd><kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></dd>
+            </div>
+            <div>
+              <dt>新建便签</dt>
+              <dd><kbd>Ctrl</kbd> + <kbd>T</kbd></dd>
+            </div>
+            <div>
+              <dt>关闭当前标签</dt>
+              <dd><kbd>Ctrl</kbd> + <kbd>W</kbd></dd>
+            </div>
+            <div>
+              <dt>重开刚关闭的标签</dt>
+              <dd><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd></dd>
+            </div>
+            <div>
+              <dt>编辑标题</dt>
+              <dd><kbd>F2</kbd></dd>
+            </div>
+            <div>
+              <dt>切换标签</dt>
+              <dd><kbd>Ctrl</kbd> + <kbd>Tab</kbd></dd>
+            </div>
+            <div>
+              <dt>向前切换标签</dt>
+              <dd><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Tab</kbd></dd>
+            </div>
+            <div>
+              <dt>放大 / 缩小正文</dt>
+              <dd><kbd>Ctrl</kbd> + <kbd>+</kbd> / <kbd>−</kbd></dd>
+            </div>
+            <div>
+              <dt>恢复默认缩放</dt>
+              <dd><kbd>Ctrl</kbd> + <kbd>0</kbd></dd>
+            </div>
+          </dl>
+        </details>
+      </div>
+      <div class="settings-actions">
+        <p id="settings-error" role="alert" hidden></p>
+        <button id="settings-dismiss" class="secondary-button" type="button">关闭</button>
+        <button id="settings-save" class="primary-button" type="button">保存设置</button>
+      </div>
+    </dialog>
+
+    <dialog id="image-dialog" class="image-dialog" aria-label="查看图片">
+      <button
+        id="image-close"
+        class="icon-button image-view-close"
+        type="button"
+        aria-label="关闭图片"
+      >
+        <svg><use href="#i-close" /></svg>
+      </button>
+      <div data-image-stage><img id="image-preview" alt="便签图片" draggable="false" /></div>
+      <div class="image-zoom-controls" aria-label="图片缩放">
+        <button type="button" data-image-zoom="-1" aria-label="缩小图片">−</button>
+        <output data-image-scale aria-live="polite">100%</output>
+        <button type="button" data-image-zoom="1" aria-label="放大图片">＋</button>
+        <button type="button" data-image-zoom="0">适应窗口</button>
+        <button type="button" data-image-original>原始像素</button>
+      </div>
+    </dialog>
+
+    <dialog id="image-layout-dialog" aria-labelledby="image-layout-title">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">图片与文字，恰到好处</p>
+          <h1 id="image-layout-title">图片排版</h1>
+        </div>
+        <button id="image-layout-close" class="icon-button" type="button" aria-label="关闭图片排版">
+          <svg><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <div class="image-layout-fields">
+        <label for="image-width"
+          ><span>图片宽度</span><input id="image-width" type="range" min="10" max="100" value="80"
+        /></label>
+        <label for="image-align"
+          ><span>对齐方式</span
+          ><select id="image-align">
+            <option value="left">靠左</option>
+            <option value="center" selected>居中</option>
+            <option value="right">靠右</option>
+          </select></label
+        >
+        <label for="image-caption"
+          ><span>图注</span
+          ><input id="image-caption" type="text" placeholder="在图片下方补充一句话"
+        /></label>
+        <label for="image-alt"
+          ><span>替代文字</span><input id="image-alt" type="text" placeholder="简要描述图片内容"
+        /></label>
+      </div>
+      <div class="dialog-actions">
+        <button id="image-apply" class="primary-button" type="button">应用排版</button>
+      </div>
+    </dialog>
+
+    <script type="module" src="/features/notes-workspace.js"></script>
+  </body>
+</html>

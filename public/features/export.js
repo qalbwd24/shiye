@@ -1,4 +1,10 @@
 import { isHidden, dayKey } from '../shared/insights.js';
+import {
+  projectOpenEntry,
+  OPEN_DATA_API_VERSION,
+  OPEN_DATA_SCHEMA_VERSION,
+  OPEN_DATA_TIME_ZONE,
+} from '../shared/open-data.js';
 
 /** Feature-local state; c.library is a live getter, never a cached snapshot. */
 export function createExport(c) {
@@ -28,7 +34,7 @@ export function createExport(c) {
     await c.flush();
     modal(
       '本地导出',
-      `<label>范围<select class="field" id="exportScope"><option value="current">当前日记</option><option value="visible">当前列表</option><option value="all">全部非隐藏日记</option></select></label><button class="option-button" id="exportText">导出纯文本 TXT</button><button class="option-button" id="exportHtml">导出带图片的 HTML</button><button class="option-button" id="printDiary">打印／保存 PDF</button><button class="option-button" id="exportPng">当前日记导出文字长图 PNG</button><p>HTML 会嵌入图片，可离线打开；音视频请用完整加密备份保存。PDF 通过浏览器打印对话框保存。</p>`,
+      `<label>范围<select class="field" id="exportScope"><option value="current">当前日记</option><option value="visible">当前列表</option><option value="all">全部非隐藏日记</option></select></label><button class="option-button" id="exportJson">导出结构化 JSON（AI／组件）</button><label><input type="checkbox" id="exportComments"> JSON 包含评论</label><button class="option-button" id="exportText">导出纯文本 TXT</button><button class="option-button" id="exportHtml">导出带图片的 HTML</button><button class="option-button" id="printDiary">打印／保存 PDF</button><button class="option-button" id="exportPng">当前日记导出文字长图 PNG</button><p>JSON 保留正文源格式与附件信息，不包含媒体文件；完整保存请使用加密备份。HTML 会嵌入图片，可离线打开；PDF 通过浏览器打印对话框保存。</p>`,
     );
     const entries = () =>
       $('#exportScope').value === 'current'
@@ -36,6 +42,25 @@ export function createExport(c) {
         : $('#exportScope').value === 'visible'
           ? c.filtered()
           : c.library.entries.filter((e) => !e.deleted && !e.draft && !isHidden(e));
+    $('#exportJson').onclick = () => {
+      const media = new Map(c.library.media.map((m) => [m.id, m]));
+      const result = {
+        format: 'shiye-open-data',
+        apiVersion: OPEN_DATA_API_VERSION,
+        schemaVersion: OPEN_DATA_SCHEMA_VERSION,
+        exportedAt: new Date().toISOString(),
+        timeZone: OPEN_DATA_TIME_ZONE,
+        entries: entries().map((e) =>
+          projectOpenEntry(e, media, { includeComments: $('#exportComments').checked }),
+        ),
+      };
+      c.download(
+        '拾页结构化日记',
+        'application/json;charset=utf-8',
+        JSON.stringify(result, null, 2),
+        'json',
+      );
+    };
     $('#exportText').onclick = () =>
       c.download(
         '拾页日记',

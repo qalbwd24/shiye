@@ -1,0 +1,31 @@
+plugins { id 'com.android.application' version '8.13.2' }
+def workspace = rootProject.projectDir.parentFile.parentFile
+def stage = new File(workspace, 'tmp/android-feedback020/stage')
+layout.buildDirectory = new File(workspace, providers.gradleProperty('qaApplicationId').isPresent() ? 'tmp/android-feedback020/qa-build' : 'tmp/android-feedback020/app-build')
+android {
+    namespace 'dev.shiye.app'
+    compileSdk 36
+    buildToolsVersion '36.0.0'
+    defaultConfig { applicationId providers.gradleProperty('qaApplicationId').getOrElse('dev.shiye.app'); minSdk 26; targetSdk 35; versionCode 22; versionName '0.20.0-feedback' }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+    sourceSets { main {
+        manifest.srcFile new File(stage, 'native/AndroidManifest.xml')
+        java.srcDirs = [new File(stage, 'native/java')]
+        res.srcDirs = [new File(stage, 'native/res')]
+        assets.srcDirs = [new File(stage, 'assets')]
+    } }
+    signingConfigs { debug { storeFile file('D:/codex-tools/android-state/keys/shiye-prototype-debug.jks'); storePassword 'android'; keyAlias 'androiddebugkey'; keyPassword 'android' } }
+}
+tasks.register('verifyFeedback020') {
+    doLast {
+        def receipt = new groovy.json.JsonSlurper().parse(new File(workspace, 'outputs/2026-10-19-android-feedback020/stage-manifest.json'))
+        receipt.sources.each { name, sha -> if (java.security.MessageDigest.getInstance('SHA-256').digest(new File(workspace,name).bytes).encodeHex().toString()!=sha) throw new GradleException('Source changed; restage: '+name) }
+        def formatter = receipt.formatterSource
+        def journal = new File(workspace, formatter.path).getText('UTF-8')
+        def start = journal.indexOf(formatter.start)
+        def end = journal.indexOf(formatter.end, start)
+        if (start < 0 || end < 0 || java.security.MessageDigest.getInstance('SHA-256').digest(journal.substring(start,end).trim().getBytes('UTF-8')).encodeHex().toString()!=formatter.sha256) throw new GradleException('Desktop formatter changed; restage')
+        receipt.stageHashes.each { name, sha -> if (java.security.MessageDigest.getInstance('SHA-256').digest(new File(stage,name).bytes).encodeHex().toString()!=sha) throw new GradleException('Stage changed: '+name) }
+    }
+}
+tasks.named('preBuild').configure { dependsOn tasks.named('verifyFeedback020') }

@@ -73,17 +73,48 @@ function editorSurface({ semantic = false, initial = '', prefix = '', suffix = '
     editor = new Target();
   const block = {
     nodeType: 1,
+    nodeName: 'DIV',
+    querySelector: () => null,
     closest(selector) {
       return selector === 'p,div' || semantic ? this : null;
     },
   };
-  const text = { nodeType: 3, parentElement: block };
-  const range = { startContainer: text, endContainer: text, startOffset: 0, collapsed: true };
+  const text = {
+    nodeType: 3,
+    nodeName: '#text',
+    parentElement: block,
+    parentNode: block,
+    data: prefix + suffix,
+  };
+  block.childNodes = [text];
+  const range = {
+    startContainer: text,
+    endContainer: text,
+    startOffset: prefix.length,
+    collapsed: true,
+    selectNodeContents() {},
+    cloneRange() {
+      return { ...this };
+    },
+    setStart(node, offset) {
+      this.startContainer = node;
+      this.startOffset = offset;
+    },
+    setEnd(node, offset) {
+      this.endContainer = node;
+      this.endOffset = offset;
+    },
+  };
   const entry = { id: 'synthetic', content: initial };
   const commands = [];
   let dirty = 0;
   doc.defaultView = win;
-  doc.getSelection = () => ({ rangeCount: 1, getRangeAt: () => range });
+  doc.getSelection = () => ({
+    rangeCount: 1,
+    getRangeAt: () => range,
+    removeAllRanges() {},
+    addRange() {},
+  });
   doc.createRange = () => ({
     side: '',
     selectNodeContents() {},
@@ -100,6 +131,7 @@ function editorSurface({ semantic = false, initial = '', prefix = '', suffix = '
   editor.ownerDocument = doc;
   editor.contains = (node) => node === text || node === block;
   editor.innerHTML = initial;
+  editor.focus = () => {};
   doc.execCommand = (name, _ui, value) => {
     commands.push([name, value]);
     editor.innerHTML += value;
@@ -127,15 +159,32 @@ function editorSurface({ semantic = false, initial = '', prefix = '', suffix = '
   };
 }
 
-test('date command escapes brackets only in Markdown and keeps rich text insertion literal', () => {
-  const surface = editorSurface();
+test('date command delegates Markdown to its document owner and rich sentence middle stays literal', () => {
+  const surface = editorSurface({ prefix: '前文', suffix: '后文' });
   surface.input.insertDateTime();
   assert.match(surface.commands[0][1], /^\[\d{4}\/\d{2}\/\d{2}  \d{2}:\d{2}:\d{2}\]$/);
-  surface.c.editor = { isMarkdown: true };
+  surface.c.editor = {
+    isMarkdown: true,
+    insertDateTime(time) {
+      surface.commands.push(['date', time]);
+      return true;
+    },
+  };
   surface.input.insertDateTime();
-  assert.match(surface.commands[1][1], /^\\\[\d{4}\/\d{2}\/\d{2}  \d{2}:\d{2}:\d{2}\\\]$/);
-  assert.equal(surface.commands[1][0], 'insertText');
+  assert.match(surface.commands[1][1], /^\[\d{4}\/\d{2}\/\d{2}  \d{2}:\d{2}:\d{2}\]$/);
+  assert.equal(surface.commands[1][0], 'date');
   surface.input.dispose();
+});
+
+test('rich paragraph end creates a blank separator while an empty body reuses its indentation', () => {
+  const end = editorSurface({ prefix: '上一段' });
+  end.input.insertDateTime();
+  assert.match(end.commands[0][1], /^\n\n　　\[.+\]\n　　$/);
+  assert.equal(end.dirty, 1);
+  const empty = editorSurface({ prefix: '　　' });
+  empty.input.insertDateTime();
+  assert.match(empty.commands[0][1], /^　　\[.+\]\n　　$/);
+  assert.equal(empty.dirty, 1);
 });
 
 test('normal Enter in blank body keeps native paragraph action, indents once and autosaves its resulting content', () => {

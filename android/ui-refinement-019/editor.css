@@ -1,0 +1,535 @@
+/* Append after editor.css. Visual-only: keep document, typography and IME geometry owners. */
+.editor-page .page-header {
+  background: transparent;
+  border-bottom-color: transparent;
+}
+.editor-page .page-heading {
+  letter-spacing: 0;
+}
+.editor-page .page-heading .entry-title::placeholder {
+  color: var(--muted);
+}
+.editor-page .format-bar > button[aria-expanded='true'],
+.editor-page .rich-tools-panel button[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--surface-soft);
+  box-shadow: inset 0 -2px var(--accent);
+}
+.editor-page .body-editor .tiptap {
+  min-width: 0;
+}
+.editor-page .body-editor .tiptap > :first-child {
+  margin-top: 0;
+}
+.editor-page .body-editor .tiptap > :last-child {
+  margin-bottom: 0;
+}
+.editor-page .body-editor .tiptap code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.92em;
+  padding: 0.08em 0.25em;
+  border-radius: 3px;
+  background: var(--field);
+}
+.editor-page .body-editor .tiptap pre code {
+  padding: 0;
+  background: transparent;
+  font-size: inherit;
+}
+.editor-page .body-editor .tiptap mark {
+  color: #292418;
+}
+.editor-page .body-editor .tiptap table {
+  color: inherit;
+}
+.editor-page .body-editor .tiptap blockquote {
+  border-left-color: var(--accent);
+}
+.editor-page .body-editor .tiptap figcaption {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.editor-page.header-frozen > .entry-context-header {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: none;
+  margin-inline: auto;
+  padding: 0;
+  background: transparent;
+}
+.entry-context-header .entry-meta {
+  position: static;
+  max-width: none;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0 8px;
+  min-height: 32px;
+  padding-inline: var(--diary-page-gutter);
+  color: var(--ink);
+}
+.entry-context-header .date-control {
+  color: var(--ink);
+}
+.entry-context-header :is(.entry-meta-time, .entry-meta-count) {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-size: 10px;
+}
+.entry-context-header .entry-meta-place {
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+}
+.entry-context-header .entry-category-shortcut {
+  flex: 1 1 auto;
+  min-width: 48px;
+}
+.entry-context-header .page-divider {
+  background: var(--ink);
+  margin: 0;
+  opacity: 1;
+}
+.editor-page.header-frozen > .page-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.sheet-dialog {
+  margin: auto;
+  border-radius: 16px;
+}
+.sheet-dialog[open] {
+  animation: none;
+}
+.editor-page:not(.reading) .entry-context-header .weekday {
+  display: inline;
+}
+.settings-dialog > .dialog-heading {
+  border-bottom: 1px solid var(--line);
+}
+.settings-dialog .settings-footer {
+  padding-top: 10px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+}
+.settings-dialog input[type='range'] {
+  touch-action: pan-y;
+}
+#imageDialog #imageWidth {
+  touch-action: pan-y;
+}
+.page-header .previous-entry-button {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 32px;
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--ink);
+}
+.header-frozen .page-header {
+  gap: 2px;
+  flex-basis: 40px;
+  padding: 0 4px;
+}
+.header-frozen .page-heading {
+  flex: 1 1 0;
+}
+.editor-page .page-heading .entry-title {
+  min-height: 36px;
+  padding: 0;
+  line-height: 36px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.header-frozen .page-header .icon-button {
+  width: 36px;
+  height: 36px;
+  flex-basis: 36px;
+  color: var(--ink);
+}
+.entry-context-header :is(.date-control, .date-control input, .entry-category-shortcut button) {
+  min-height: 28px;
+  color: var(--ink);
+}
+.entry-context-header .reading-date {
+  padding-inline: var(--diary-page-gutter);
+  color: var(--ink);
+}
+.editor-page .format-bar > button,
+.editor-page .format-bar > #imageButton,
+.editor-page .rich-tools-panel button {
+  height: 32px;
+  min-height: 32px;
+}
+.editor-page .rich-tools-panel .format-scroll {
+  padding-block: 2px;
+}
+
+/* Keep one stable wallpaper coordinate system while the IME resizes the editor. */
+.editor-page .paper-layer {
+  height: var(--diary-wallpaper-height, 100lvh);
+  bottom: auto;
+}
+.editor-page.header-frozen > .page-scroll {
+  scroll-behavior: auto;
+}
+.editor-page:not(.reading) .diary-page {
+  min-height: 100%;
+  /* Reserve enough real scroll range for the fixed 84px caret clearance at
+     the final line. The previous 32px cap stopped the scroller near 48px. */
+  padding-bottom: max(96px, env(safe-area-inset-bottom, 0px));
+}
+.editor-page .body-editor .tiptap {
+  min-height: 130px;
+}
+.editor-page .format-bar {
+  background: transparent;
+  border-top-color: var(--line);
+}
+.editor-page .body-editor figure[data-rich-image] {
+  max-width: 100%;
+}
+.editor-page:not(.reading) .body-editor figure[data-rich-image] img {
+  max-height: min(calc(var(--diary-wallpaper-height, 100lvh) * 0.46), 360px);
+  object-fit: contain;
+}
+.category-other-action {
+  border-top: 1px solid var(--line);
+  padding: 8px 16px 12px;
+}
+.category-other-action button {
+  width: 100%;
+  min-height: 44px;
+  text-align: left;
+  color: var(--accent);
+}
+.settings-dialog {
+  background: var(--paper);
+}
+.settings-dialog .settings-footer {
+  background: transparent;
+  border-top-color: var(--line);
+}
+.settings-dialog #entryLocation {
+  flex: 0 1 42%;
+  width: 42%;
+  min-width: 0;
+  padding: 8px;
+  font-size: 14px;
+}
+
+/* One metadata row in both writing and reading; persisted date fields stay unchanged. */
+.editor-page .entry-context-header .entry-meta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(44px, 25%);
+  align-items: center;
+  gap: 6px;
+  position: static;
+  max-width: none;
+  min-height: 36px;
+}
+.entry-meta-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.editor-page .entry-meta-date .date-control,
+.editor-page .entry-meta-date .weekday {
+  display: flex;
+  font-size: 10px;
+}
+.entry-meta-date .date-control > svg,
+#entryMetaTime,
+#readingModeButton,
+.editor-page .reading-date {
+  display: none;
+}
+.editor-page .entry-meta-place {
+  grid-column: 2;
+  display: block;
+  min-width: 0;
+  max-width: none;
+  text-align: center;
+}
+.editor-page .entry-meta-place[hidden] {
+  visibility: hidden;
+}
+.editor-page .entry-meta-count {
+  grid-column: 3;
+}
+.editor-page .entry-category-shortcut {
+  grid-column: 4;
+  display: block;
+  min-width: 0;
+}
+.editor-page .entry-category-shortcut button {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  gap: 3px;
+  justify-content: flex-end;
+  font-size: 10px;
+}
+.editor-page .entry-category-shortcut svg {
+  width: 12px;
+  height: 12px;
+  flex-basis: 12px;
+}
+.editor-page.reading .reading-title {
+  padding: 12px 0 18px;
+  font-size: 22px;
+  line-height: 1.45;
+  text-align: left;
+}
+.editor-page.reading .body-editor figure[data-rich-image] {
+  width: 100% !important;
+  max-width: 100%;
+  margin-inline: 0 !important;
+}
+.editor-page.reading .body-editor figure[data-rich-image] img {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  object-fit: contain;
+}
+.editor-page [data-command='formatBlock'][data-value='p'] {
+  color: var(--ink);
+  background: transparent;
+  box-shadow: none;
+}
+.settings-dialog .settings-scroll {
+  touch-action: pan-y;
+  scrollbar-gutter: stable;
+}
+.settings-dialog .settings-footer .dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.settings-dialog .settings-footer .dialog-actions button {
+  min-height: 44px;
+  min-width: 0;
+  margin: 0;
+  padding-inline: 10px;
+}
+
+/* Native edge-to-edge status bar: wallpaper continues behind system icons. */
+.editor-page {
+  padding-top: var(--diary-native-top-inset, 0px);
+}
+
+/* E22-19: metadata first, strong title second; both remain outside the scroller. */
+.editor-page.header-frozen > .page-header.entry-context-header {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  gap: 0;
+  padding: 0;
+  min-height: 92px;
+}
+.entry-top-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding-inline: 2px;
+}
+.editor-page .entry-top-row > .icon-button {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 40px;
+}
+.editor-page .entry-top-row .entry-meta {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 2px;
+  gap: 4px;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(28px, 17%);
+}
+.editor-page .entry-meta-date .date-control,
+.editor-page .entry-meta-date .weekday {
+  font-size: 11px;
+}
+.editor-page .entry-top-row .entry-category-shortcut svg {
+  display: none;
+}
+.editor-page .page-header > .page-heading {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 47px;
+  padding: 2px var(--diary-page-gutter) 5px;
+}
+.editor-page .page-header .page-heading .entry-title {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  max-height: 40px;
+  padding: 0;
+  margin: 0;
+  font-size: 23px;
+  font-weight: 750;
+  line-height: 40px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0;
+}
+.editor-page .page-header .entry-title::placeholder {
+  color: var(--muted);
+  font-weight: 650;
+  opacity: 1;
+}
+.editor-page .page-header > .page-divider {
+  width: 100%;
+  flex: 0 0 1px;
+  margin: 0;
+}
+
+/* Override prior four-column and unconditional time hiding rules only in opted-in projection. */
+.info-placement-enabled .entry-top-row .entry-meta {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+}
+.info-placement-enabled .entry-meta > .diary-info-item {
+  display: block;
+  min-width: 0;
+  max-width: 96px;
+  flex: 0 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.info-placement-enabled .entry-meta > .date-control {
+  display: flex;
+  flex: 0 0 auto;
+  max-width: 90px;
+}
+.info-placement-enabled .entry-meta > #weekday {
+  flex: 0 0 auto;
+  max-width: 35px;
+}
+.info-placement-enabled .entry-meta > #wordCount {
+  flex: 0 0 auto;
+  max-width: 70px;
+}
+.info-placement-enabled .entry-meta > #entryMetaTime {
+  display: block;
+  flex: 0 0 auto;
+  max-width: 45px;
+}
+.info-placement-enabled .entry-meta > #entryMetaPlace {
+  visibility: visible;
+  text-align: left;
+  flex: 1 1 24px;
+}
+.info-placement-enabled .entry-meta > .entry-category-shortcut {
+  display: block;
+  flex: 1 1 24px;
+}
+.info-placement-enabled #toolbarInfoSlot > #entryMetaTime {
+  display: block;
+}
+.info-placement-enabled #toolbarInfoSlot > .entry-category-shortcut {
+  display: block;
+}
+.info-placement-enabled .entry-meta-date {
+  display: none !important;
+}
+.editor-page.info-placement-enabled:not(.has-top-title) > .entry-context-header {
+  min-height: 45px;
+}
+.info-placement-enabled:not(.has-top-title) .page-header > .page-heading {
+  min-height: 0;
+  height: 0;
+  padding: 0;
+  overflow: visible;
+}
+.info-placement-enabled .page-heading .entry-title[hidden] {
+  display: none !important;
+}
+.info-placement-enabled .diary-info-item[hidden] {
+  display: none !important;
+}
+.editor-page.info-placement-enabled .diary-info-slot > .reading-title {
+  min-height: 40px;
+  max-height: 40px;
+  line-height: 40px;
+  padding: 0;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+/* 017 v4: opted-in reading right slot must not inherit legacy hidden date/weekday. */
+.info-placement-enabled.reading #toolbarInfoSlot > .date-control:not([hidden]) { display:flex; }
+.info-placement-enabled #toolbarInfoSlot > #weekday:not([hidden]) { display:block; }
+.info-placement-enabled #toolbarInfoSlot > #entryTitle { box-sizing:border-box;height:40px;min-height:40px;max-height:40px;padding:0;line-height:40px; }
+.info-placement-enabled #toolbarInfoSlot > .entry-category-shortcut:not([hidden]) { display:flex;align-items:center;height:44px;max-height:44px;line-height:normal; }
+
+/* 024: each writing tool can move to the right group without moving the information slot. */
+.info-placement-enabled .toolbar-right-tools {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+.info-placement-enabled .toolbar-right-tools > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 44px;
+  padding: 0;
+  color: var(--ink);
+}
+.info-placement-enabled .toolbar-right-tools:empty { display: none; }
+.info-placement-enabled .toolbar-right-tools:not(:empty) + .diary-info-slot {
+  flex: 0 1 auto;
+  max-width: min(120px, 28vw);
+}
+.info-placement-enabled.reading .toolbar-right-tools { display: none; }
+#toolbarOrderSetting .preference-row > span { flex: 1 1 auto; }
+#toolbarOrderSetting .preference-row > select { min-height: 44px; font-size: 16px; }
+
+/* Optional diary-only actions reuse the existing side/order settings. */
+.editor-page .format-bar .diary-action-tool[hidden] { display: none !important; }
+.editor-page .format-bar .diary-action-tool { min-width: 40px; font-size: 12px; font-weight: 600; }
+#toolbarOrderSetting .preference-row input[type='checkbox'] { width: 20px; height: 20px; }
+.editor-page.reading.has-diary-action-tools .format-bar { display: flex; min-height: 44px; }
+.editor-page.reading.has-diary-action-tools .format-bar > button:not(.diary-action-tool),
+.editor-page.reading.has-diary-action-tools .format-bar > .rich-tools-panel { display: none !important; }
+.editor-page.reading.has-diary-action-tools .toolbar-right-tools { display: flex; }
+.editor-page.reading.has-diary-action-tools .format-bar > .diary-action-tool:not([hidden]),
+.editor-page.reading.has-diary-action-tools .toolbar-right-tools > .diary-action-tool:not([hidden]) { display: inline-flex !important; align-items: center; justify-content: center; }
+
+/* Keep all populated top-row fields reachable at a 320 CSS px viewport. */
+.info-placement-enabled .entry-meta > .date-control { max-width: 64px; }
+.info-placement-enabled .entry-meta > #weekday { max-width: 29px; }
+.info-placement-enabled .entry-meta > #entryMetaPlace {
+  flex: 1 1 36px;
+  min-width: 36px;
+  max-width: 64px;
+}
+.info-placement-enabled .entry-meta > #wordCount { max-width: 42px; }
+.info-placement-enabled .entry-meta > .entry-category-shortcut {
+  flex: 0 1 46px;
+  min-width: 38px;
+  max-width: 46px;
+}
+/* Search remains reachable above the document at 320 CSS px and with the IME open. */
+.diary-search-bar{display:flex;align-items:center;gap:3px;min-height:38px;padding:3px 7px;background:rgba(236,247,252,.96);border-bottom:1px solid rgba(91,145,174,.3);box-sizing:border-box;position:relative;z-index:4}
+.diary-search-bar[hidden]{display:none}
+.diary-search-bar input{min-width:0;flex:1 1 90px;height:32px;border:1px solid #9bbccc;border-radius:8px;background:#fff;color:#193445;font-size:14px;padding:0 7px}
+.diary-search-bar span{flex:0 1 auto;min-width:48px;max-width:95px;font-size:11px;line-height:1.1;color:#355369;text-align:center}
+.diary-search-bar button{flex:0 0 30px;width:30px;height:32px;border:0;border-radius:7px;background:transparent;color:#235773;font-size:23px;line-height:30px;padding:0}
+.diary-search-bar button:disabled{opacity:.35}
+.diary-search-hit{background:#ffe384;color:#342b13;border-radius:2px}
+.diary-search-current{background:#ffac53;color:#211c14;box-shadow:0 0 0 1px #c67c2b}
+@media(max-width:360px){.diary-search-bar{gap:1px;padding-inline:4px}.diary-search-bar span{max-width:73px;font-size:10px}.diary-search-bar button{flex-basis:28px;width:28px}}

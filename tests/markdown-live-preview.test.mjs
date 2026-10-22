@@ -7,6 +7,8 @@ import {
   syntaxTree,
 } from '../public/vendor/codemirror.js';
 import { buildLivePreviewDecorations, previewMediaURL } from '../public/editor/live-preview.js';
+import { markdownStructureEnter } from '../public/editor/markdown-transforms.js';
+import { marked } from '../public/vendor/marked.js';
 
 function presentation(source, { cursor = 0, focus = false, resolveMedia, visibleRanges } = {}) {
   const state = EditorState.create({
@@ -217,4 +219,90 @@ test('HTML bridge preserves code examples, unsupported tags and unsafe color att
     '`<u>code</u>`\n```html\n<span style="color:#fff">code</span>\n```\n<span style="color:url(https://invalid)">bad</span>\n<span style="color:#fff;background:url(x)">bad</span>\n<u onclick="x">bad</u>\n<span style="color:rgb(999,0,0)">bad</span>';
   const result = presentation(source);
   assert.ok(!result.some(({ spec }) => ['md-underline', 'md-custom-color'].includes(spec.class)));
+});
+
+test('standalone rules preview after leaving their line and expose editable markers on return', () => {
+  const source = '前一段\n\n---\n\n后一段';
+  const start = source.indexOf('---');
+  const inactive = presentation(source, { focus: true, cursor: source.length });
+  const rules = inactive.filter(({ spec }) => spec.widget);
+  assert.equal(rules.length, 1);
+  assert.equal(source.slice(rules[0].from, rules[0].to), '---');
+  for (const cursor of [start, start + 1, start + 3]) {
+    const active = presentation(source, { focus: true, cursor });
+    assert.ok(!active.some(({ spec }) => spec.widget));
+    assert.equal(visibleText(source, active), source);
+  }
+  assert.equal(presentation(source).filter(({ spec }) => spec.widget).length, 1);
+  assert.equal((marked.parse(source).match(/<hr>/g) || []).length, 1);
+});
+
+test('automatic diary indentation plus rule Enter has matching preview and HTML semantics', () => {
+  for (const marker of ['---', '----', '- - -', '***', '___']) {
+    for (const prefix of ['', '　　前一段\n', '　　前一段\n　　\n', '前文第一行\n前文第二行\n']) {
+      for (const indent of ['', '　　']) {
+        const source = `${prefix}${indent}${marker}`;
+        const transaction = markdownStructureEnter(source, source.length, source.length);
+        const completed =
+          source.slice(0, transaction.from) + transaction.insert + source.slice(transaction.to);
+        const result = presentation(completed, {
+          focus: true,
+          cursor: transaction.selection.anchor,
+        });
+        assert.equal(result.filter(({ spec }) => spec.widget).length, 1, marker);
+        assert.equal((marked.parse(completed).match(/<hr>/g) || []).length, 1, marker);
+        assert.doesNotMatch(marked.parse(completed), /<h2>/);
+        assert.equal(completed.slice(transaction.selection.anchor - 2), '　　');
+      }
+    }
+  }
+});
+
+test('rule preview preserves Setext headings, inline dashes and code examples', () => {
+  for (const source of [
+    '已有标题\n---',
+    '这句 --- 仍是正文',
+    '`---`',
+    '```text\n---\n　　---\n```',
+    '~~~\n---\n~~~',
+    '    ---',
+    '\t---',
+    '\\---',
+    '　　---', // Enter repairs only a newly completed line, never a stored source wholesale.
+  ]) {
+    assert.ok(!presentation(source).some(({ spec }) => spec.widget), source);
+    assert.doesNotMatch(marked.parse(source), /<hr>/, source);
+  }
+  const heading = presentation('已有标题\n---');
+  assert.ok(heading.some(({ spec }) => spec.class === 'md-heading md-heading-2'));
+  assert.match(marked.parse('已有标题\n---'), /<h2>已有标题<\/h2>/);
+});
+
+test('rule click resolves its current position and focuses the editable marker line', () => {
+  const [{ spec }] = presentation('---').filter(({ spec }) => spec.widget);
+  const attributes = new Map();
+  const events = new Map();
+  const node = {
+    setAttribute: (name, value) => attributes.set(name, value),
+    addEventListener: (name, callback) => events.set(name, callback),
+  };
+  const selections = [];
+  let focused = false;
+  const view = {
+    dom: { ownerDocument: { createElement: () => node } },
+    posAtDOM: (element) => {
+      assert.equal(element, node);
+      return 23;
+    },
+    dispatch: (transaction) => selections.push(transaction.selection),
+    focus: () => {
+      focused = true;
+    },
+  };
+  assert.equal(spec.widget.toDOM(view), node);
+  assert.equal(attributes.get('role'), 'separator');
+  assert.equal(attributes.get('aria-label'), '分割线');
+  events.get('click')();
+  assert.deepEqual(selections, [{ anchor: 23 }]);
+  assert.equal(focused, true);
 });

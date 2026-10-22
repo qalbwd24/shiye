@@ -1,4 +1,5 @@
 import { isHidden } from '../shared/entry-state.js';
+import { formatZoned } from '../shared/time-zone.js';
 
 export const ALBUM_PAGE_SIZE = 80;
 const PREF_KEY = 'shiye.album.v1';
@@ -205,7 +206,7 @@ export function createAlbum(c) {
         date =
           timestamp(source) === null
             ? '日期未记录'
-            : new Date(source.date).toLocaleDateString('zh-CN');
+            : formatZoned(source.date, { year: 'numeric', month: 'numeric', day: 'numeric' });
       const typeNames = { image: '图片', video: '视频', audio: '音频', other: '附件' };
       const preview =
         card.type === 'image'

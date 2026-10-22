@@ -1,60 +1,54 @@
-import { randomUUID } from 'node:crypto';
-import { stickerMedia } from '../domain/stickers.mjs';
+import {
+  collectSticker,
+  updateSticker,
+  stickerCatalog,
+  stickerAsset,
+} from '../domain/sticker-collection.mjs';
+import { resolveStickerMessage } from '../domain/sticker-message-source.mjs';
 
 /** Reusable image references; deleting a collection item never deletes its media file. */
 export function createRoutes({ getDb, mutate, body, reply, fail }) {
-  const label = (value, fallback, max, what) => {
-    if (value === undefined) return fallback;
-    if (typeof value !== 'string' || !value.trim() || value.trim().length > max)
-      throw fail(400, `${what}须为 1–${max} 个字符`);
-    return value.trim();
-  };
   return async (req, res, p) => {
+    if (p === '/api/stickers/catalog' && req.method === 'GET') {
+      const query = new URL(req.url, 'http://localhost').searchParams;
+      if (
+        [...query.keys()].some((key) => key !== 'includeDeleted') ||
+        query.getAll('includeDeleted').length > 1 ||
+        (query.has('includeDeleted') && !['0', '1'].includes(query.get('includeDeleted')))
+      )
+        throw fail(400, '表情库查询参数不正确');
+      return reply(
+        res,
+        200,
+        stickerCatalog(getDb(), { includeDeleted: query.get('includeDeleted') === '1' }),
+      );
+    }
+    if (p === '/api/stickers/from-message' && req.method === 'POST') {
+      const input = JSON.parse((await body(req, 64 * 1024)).toString('utf8'));
+      const result = await mutate((db) => {
+        const resolved = resolveStickerMessage(db, input, fail);
+        const collected = collectSticker(db, { ...input, mediaId: resolved.media.id }, { fail });
+        return {
+          version: 1,
+          ...collected,
+          source: resolved.source,
+          ...(resolved.occurrenceId ? { occurrenceId: resolved.occurrenceId } : {}),
+          media: stickerAsset(resolved.media),
+        };
+      });
+      return reply(res, result.status === 'created' ? 201 : 200, result);
+    }
     if (p === '/api/stickers' && req.method === 'GET')
       return reply(res, 200, getDb().stickers || []);
     const match = p.match(/^\/api\/stickers\/([a-f0-9-]+)$/);
     if (!(p === '/api/stickers' && req.method === 'POST') && !(match && req.method === 'PUT'))
       return false;
     const input = JSON.parse((await body(req)).toString('utf8'));
-    const result = await mutate((db) => {
-      db.stickers ||= [];
-      const now = new Date().toISOString();
-      if (match) {
-        const sticker = db.stickers.find((item) => item.id === match[1]);
-        if (!sticker) throw fail(404, '表情包收藏不存在');
-        if (input.name === undefined && input.group === undefined && input.deleted === undefined)
-          throw fail(400, '没有可保存的表情包修改');
-        if (input.deleted !== undefined && typeof input.deleted !== 'boolean')
-          throw fail(400, '移除状态不正确');
-        sticker.name = label(input.name, sticker.name, 250, '表情名称');
-        sticker.group = label(input.group, sticker.group, 80, '分组名称');
-        if (input.deleted !== undefined) sticker.deleted = input.deleted;
-        sticker.updatedAt = now;
-        return sticker;
-      }
-      const media = stickerMedia(db, input.mediaId, fail);
-      const name = label(input.name, media.name || '表情', 250, '表情名称');
-      const group = label(input.group, '默认', 80, '分组名称');
-      const existing = db.stickers.find((item) => item.mediaId === media.id);
-      if (existing) {
-        if (existing.deleted) {
-          existing.deleted = false;
-          existing.updatedAt = now;
-        }
-        return existing;
-      }
-      const sticker = {
-        id: randomUUID(),
-        name,
-        group,
-        mediaId: media.id,
-        createdAt: now,
-        updatedAt: now,
-        deleted: false,
-      };
-      db.stickers.push(sticker);
-      return sticker;
-    });
+    const result = await mutate((db) =>
+      match
+        ? updateSticker(db, match[1], input, { fail })
+        : collectSticker(db, input, { fail }).sticker,
+    );
     return reply(res, match ? 200 : 201, result);
   };
 }

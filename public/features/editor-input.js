@@ -1,3 +1,6 @@
+import { richDateTimeInsertion } from '../editor/rich-date-time.js';
+import { dateParts } from '../shared/time-zone.js';
+
 export const PARAGRAPH_INDENT = '　　';
 const SEMANTIC_CONTEXT =
   'li,ul,ol,pre,code,blockquote,table,td,th,h1,h2,h3,h4,h5,h6,[contenteditable="false"]';
@@ -7,22 +10,8 @@ export function initialEditorContent(template = '', preferences = {}) {
   return template || (paragraphIndentEnabled(preferences) ? PARAGRAPH_INDENT : '');
 }
 export function formatLocalDateTime(date = new Date()) {
-  const pad = (value) => String(value).padStart(2, '0');
-  return (
-    '[' +
-    date.getFullYear() +
-    '/' +
-    pad(date.getMonth() + 1) +
-    '/' +
-    pad(date.getDate()) +
-    '  ' +
-    pad(date.getHours()) +
-    ':' +
-    pad(date.getMinutes()) +
-    ':' +
-    pad(date.getSeconds()) +
-    ']'
-  );
+  const p = dateParts(date);
+  return `[${p.year}/${p.month}/${p.day}  ${p.hour}:${p.minute}:${p.second}]`;
 }
 export function paragraphIndentIntent(
   event,
@@ -91,7 +80,55 @@ export function createEditorInput(c) {
     enterIntent = pending = null;
   });
   listen(editor, 'keydown', (event) => {
-    if (c.editor?.isMarkdown) return;
+    if (c.editor?.isStructured || c.editor?.isMarkdown) return;
+    if (
+      event.key === 'Tab' &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      !event.metaKey &&
+      !event.isComposing &&
+      event.keyCode !== 229 &&
+      !composing &&
+      !justComposed &&
+      !event.defaultPrevented &&
+      c.current() &&
+      !c.current().deleted
+    ) {
+      const range = selectionRange();
+      if (range?.collapsed && !semantic(range)) {
+        event.preventDefault();
+        if (event.shiftKey) {
+          const block = elementOf(range.startContainer)?.closest('p,div') || editor;
+          const before = doc.createRange();
+          before.selectNodeContents(block);
+          before.setEnd(range.startContainer, range.startOffset);
+          const prefix = before.toString();
+          const remove = /(?:\u3000{1,2}| {1,4}|\t)$/.exec(prefix)?.[0];
+          if (!remove || prefix.trim()) return;
+          const walker = doc.createTreeWalker(block, win.NodeFilter.SHOW_TEXT);
+          let node,
+            remaining = prefix.length - remove.length;
+          while ((node = walker.nextNode())) {
+            if (remaining <= node.length) {
+              range.setStart(node, remaining);
+              break;
+            }
+            remaining -= node.length;
+          }
+          if (!node) return;
+          const selection = doc.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        if (
+          doc.execCommand('insertText', false, event.shiftKey ? '' : PARAGRAPH_INDENT) !== false
+        ) {
+          c.current().content = editor.innerHTML;
+          c.markDirty();
+        }
+        return;
+      }
+    }
     if (event.key === 'Enter' || event.code === 'Enter' || event.code === 'NumpadEnter') {
       enterIntent =
         !event.isComposing &&
@@ -122,7 +159,7 @@ export function createEditorInput(c) {
     });
   });
   listen(editor, 'beforeinput', (event) => {
-    if (c.editor?.isMarkdown) return;
+    if (c.editor?.isStructured || c.editor?.isMarkdown) return;
     if (inserting) return;
     pending = null;
     const entry = c.current(),
@@ -146,7 +183,7 @@ export function createEditorInput(c) {
     editor,
     'input',
     (event) => {
-      if (c.editor?.isMarkdown) return;
+      if (c.editor?.isStructured || c.editor?.isMarkdown) return;
       if (inserting) return;
       const intent = pending;
       pending = null;
@@ -194,7 +231,30 @@ export function createEditorInput(c) {
     },
     insertDateTime() {
       const time = formatLocalDateTime();
-      c.command('insertText', c.editor?.isMarkdown ? time.replace(/[\[\]]/g, '\\$&') : time);
+      if (c.editor?.insertDateTime?.(time)) return;
+      if (!c.current() || c.current().deleted || composing || justComposed) return;
+      const range = selectionRange();
+      if (!range) {
+        c.command('insertText', time);
+        return;
+      }
+      const block = elementOf(range.startContainer)?.closest('p,div') || editor;
+      const indent = paragraphIndentEnabled(preferences()) ? PARAGRAPH_INDENT : '';
+      const edit = richDateTimeInsertion(range, block, time, {
+        indent,
+        inline: semantic(range),
+        includePreviousBlock: block !== editor,
+      });
+      // Prefer the live selection, including sentence-middle and selected-text paths.
+      // The generic toolbar command restores a cached range and can move the insertion.
+      editor.focus();
+      const selection = doc.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(edit.range);
+      if (doc.execCommand('insertText', false, edit.insert) !== false) {
+        c.current().content = editor.innerHTML;
+        c.markDirty();
+      }
     },
     dispose() {
       reset();

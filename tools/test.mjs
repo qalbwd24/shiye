@@ -15,8 +15,15 @@ function collect(dir) {
 }
 const files = collect(path.join(APP_ROOT, 'tests')).sort();
 if (!files.length) throw Error('No automated tests found');
-const result = spawnSync(process.execPath, ['--test', ...files], {
-  cwd: APP_ROOT,
-  stdio: 'inherit',
-});
+const concurrency = process.env.SHIYE_TEST_CONCURRENCY;
+if (concurrency && !/^(?:[1-9]|[12]\d|3[0-2])$/.test(concurrency))
+  throw Error('SHIYE_TEST_CONCURRENCY must be an integer from 1 to 32');
+const result = spawnSync(
+  process.execPath,
+  ['--test', ...(concurrency ? [`--test-concurrency=${concurrency}`] : []), ...files],
+  {
+    cwd: APP_ROOT,
+    stdio: 'inherit',
+  },
+);
 process.exitCode = result.status ?? 1;

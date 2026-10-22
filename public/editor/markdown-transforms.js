@@ -117,7 +117,9 @@ export function transformMarkdown(source, from, to, command, value) {
     case 'insertText':
       return edit(from, to, String(value ?? ''));
     case 'insertHorizontalRule':
-      return blockMarkdownEdit(source, from, to, '---');
+      // A divider separates existing prose. A stale or multi-line selection
+      // must never replace entire paragraphs with a single rule.
+      return blockMarkdownEdit(source, to, to, '---');
     case 'insertHTML': {
       const html = String(value ?? '');
       const insert = htmlToMarkdown(html);
@@ -242,9 +244,12 @@ export function markdownStructureEnter(source, from, to, enabled = true) {
         .slice(0, Math.max(0, start - 1))
         .split('\n')
         .at(-1) || '';
-    // An existing unindented dash underline after prose is valid Setext syntax.
-    if (!prefixed && /^ {0,3}-+[ \t]*$/.test(line) && start && previous.trim()) return null;
-    const leading = start && previous.trim() ? '\n' : '';
+    // In diary input, completing a thematic marker means a divider even when
+    // auto-indent is off. Otherwise --- turns the preceding paragraph into a
+    // Setext heading. This only handles the active Enter, never stored sources.
+    // The automatic ideographic indent is not a Markdown blank line. Keep a
+    // real empty line before a new rule, or it becomes an empty Setext heading.
+    const leading = start && previous.length ? '\n' : '';
     return edit(start, end, `${leading}${line}\n\n${paragraph}`);
   }
   if (!prefixed) return null;

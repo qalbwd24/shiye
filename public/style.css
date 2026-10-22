@@ -23,3 +23,8 @@
 @import url('./styles/entry-cards.css');
 @import url('./styles/return-navigation.css');
 @import url('./styles/markdown-editor.css');
+@import url('./styles/category-picker.css');
+@import url('./styles/quick-capture.css');
+@import url('./styles/quick-appearance.css');
+@import url('./styles/quick-input.css');
+@import url('./styles/rich-quick-editor.css');

@@ -1,3 +1,4 @@
+import { sortedTaxonomy } from '../shared/taxonomy.js';
 /** Feature-local state; c.library is a live getter, never a cached snapshot. */
 export function createTemplates(c) {
   const { $, $$, api, escape: esc, modal, closeModal, toast, sanitize, command } = c;
@@ -42,7 +43,14 @@ export function createTemplates(c) {
   function editTemplate(t, content = '') {
     modal(
       t ? '编辑模板' : '新模板',
-      `<label>名称<input class="field" id="templateName" value="${esc(t?.name || '')}"></label><label>绑定分类<select class="field" id="templateCategory"><option value="">不自动套用</option>${c.library.categories.map((c) => `<option>${esc(c)}</option>`).join('')}</select></label><label>正文（HTML 或普通文本）<textarea class="field" id="templateContent" rows="8">${esc(t?.content || content)}</textarea></label><button class="primary" id="saveTemplate">保存</button>${t ? '<button class="secondary" id="deleteTemplate">移到模板回收站</button>' : ''}`,
+      `<label>名称<input class="field" id="templateName" value="${esc(t?.name || '')}"></label><label>绑定分类<select class="field" id="templateCategory"><option value="">不自动套用</option>${sortedTaxonomy(
+        c.library,
+        'category',
+      )
+        .map((item) => `<option>${esc(item.name)}</option>`)
+        .join(
+          '',
+        )}</select></label><label>正文（HTML 或普通文本）<textarea class="field" id="templateContent" rows="8">${esc(t?.content || content)}</textarea></label><button class="primary" id="saveTemplate">保存</button>${t ? '<button class="secondary" id="deleteTemplate">移到模板回收站</button>' : ''}`,
     );
     $('#templateCategory').value = t?.category || '';
     $('#saveTemplate').onclick = async () => {

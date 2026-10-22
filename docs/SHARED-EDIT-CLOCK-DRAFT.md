@@ -1,0 +1,95 @@
+# 本地编辑时钟与合流草案（待独立审核）
+
+2026-10-19 纯数据候选。源码 `public/shared/shared-edit-clock.js`，定向测试 `tests/shared-edit-clock.test.mjs`。电脑和 Android 各自完整保留本地正文、原件与离线写入；本机保存 ACK 和远端同步 ACK 分开。同步服务未来可迁到独立服务器，当前 PC 只是暂时的服务主机。本草案没有改现有存储、HTTP、消息身份、UI、设备或正式运行包。
+
+## 编辑元数据和本地提交
+
+每个安装保留稳定 `deviceId` 和 JSON `clock={version,deviceId,lastPhysicalMs,lastLogical}`。新编辑操作有稳定 `operationId`、`entityType`、`entityId`、`fieldPath`、`action`、`baseRevision`、`parentOpId`、可选确认后的 `resultRevision`、`editedAt`、`stamp={physicalMs,logical,deviceId,operationId}`。`editedAt` 是**设备报告的 UTC**，供展示/诊断，不宣称跨设备绝对真实时间；HLC 加父操作链和版本回执判断已知因果先后。无因果证据时消息按可信编辑 stamp 后改生效；同毫秒比较逻辑计数、稳定设备 ID 和操作 ID，与收到 ACK 的顺序无关。系统时间回拨时 HLC 不倒退。原消息 `sentAt`、源作者、引用、原位替代根和本地消息 ID 均不因编辑时钟改变。
+
+本地 owner 须在**同一持久事务**写业务新版本、clock snapshot、op/outbox、可恢复历史及原件引用；收到本地提交回执即可离线继续使用。网络重试直接取已存 op，传入相同 operationId/实体/字段/动作/基础版本/正文；不重新盖编辑时间，也不换身份。模块对不同意图的 retry 拒绝。远端收到操作后先按 operationId 幂等确认；ACK 丢失可查同一回执并重放，不另建后继。收到远端 stamp 只推进本地 HLC，不重写已保存的 editedAt。跨设备恢复若 deviceId 不同须建立该设备的新 clock、先 observe 已收事件；不能把 A 设备的 clock 原样重命名成 B。
+
+## 两种合流规则
+
+消息以稳定消息根身份聚合；同一消息内容的两个可比较编辑操作，显式同 scope 父链或由 owner 验证登记的 resultRevision→baseRevision 边证明的后继优先；否则按可信 stamp 选择后改，另一版留可恢复修订。纯 planner 的 `verifiedRevisionEdges` 仅接受调用者已从可信业务账本核实的操作对，不能把 wire 自报 revision 当证明。撤回墓碑是终态，迟到编辑、乱序 ACK 和旧副本都不得复活正文。撤回规划结果只给无正文墓碑/身份，`variants` 与 `recoverableRevisions` 为空；两分钟内本机撤回恢复另由端侧私有存储管理，绝不进入服务端 tombstone。旧消息缺可靠编辑 stamp 时，结果 `unresolved` 且两版保留，**不得用 sentAt、到达顺序或 Entry 聚合 revision 猜胜者**。同 operationId 内容不一致是身份碰撞，拒绝。
+
+思绪长篇按字段/规范单元粒度比较。标题、分类、标签与正文各自独立；不同 unitId 的 body/unit 编辑独立合并，不能误作整篇冲突。相同长篇正文 scope 的两个操作只有在相同可信 baseRevision、互非父子时判真并发，保存两版；明确后继正常应用。缺因果/基础版本的旧正文操作先 `unresolved` 保全，不假设真并发。整篇 `body` 与某一 `body/unit:<id>` 同时变更不能安全自动合并，需转换/映射后再判。历史操作必须与比较双方同 entityType/entityId/fieldPath，重复 operationId 的内容必须完全一致，循环父链或跨日记/跨字段桥接直接拒绝。此防守来自独审真实反例：另一日记的桥接记录曾把同 base 的两版正文伪判成后继。本模块只规划一对操作，完整多头合流、保留式原件和事务由各 owner 接线。
+
+## 现有业务身份接线最小约束
+
+端侧需要稳定的源消息 ID↔规范 MessageUnit ID↔replacementRootId 映射及各根当前版本。操作 `entityId` 指同一业务根，不以标题、显示排序、TL 临时号或发送时间代替；sourceId/roomId/entryId 等 scope 由持久映射确认后附在正式 wire，不由纯数据模块新造 owner。旧 `replacementOf/replacementRootId` 是已撤前驱与原位根，编辑时钟是后续编辑版本的元数据；未来接线应在原 replacement 规则下把操作重基到当前 head，保留原 sentAt/原位置/空正文墓碑，遇 active 分叉或未知 owner 仍 409 保留本地待同步版本。operationId 贯穿本地 outbox、原 owner 回执、拉取增量及丢 ACK 重试；服务端同一业务事务提交新版本、op 去重回执和同步日志。不得把本机 `replacementMediaIntent`、草稿/待发材料当已发业务。
+
+上述字段是**待接线提案**，不是现有 `/api/chat-journal/messages`、shared wire 或 Android Repository 已接受的新字段。适配必须分别经 PC/Android 数据 owner 确认，并将直接编辑/撤回恢复/源归篇与 canonical 投影的实际 ID 回读独立验收。当前两个真实冲突缺 editedAt，继续保留两版；本候选不会改它们的既有裁决或数据。
+
+## 现有保存路径只读核查与接线顺序
+
+`public/shared/shared-business-client.js` 的 `enqueue` 已可在一个本地事务放 pending、optimistic、localPayload 和 draftClear；`rebuild` 用 pending optimistic 重建本地可读实体，`sync` 是另一步。`public/shared/shared-chat-source.js` 的 legacy 文本发送/撤回已在 enqueue 后返回 `localAck:true,serverConfirmed:false`，并后台 kick sync。它是本地确认与服务端确认分离的可复用样板，但尚未把新 edit clock/因果记录落进该事务。
+
+`public/shared/shared-diary-client.js` 的 `save` 有 optimistic Entry、create 没有；两者 `commit` 当前都默认 `await client.sync()`，所以离线 enqueue 已成功后 UI 仍可能收到同步失败并误报保存失败。`public/shared/shared-directory-client.js` 的 update/setState/setOrder 有 optimistic，create/saveSettings/register 没有，commit 同样默认等待 sync。应先在 shared runtime 上逐项定义本地 ACK：创建分配稳定 ID 与完整本地 optimistic 实体；设置参数的本地可读投影和 CAS 基准明确后再给本地 ACK；远端失败另显 pending/blocked，不抹掉本机改动。保存操作的 HLC snapshot、业务内容、op/outbox、媒体句柄必须在同一事务；仅改 `sync:false` 默认值不能修复缺 optimistic 的创建/设置。
+
+现有 PC 思绪产品入口仍不同：`public/features/entry-save.js`、`public/editor/persistence.js` 等直接调用 `/api/entries`，shared runtime `rendererAttached:false`。电脑断外网但本机 18765 后台仍运行，只证明本机服务可达，**不证明 PC 客户端独立离线**。最终验收必须在本机 backend 停止后，PC 冷启动仍能从本地库读完整正文/原件、写改且收到本地持久 ACK，随后后台恢复才同步。此产品入口由 PC owner 管理，不能把纯模块测试算成已接入。Android Repository/原件层也须独立做断服务冷开验收，保留现有手机测试资料。
+
+服务端 `src/server/domain/chat-journal.mjs` 已对 `replacementOf/replacementRootId` 验同房、原 sentAt、作者、已撤前驱与分叉，`shiye-journal.js` 则从现存 TL/worker 内容组出 journal wire；这些现有身份/原位规则须保留。下一阶段先让 PC/Android owner确认 `editClock`/operationId 的固定 wire 与来源↔canonical 根映射，再由原 owner 在受控写口按已登记根/head 验真因果并重基到当前后继，ACK 丢失复用同 operationId；不得把客户端自报父链/版本直接当可信登记。legacy 消息 revision 是该消息自己的版本，不能借归篇 Entry revision 决定另一条消息的编辑先后。此处是接线建议，尚未改上述 owned 文件或正式服务。
+
+## 2026-10-19 本地 ACK 与离线新建候选（源码已接、未发布）
+
+本节记录后续实际接线候选，前面只读核查是其动工前状态。`shared-diary-client`、`shared-directory-client` 的写操作现在默认在本机事务写入不可变 outbox 与可读 optimistic 后返回 `{operationId,localAck:true,serverConfirmed,status,committedLocalRevision,localRevision,serverRevision}`；`committedLocalRevision` 直接来自本次 enqueue 事务，`localRevision` 是返回时当前可见代际，可能已被后续本地改动推进，`serverRevision` 未远端确认时为 null。确认/退出 fence 应比较本次 op 的 `committedLocalRevision`，不得把当前代际或晚 ACK 误作本次正文，更不得把任一本地 revision 塞进旧服务端 Entry revision。显式 `sync:true` 才等远端，网络失败的异常带 `localCommitted:true`、同一 `operationId`、实体 ID 和已提交本地 revision。后台同步失败不能解释成本机保存失败。旧在线消费者须显式传 `sync:true`；定向在线测试已按此使用。现有 PC 思绪产品页面和 Android 原生 Repository 尚未接入此默认，不能据 shared runtime 测试称产品已离线可用。
+
+`entry-create-local` 固定 wire 为 `{entryId,entry:{id:<同一客户端 UUID>,...完整 Entry}}`，本地同事务创建可读 Entry 与 pending；服务端在原 owner 事务复用 `validateEntry`、`commitDiaryUnits`，同 ID 异操作拒绝碰撞。创建未 ACK 后的每次编辑用独立不可变 `entry-save-local`，输入 `{entryId,entry,baseOperationId}`；`baseOperationId` 指前一条同 Entry 的本地创建或保存操作。服务端只从自身同业务库 `_sharedCommands` 可信回执取基础 revision，验证该回执 action/Entry ID 后按当前头 CAS 走原 `validateEntry`/`replaceEntry`；不信客户端自报 revision，不在 ACK 后改写旧 wire。多次离线保存形成固定父操作链，远端并发变化则 409 且本机内容与 outbox 保留。老服务端不认识新 action，客户端先从同 identity 的 `info.capabilities.localFirstCreate` 核对；无能力则明确 `SHARED_LOCAL_CREATE_UNSUPPORTED` blocked，仍保本地实体与同一操作，不回落旧会重分 ID 的 `entry-create`。
+
+`conversation-create-local` 固定 wire 带客户端持久 `desktop:<sourceUUID>:<decimal roomID>`；`reserveLocalConversationId` 在本地 meta 事务持久化 sourceUUID 与下一负数房号，20 位十进制 ID 全程字符串。服务端在既有目录 owner 事务复用 `createDirectoryConversation`/`saveConversation`，显式 ID 碰撞拒绝，同 operationId 相同 wire 重放回原 ACK。新建在本地 `list/row` 立即可见。新房编辑由 `conversation-save-local` 指向同房前一新建/编辑回执，目录排序由 `conversation-order-local` 指向前一个目录变更回执；服务端仅信自身已登记的 revision，按原 CAS 和完整 order 验证。pin/archive 的原目录动作按 outbox 排队，optimistic 同步增加本地状态 revision。隔离 HTTP 已验新建→编辑→置顶→排序排空，尚未做 PC/Android 产品页面及真实发送联验。服务端 `info.capabilities.localFirstCreate={version:1,entry:true,conversation:true}` 是此候选能力，不代表旧正式服务支持。
+
+偏好写入增加本地可读 optimistic 投影与本地 revision guard；同一偏好前序尚 pending 时明确阻止新写，避免旧 CAS 造成假成功。程序设置 `saveSettings` 与本地缓存同事务提交 pending；`settings` 在 pending 时返回带 `localAck/serverConfirmed:false` 的本机投影，连续 pending 设置明确 `SHARED_SETTINGS_PENDING`。缺本地投影的其他写动作默认仍等待远端确认，避免把不可见的 pending 冒称已可离线读写。这仍是候选边界：尚需服务端规范化结果回拉、全部设置形态/大于 4MiB 的本地新建 Entry、页面级冷启动及真实发送验证；未把本地投影宣称远端确认。编辑时钟本身尚未与这些业务事务合并，不能把这批新建/保存当完整消息或长篇冲突合流上线。
+
+独审用隔离包已从既审来源冻结：backend144 base `20261019-shared-business-1792443736495` 仅覆盖 `shared-sync/service.mjs`、`conversation-services/directory.mjs`、`routes/entries.mjs`，新包 `outputs/backend-runtimes/20261019-shared-local-first-1792445098721` manifest SHA `4275b15e8d41fdedddbe87cd93fba2f43ca7ec77617548ecb3102c6da40a5e57`；client61 base `data-candidate-1792443858794` 仅覆盖三 shared client，新包 `outputs/2026-10-19-shared-business-integration/local-first-client-1792445098721` manifest SHA `2d8af5d6f0fed0b94baa4fcec41df375e49efac523a35d8abde33ffc23ef2909`。`tmp/shared-local-first-freeze/verify.mjs` 对两 base 与新包逐源 SHA、精确覆盖、相对依赖、双 bundle 重建和 backend 可导入核验通过。44 项相关 Node/HTTP/IndexedDB 与定向 lint 通过，日志在 client 包根。此冻结仅供独立审，未改正式运行指针、安装包或设备。
+
+独审在上述首冻发现两处真实断点，保留首冻及失败回执：已有权威 Entry 首次离线保存使用旧 `entry-save`，第二次保存原先拒绝该 pending 父操作；部分字段合法的新房缺 `selfName/description`，后续编辑会生成含 `undefined` 的 wire。修复后，`entry-save-local` 只承认同 Entry 已登记的创建、保存或删除/恢复回执作为可信基础，仍从服务端回执取 revision 并执行原 CAS；本地与服务端的新房固定动作均规范默认 `selfName:'我'`、空说明、空 `clientMetadata`、默认分类/空闲时数/模式，并保留传入的可移植未知字段。第二份独立六源 overlay 冻结为 backend `outputs/backend-runtimes/20261019-shared-local-first-1792445580309`，manifest SHA `34c22185093319c8fd283ca24e4bb0cf3005d39d7ae520b1408740a51927781b`；client `outputs/2026-10-19-shared-business-integration/local-first-client-1792445580309`，manifest SHA `cd8ef5c248e5e5104e4b58b5409137130f4933e40cd4df4755bf7887661e2048`。逐源 SHA/精确覆盖/双 bundle 验证通过，45 项定向与从首冻 QA 复制后只替换六源的原独审反例 6/6 通过；后者仅是施工方复跑，仍等独立 Sol 高复审。新冻未部署，完整离线产品入口、时钟同事务与大正文限制不变。
+
+第二冻独审原 6 例通过后又以已有权威房连续离线 `update` 发现第三处 P1：旧 `conversation-save` 首条 pending 未被同房后继识别，两条旧 wire 的 `expectedRevision` 相同而自冲突。第三冻在同六源内按版本域修复：Entry create/save/delete/restore 只连同一 Entry 的 `revision`；房间内容编辑只连同房 create/save（含旧 `conversation-save`）的 `revision`；pin/archive 只连同房 create/list-state/state-local 的 `listStateRevision`，连续离线状态编辑用新的不可变 `conversation-state-local`；手工 order 只连目录 create/list-state/state-local/order 的 `directoryRevision`。服务端从自身真实登记回执取基础版本，逐域核 action、房间 ID 和安全整数，随后交原 owner CAS；外房/错域父操作拒绝，另一端真实并发仍 409 保留本机操作。旧首条 wire 不改，新的后继 action 无 ACK 后重写。第三份 backend `outputs/backend-runtimes/20261019-shared-local-first-1792445944342` manifest SHA `c25201b8a96625e54632e630250757f87fec298eafb43b7de1240689b07a46b6`；client `outputs/2026-10-19-shared-business-integration/local-first-client-1792445944342` manifest SHA `04ab9c02280e688ae345106b64727e562c4d6a886b6aa34f12926f005712f71d`。逐源 SHA/精确六 overlay/双 bundle/导入通过，同范围 HTTP 矩阵 5/5、原独审 7 例施工方隔离复跑 7/7；待独立 Sol 高最终核验，未部署。
+
+## 2026-10-19 原owner消息编辑域切片（Sol执行候选，未接service）
+
+新增独立domain/local-message-edits.mjs候选，原store.mutate唯一持久owner；不改正在被其他Sol持有的service/business-client/diary/directory/Entry routes，也不改UI/worker/正式。拟message-edit-local wire为{sourceId,roomId,rootMessageId,operationId,base:{headMessageId,headRevision:null|int,headSha256,editOperationId:null|uuid},editedAt,stamp:{physicalMs,logical,deviceId,operationId},message:{text,attachments,replyTo?}}。不收自报parent/resultRevision/sentAt/newID；可信context.operationId须等外层command同ID且匹配inner，deviceId来自已授权传输context而非自报别名。describe helper给当前root/head真实body-free base，不用Entry聚合revision或sentAt猜。
+
+db._messageEdits仅root身份、initial/applied head版本/指纹/stamp及最小幂等receipt，无正文/附件副本。无clock旧链仅exact当前base初始化；之后base须匹配本root实际已登记initial/applied，未知409保本地版本。同known base并发用已审HLC比较；base是当前head时stamp回退明确冲突，不自动改时间。新胜者复用原withdraw+append，在同COW事务生成op派生replacement ID并保root原sentAt/位置，旧head空正文墓碑。旧败版server仅hash/superseded，恢复正文留客户端私有history。
+
+新增message-withdraw-local由明确root意图提供终态，也核同root/self/实际base，不改旧journal-withdraw别名语义。旧UI单message撤回/显式replacement照原路；外部链漂移新域仅unknown-stale/conflict，不能推root终态或自动resetstamp。显式旧重新编辑的受控ledger reset/head识别尚未接，普通edit不得绕过。服务head投影/固定动作/客户端同IDB clock提交仍由root后续接；纯域候选不代表用户已可合流。
+
+### 独立域候选已冻结（待Sol高审核，未接固定HTTP动作）
+
+源码新增 `src/server/domain/local-message-edits.mjs`，不改旧chat-journal/message-store/service。导出 `describeLocalMessageEdit(db,scope,context)` 只读真base；`applyLocalMessageEdit(db,input,context)`、`applyLocalMessageWithdrawal(db,input,context)` 同步函数必须运行在原 `store.mutate` 的COW对象内；`commitLocalMessageEdit(store,input,context)` / `commitLocalMessageWithdrawal` 仅是该事务的包装。可信context固定 `{sourceId,roomId,actor:{kind:'self',id:'self'},operationId,deviceId,conversationWriter?,now?}`，source/room/self必须来自上层原鉴权，operationId严格等外层command，deviceId不提升权限。`now`只供可信owner测试注入，不是wire字段。room为统一owner时仍须原有conversationWriter授权。
+
+edit wire沿上段提案；withdraw wire仅 `{sourceId,roomId,rootMessageId,operationId,base}`。未知字段/自报parent/resultRevision/sentAt/newID拒绝；text沿原500000字符、附件100和真实media存在门禁，editedAt和HLC physical不能超可信now五分钟，回拨时editedAt可小于HLC physical，不擅自改时钟。headSha256为递归key排序规范JSON `{message:<实际journal message>,unit:<实际MessageUnit或null>}` 的SHA256；headRevision取该unit revision或null，绝不取Entry revision。实际head只能由describe或已登记applied回执提供，初次无stamp的legacy后继链也须exact当前head/base。无需把旧引用/CommentTarget重指到新head；新后继保原replyTo/sentAt/根及位置。
+
+ledger `_messageEdits={version:1,roots,operations}` 只存root身份、initial/applied head四字段、版本/editedAt/stamp、operationId/intentSha256/outcome/最小head回执，无正文/附件副本。已知ancestor并发按HLC比较；superseded仅登记hash回执、不登记可冒充父链的head。当前base时stamp不严格增加报 `LOCAL_MESSAGE_EDIT_CLOCK_REGRESSION`。原withdraw+append与ledger、原件引用、shared log及sourceMessageConflicts/history purge在同一原owner事务。显式root终态之后旧/新edit均返回无正文withdrawn，不能回生；不同意图同op仍冲突。legacy单消息撤回/显式reedit仍走原domain，不被新ledger拦截。
+
+正常结果 `{sourceId,roomId,rootMessageId,operationId,accepted:true,outcome:'applied'|'superseded'|'withdrawn',state:'active'|'withdrawn',version,headMessageId,base:<四字段或null>,replayed}`，始终无正文。外部链/可见源发生未知变化时结果 `{...,accepted:false,outcome:'conflict',state:'unknown-stale',code:'LOCAL_MESSAGE_EDIT_UNKNOWN_STALE'}`，同时持久root诊断状态。**未来service必须先提交该结果，再映射409；不要在mutate内部throw使诊断回滚。** 其他校验错误抛400/403/409并回滚。旧流程引起的未知后继/单message撤回不能据旧stamp猜新head，也不能推成新root终态。受控显式reset/head识别仍待单独协议，本批不接。
+
+冻结 `outputs/2026-10-19-local-message-edits/candidate-1792445465815`，70个源码/测试依赖SHA，manifest `401a95ed36011bdfb7ec36b4658a2be0c7247a2ab07b4912e70c6014a399f4fd`；新domain SHA `623a75b0653e03199c65936b3c3cd52715e9657ed1ddf9e515e0d83fd892ce0d`。16新域测试＋12原replacement＋10原HLC共38，在冻结树重跑全过；新HTTP为实际store+domain的独立localhost fixture，不是产品service动作。尚未接服务head投影/正式fixed action/客户端同IDB时钟/真实离线页面与设备；未动正式库、运行包或设备。见 [验证记录](validation/2026-10-19-local-message-edits.md)。
+
+### 历史回执P1窄修与下一批actualservice候选（进行中，未发布）
+
+独审在旧401a冻结发现A applied后B applied再重放A，旧域却返回A operationId+B head/version/base，晚ACK可误授权。本P1不能因原16过而放行。窄修现持久各op的state/version/head/base；非terminal重放顶层这些字段固定原提交，当前权威独立 `currentHead={state,version,headMessageId,base}`。root终态 `terminal:true` 优先，所有旧ACK顶层与currentHead均withdrawn/base:null，绝不给可复活旧base。新原例含superseded/reopen/terminal邻近已通过。第一次f3冻结误带live localfirst directory依赖，撤回其窄审资格；正确窄冻为 `receipt-fix-1792446892416`，manifest `0230e7a05a10e738a484ea39ada98323850889fe91c4fe107ea1318639b3fd5d`，只从旧70冻结覆domain/test两源，其余68同SHA，不读live，39/39日志在冻内。仍待独审；后续actualservice候选不套此批结论。
+
+下一批真实shared service固定action为 `message-edit-local`、`message-withdraw-local`、`message-describe-local`，均经原 `/api/shared/v1/command`，不增加任意URL/path口。describe inner只收 `{sourceId,roomId,rootMessageId}`，返回 `result={sourceId,roomId,rootMessageId,state,version,base,editedAt,stamp}`（终态base:null）及readOnly:true，不落command回执。edit/withdraw inner沿上文，inner.operationId必须与outer严格同；edit stamp.deviceId必须是客户端**本地安装持久writerUUID**，只排序不授权。服务从原cookie/paired鉴权取得self全库权限，另把 `authenticatedDeviceId` 写无正文审计，绝不把配对凭据/当前URL当clock身份；换地址/重新配对同writer、同wire可重试。service新动作绕过generic prior成功快返回，按domain历史committed/currentHead/terminal重算body-free回执；unknown-stale先原tx提交诊断再映射409，不添成功globalreceipt。
+
+首导离线base公共协议模块为 `public/shared/shared-message-edit-protocol.js`。`sharedMessageEditHeadSha256(message,headRevision)` 对递归key排序UTF8 JSON `{protocol:'shiye-message-edit-base-v1',message:<实际原journal message仅剔editBase>,headRevision:<实际chat unit revision或legacy null>}` 做SHA256。**这替代本节早期包含完整unit的草案hash，仅此新service批次使用。** canonical作者/原件/兼容hash/链/原entry投影仍由server单独核验，不因hash不带unit而放宽。shared投影clone给active self message附只读 `editBase={headMessageId,headRevision,headSha256,editOperationId}`；不改原message/compatibilityHash，旧journal保存白名单也不接受editBase。`buildLocalMessageEditBase(message,annotation=message.editBase)` 本机核SHA后返回四字段，完整签名seed含annotation，首导无需在线describe。未知外部链只附 `editBase:{state:'unknown-stale'}`，builder明确拒绝，不能把旧creator冒成新head。
+
+新增readonly entityType `message-edit-head`，entityId为root身份规范SHA，只有已登记roots发布。active data固定 `{version:1,readOnlyProjection:true,sourceId,roomId,rootMessageId,state:'active'|'unknown-stale',headVersion,base:<四字段或null>,editedAt:<ISO|null>,stamp:<HLC|null>}`，不含正文或operations全表。parent hidden/deleted/draft时空data deleted墓碑；root明确终态空data withdrawn墓碑，终态优先保持不可复活。flatten一次建立entry/message/unit/root索引并缓存链，投影O(entries+messages+units+roots)，不按每root重复扫整库；旧客户端可接unknown entity但无新写口。新info能力 `messageEdits={version:1,baseProtocol:'shiye-message-edit-base-v1',writerIdentity:'local-installation-uuid',readOnlyHeadEntity:'message-edit-head'}`。
+
+本批尚待精确approved149+localfirst第三冻组合、独审及client HLC/op同IDB事务接线；后者由当前query/client owner顺序实施，不能据server HTTP通过声称页面/手机已普通消息离线合流。
+
+actualservice最终候选已按上述组合冻为 `20261019-message-edits-1792447465520`，153源/424边，manifest `786abbd316a79058b1c4334da7bde60c772579cf197ab72c8c7c4b6eeed5c84d`，58定向冻结树通过，仍待独审。首次6d29候选因旧index升级缺口明确弃。兼容marker `_messageEditProjectionVersion` undefined/0保持旧flatten、1才附新投影；所有shared请求先await原owner一次COW迁移，保持library/epoch/原body，切1首次重算派生fingerprint，失败全回滚。旧registered signedseed经历史水位delta续接已实际验。marker1不能退旧149无projection包；同新schema source以可信启动 `SHIYE_MESSAGE_EDIT_WRITES=0` 保读并禁新edit/withdraw，能力字段增加 `writeEnabled`，503 `SHARED_MESSAGE_EDITS_READ_ONLY` 必须保客户端本机版本/原op。新client还须独立接HLC同IDB事务，未混本批。
+
+### 客户端原子编辑接线候选（2026-10-19，独立 overlay，未装机/发布）
+
+上述服务786a已获独立分项通过。客户端新增 `shared-message-edit-client.js`，仅扩同一 shared storage owner 的 transaction，不改服务源/数据库版本。`client.editMessage({conversationId,messageId,operationId,text,attachments?,expectedLocalRevision?})`、`client.withdrawMessage({conversationId,messageId,operationId})` 本机提交即返回 `{localAck:true,serverConfirmed:false,operationId,messageId,rootMessageId,sentAt,editedAt,stamp,parentLocalOperationId,committedLocalRevision}`；`source.edit(id,text,options)` 和 `source.withdrawRoot(id,options)` 是双端同源入口，旧 `source.withdraw` 单消息别名保持。首次完整签名seed的只读editBase足以构造真实base，不要求在线describe。
+
+一次IDB事务内持久 `meta.messageEditWriter={version:1,deviceId:<本机安装UUID>,lastPhysicalMs,lastLogical}`、同op不可变wire、outbox、原sentAt/root/actor/reply与原附件引用的乐观后继及私有 `local-message-edit-history`。writer与URL/配对凭据无关；两窗口按同IDB写事务串行发钟；事务abort全部撤销。连续离线编辑使用最后已收到的真实base及严格递增HLC，不把未登记乐观head伪造为server父证明；私有parentLocalOperationId只记录本机因果，不进wire。已有附件原样保留，新增/替换未准备媒体报 `SHARED_MESSAGE_EDIT_NEW_MEDIA_UNSUPPORTED`，不清草稿或假ACK。能力缺失/禁写保存本机版本与原op并明确阻塞，不退legacy写法。
+
+远端 `message-edit-head` 只有真正更新的权威projection才在接收事务observe时钟；晚ACK的历史committed映射保持对应原op，currentHead独立。显式root终态在同接收事务清active/base派生正文、匹配私有历史、inbox及旧待发edit；旧不可变wire不会改成另一份后再重试，而是移除并保存body-free `terminalRejected` receipt（原wire SHA/本机commit revision/terminal；本机撤回尚未远端确认时serverConfirmed:false）。本次body-free withdraw wire保留；不清无关联独立草稿。终态fence持久已知root及后继messageIds，因此服务墓碑剔replacement元数据后，旧inbox刷新也不能复活旧正文。history不是第二个业务库，也不进入server seed/ledger。
+
+Android纯data `directoryCommand('create', values)` 现仅在本机create持久完成后回原 `{id,rooms,operationId}` 并附可选localAck/serverConfirmed；无网不await sync。重试/重开从既有pending输入或可信receipt取同canonicalId，不重新生成房间。native command白名单补6个已审local-first动作及message三动作，确切名称为 `conversation-state-local`，不存在 `conversation-list-state-local` 别名。未改MainActivity/页面/C#固定路由/正式服务或设备。
+
+真实Chrome持久IDB随后复现并修复两项：多次服务端后继后，旧墓碑会合法剔replacement元数据，本机必须用唯一active self后继保留的明确replacementRootId认根，不将中间id误当新root；unknown-stale editBase仍明确拒绝，server照原算法独立核base。另已激活signed包的 `local-seed-entity`/`local-seed-feed-row` 原副本也属于终态清理范围；同tx删除匹配旧Entry staging正文/脱敏feed，保body-free identity及包私有 `localBodiesRedacted:true`。后续resolve仍核原manifest/登记/签名身份，但不把已清正文的行冒作attested baseline，强制受限权威snapshot+delta；旧包重导先按已知terminal fence清新stage，所有seed最终inbox apply亦走同tx terminal过滤。manifest/crypto/原件handle/status API均未扩字段。`readOperation` 对此清理回 `{status:'terminal',terminalRejected:true,serverConfirmed,result:{state:'withdrawn',terminal:true,base:null,...identity}}`，不把本机未确认撤回冒成远端ack；历史已提交映射非终态时仍与currentHead分开。
+
+本机乐观Entry清旧content/canonical/preview/search/history派生缓存，按当前未撤回journal text重建searchText与短preview，query索引随同putEntity原事务更新。继承已审query63既有有界投影门槛，超限仍整事务失败保草稿，不新增静默截断全文。最终候选 `client-1792450149596`（manifest `ddc740abf119fcd747c2e7c5e45cb82c1f115c22be87a9efc1d491483a05743e`）明确由已审query63 a360f6…＋knownrefs a2e96f…＋本切片组成，66源/22Java、双bundle闭包可重建。51核心/邻近＋6导入邻近、真实Chrome持久profile六边界、真实Java九fixed动作及三个未知拒绝通过；这是施工方候选，待独立审，不是页面/设备/真实整库/正式部署。完整命令、原失败和未验边界见 [验证](validation/2026-10-19-local-message-edits.md)。源码锁已释放，后续改动须另冻。

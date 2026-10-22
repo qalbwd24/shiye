@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>拾页 · 旧日记转换对照</title>
+    <link rel="stylesheet" href="/styles/legacy-conversion-lab.css" />
+  </head>
+  <body>
+    <header>
+      <strong>旧日记转换对照</strong><span id="status">读取独立试验库…</span
+      ><span>只读 · 原库不回写</span>
+    </header>
+    <main>
+      <aside>
+        <input id="search" type="search" placeholder="搜索样本标题" /><select id="cohort">
+          <option value="all">全部样本</option>
+          <option value="development">开发样本</option>
+          <option value="holdout">盲测样本</option></select
+        ><select id="result">
+          <option value="all">全部检查结果</option>
+          <option value="review">需要核对</option>
+          <option value="pass">未发现保真差异</option>
+        </select>
+        <div id="samples"></div>
+      </aside>
+      <section id="detail">
+        <h1 id="title">选择一篇样本</h1>
+        <p id="metadata"></p>
+        <details id="checks">
+          <summary>检查与时间识别结果</summary>
+          <pre id="diagnostics"></pre>
+        </details>
+        <div class="columns">
+          <article>
+            <h2>原版</h2>
+            <div id="original-attachments"></div>
+            <div id="original" class="prose"></div>
+          </article>
+          <article>
+            <h2>转换后的新副本</h2>
+            <div id="candidate-attachments"></div>
+            <div id="candidate" class="prose"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/features/legacy-conversion-lab.js"></script>
+  </body>
+</html>

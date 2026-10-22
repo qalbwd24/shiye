@@ -1,0 +1,114 @@
+/* Body-only styles: quick window chrome, zoom and preferences keep their existing owners. */
+.rich-document-editor .tiptap {
+  min-height: 14em;
+  outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  line-height: inherit;
+}
+.rich-document-editor :is(figure[data-rich-image], figure[data-rich-video]) {
+  position: relative;
+  max-width: 100%;
+  margin: 0.8em auto;
+}
+.rich-document-editor .rich-media-edit {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+}
+.rich-document-editor figure:is(:hover, :focus-within, .ProseMirror-selectednode) .rich-media-edit {
+  opacity: 1;
+  pointer-events: auto;
+}
+.rich-document-editor figure[data-align='left'] {
+  margin-left: 0;
+}
+.rich-document-editor figure[data-align='right'] {
+  margin-right: 0;
+}
+.rich-document-editor figure img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  cursor: zoom-in;
+}
+.rich-document-editor figure video {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  background: #111;
+}
+.rich-document-editor figcaption {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.88em;
+}
+.rich-document-editor .ProseMirror-selectednode {
+  outline: 1px solid var(--accent);
+  outline-offset: 3px;
+}
+.rich-document-editor table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.rich-document-editor :is(td, th) {
+  border: 1px solid var(--line);
+  padding: 0.3em 0.5em;
+}
+.rich-document-editor ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 0;
+}
+.rich-document-editor ul[data-type='taskList'] li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+}
+.rich-document-editor ul[data-type='taskList'] li > div {
+  min-width: 0;
+  flex: 1;
+}
+.rich-image-layout {
+  display: grid;
+  gap: 0.75em;
+  margin-bottom: 1em;
+}
+.rich-image-layout label {
+  display: grid;
+  gap: 0.3em;
+}
+.rich-image-layout :is(input, select, textarea) {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.rich-attachment-choices {
+  display: grid;
+  gap: 0.4em;
+}
+
+.entry-reading-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.85em;
+  padding: 0.5rem 0;
+}
+.entry-reading-notice[hidden] {
+  display: none;
+}
+.rich-reading-content {
+  cursor: text;
+}
+.rich-reading-content :is(video, audio) {
+  max-width: 100%;
+}

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>拾页 · 同步联调</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>拾页 · 同步联调</h1>
+        <span id="state" role="status">尚未连接</span>
+      </header>
+      <p class="hint">独立测试库。这里的内容用于验证电脑、手机互通，不会读写日常日记。</p>
+      <details id="connection" open>
+        <summary>连接与设备配对</summary>
+        <p>
+          先在电脑的 127.0.0.1
+          页面生成配对码，再在电脑和手机各配对一次。配对码有效十分钟，可用两次。
+        </p>
+        <label>后台地址<input id="base-url" type="url" /></label>
+        <div class="row">
+          <label
+            >设备名称<input id="device-name" maxlength="80" placeholder="例如：我的手机" /></label
+          ><label
+            >配对码<input id="code" inputmode="numeric" autocomplete="off" maxlength="8"
+          /></label>
+        </div>
+        <div class="row">
+          <button id="generate">在本机生成配对码</button><button id="pair">配对并连接</button
+          ><button id="reconnect">连接已配对设备</button>
+        </div>
+        <output id="pair-code"></output>
+        <p class="hint">
+          设备凭证仅保存在当前浏览器。切换地址仍使用同一份本地数据；若服务器库身份不同，会暂停以防混库。请勿向陌生服务器填写已有设备凭证。
+        </p>
+      </details>
+      <section id="workspace" hidden>
+        <div class="toolbar">
+          <button id="pause">暂停同步，测试离线</button><button id="sync">立即同步</button
+          ><button id="history">查看冲突历史</button><span id="media-state"></span>
+        </div>
+        <div class="columns">
+          <section>
+            <h2>本地内容</h2>
+            <div id="records"></div>
+          </section>
+          <section>
+            <h2 id="editor-heading">新建测试内容</h2>
+            <label
+              >类型<select id="type">
+                <option value="chatMessage">随想消息</option>
+                <option value="journalAggregate">思绪长文</option>
+                <option value="conversation">会话设置</option>
+                <option value="taxonomy">分类</option>
+              </select></label
+            >
+            <label>名称 / 标题<input id="title" /></label>
+            <label>分类标识<input id="category" placeholder="可在两端修改" /></label>
+            <label
+              >正文 / 说明<textarea id="body" rows="8" placeholder="输入一些测试文字"></textarea>
+            </label>
+            <label>图片、视频或附件<input id="files" type="file" multiple /></label>
+            <p class="hint">
+              测试编辑器仅录入纯文本段落，以现有 shiye-richdoc
+              格式保存。附件保存原件；会话的第一张图片同时用作壁纸引用。
+            </p>
+            <div id="attachments"></div>
+            <div class="row">
+              <button id="save" class="primary">保存到本机并同步</button
+              ><button id="new">另建一条</button>
+            </div>
+            <p id="saved" role="status"></p>
+          </section>
+        </div>
+        <details id="conflicts">
+          <summary>冲突历史</summary>
+          <div id="conflict-items"></div>
+        </details>
+      </section>
+      <p id="notice" role="alert"></p>
+    </main>
+  </body>
+</html>

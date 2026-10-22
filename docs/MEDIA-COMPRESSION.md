@@ -22,7 +22,7 @@
 
 使用本机已存在并实际检查过的 Gyan WinGet FFmpeg 9.0 full build（libx264 与 AAC 可用），不是随应用源码提供的二进制：
 
-`C:\Users\微霖\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0-full_build\bin\ffmpeg.exe`
+`C:\Users\<用户名>\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0-full_build\bin\ffmpeg.exe`
 
 FFprobe 位于同目录。可通过绝对路径环境变量 `SHIYE_FFMPEG_PATH`、`SHIYE_FFPROBE_PATH` 覆盖；不依赖 PATH，也不自动下载安装。缺失工具时应选原件。该已安装构建启用了 GPL/version3，源码交付不包含 FFmpeg；重新分发运行时需另行处理其许可证。
 

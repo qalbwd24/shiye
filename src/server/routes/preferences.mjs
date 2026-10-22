@@ -1,5 +1,8 @@
 import { normalizeAppearance, normalizeLayout } from '../../../public/shared/appearance.js';
+import { normalizeQuickAppearance } from '../../../public/shared/quick-appearance.js';
 import { normalizeAvatarCrop } from '../../../public/shared/profile.js';
+import { taxonomyItems } from '../../../public/shared/taxonomy.js';
+import { normalizeTimeZone } from '../../../public/shared/time-zone.js';
 export function createRoutes({ mutate, body, reply, fail }) {
   return async (req, res, p) => {
     if (p === '/api/preferences' && req.method === 'PUT') {
@@ -20,10 +23,21 @@ export function createRoutes({ mutate, body, reply, fail }) {
         nightYesterday: [true, false],
         autoIndent: [true, false],
         autoIndentParagraph: [true, false],
+        extendedShortcuts: [true, false],
+        quickInitialFocus: ['title', 'body'],
       };
       const next = {};
       for (const [key, value] of Object.entries(input)) {
-        if (key === 'memoryCategories') {
+        if (key === 'timeZone') {
+          try {
+            next.timeZone = normalizeTimeZone(value);
+          } catch (error) {
+            throw fail(400, error.message);
+          }
+        } else if (key === 'defaultCategory') {
+          if (typeof value !== 'string' || !value) throw fail(400, '请选择已有分类作为默认分类');
+          next[key] = value;
+        } else if (key === 'memoryCategories') {
           if (!Array.isArray(value) || value.some((c) => typeof c !== 'string'))
             throw fail(400, '分类格式错误');
           next[key] = value;
@@ -79,6 +93,12 @@ export function createRoutes({ mutate, body, reply, fail }) {
             }
           }
           next.profile = profile;
+        } else if (key === 'quickAppearance') {
+          try {
+            next.quickAppearance = normalizeQuickAppearance(value);
+          } catch (error) {
+            throw fail(400, error.message);
+          }
         } else if (key === 'appearance' || key === 'layout') {
           try {
             next[key] = key === 'appearance' ? normalizeAppearance(value) : normalizeLayout(value);
@@ -92,6 +112,11 @@ export function createRoutes({ mutate, body, reply, fail }) {
         res,
         200,
         await mutate((d) => {
+          if (
+            next.defaultCategory !== undefined &&
+            !taxonomyItems(d, 'category').some((item) => item.name === next.defaultCategory)
+          )
+            throw fail(409, '默认分类已不存在，请重新选择');
           if (next.profile) {
             const profile = {
               authorName: '我',
@@ -116,6 +141,14 @@ export function createRoutes({ mutate, body, reply, fail }) {
             if (!d.media.some((m) => m.id === b.id && m.purpose === 'background'))
               throw fail(400, '背景图片不存在，请重新选择');
           }
+          if (
+            next.quickAppearance?.background &&
+            !d.media.some(
+              (media) =>
+                media.id === next.quickAppearance.background.id && media.purpose === 'background',
+            )
+          )
+            throw fail(400, '快捷窗口背景图片不存在，请重新选择');
           d.settings.preferences = { ...d.settings.preferences, ...next };
           return d.settings.preferences;
         }),

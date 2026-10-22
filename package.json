@@ -1,6 +1,6 @@
 {
   "name": "diary-desktop-preview",
-  "version": "0.8.1",
+  "version": "0.9.27",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,7 +14,9 @@
     "check:files": "node tools/check-files.mjs",
     "build:launcher": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-launcher.ps1",
     "package:source": "node tools/package-source.mjs",
-    "build:editor": "node tools/build-editor.mjs"
+    "build:editor": "node tools/build-editor.mjs",
+    "build:rich-editor": "node tools/build-rich-editor.mjs",
+    "desktop:control": "node tools/desktop-control.mjs"
   },
   "engines": {
     "node": ">=22.13"
@@ -26,11 +28,22 @@
     "@codemirror/state": "6.7.5",
     "@codemirror/view": "6.43.12",
     "@lezer/highlight": "1.2.3",
+    "@tiptap/core": "3.31.3",
+    "@tiptap/extension-list": "3.31.3",
+    "@tiptap/extension-table": "3.31.3",
+    "@tiptap/markdown": "3.31.3",
+    "@tiptap/pm": "3.31.3",
+    "@tiptap/starter-kit": "3.31.3",
     "esbuild": "0.28.2",
     "eslint": "10.10.0",
+    "fake-indexeddb": "6.2.4",
     "globals": "17.12.0",
     "prettier": "3.9.6",
+    "source-map-js": "1.2.2",
     "turndown": "7.2.4"
   },
-  "description": "拾页：本地日记、旧格式导入与加密备份"
+  "description": "拾页：本地日记、旧格式导入与加密备份",
+  "dependencies": {
+    "jsdom": "30.1.1"
+  }
 }

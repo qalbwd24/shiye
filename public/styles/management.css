@@ -2,6 +2,26 @@
   max-width: 1150px;
   margin: 0 auto;
 }
+.taxonomy-heading {
+  position: sticky;
+  top: -1px;
+  z-index: 2;
+  padding: 12px 0;
+  background: var(--paper);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.taxonomy-heading-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+#taxRows {
+  max-height: min(62dvh, 680px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
 .taxonomy-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(250px, 0.8fr);

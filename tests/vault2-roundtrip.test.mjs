@@ -69,7 +69,18 @@ test('compressed encrypted archive restores multiple chunks; truncated archive c
   };
   await api('/api/preferences', {
     method: 'PUT',
-    data: { appearance, theme: 'dark', layout: { list: true } },
+    data: {
+      appearance,
+      theme: 'dark',
+      layout: { list: true },
+      quickAppearance: {
+        backgroundMode: 'custom',
+        background: appearance.backgrounds[0],
+        inheritTypography: false,
+        fontSize: 14,
+        fontWeight: 600,
+      },
+    },
   });
   const saved = await createBackup(api, 'synthetic-test-backup-123', () => {}),
     raw = await fs.readFile(saved.path);
@@ -79,10 +90,15 @@ test('compressed encrypted archive restores multiple chunks; truncated archive c
       appearance: { accent: '#05a6b2', backgrounds: [] },
       theme: 'light',
       layout: { list: false },
+      quickAppearance: { backgroundMode: 'none' },
     },
   });
   const result = await restoreBackup(api, new Blob([raw]), 'synthetic-test-backup-123', () => {});
   assert.equal((await api('/api/library')).settings.preferences.theme, 'light');
+  assert.equal(
+    (await api('/api/library')).settings.preferences.quickAppearance.backgroundMode,
+    'none',
+  );
   assert.equal(result.entries, 0);
   assert.equal(result.mergedEntries, 1);
   assert.equal(result.mergedMedia, 2);
@@ -119,6 +135,8 @@ test('compressed encrypted archive restores multiple chunks; truncated archive c
   assert.equal(restoredPrefs.theme, 'dark');
   assert.equal(restoredPrefs.layout.list, true);
   assert.equal(restoredPrefs.appearance.backgrounds[0].id, background.id);
+  assert.equal(restoredPrefs.quickAppearance.background.id, background.id);
+  assert.equal(restoredPrefs.quickAppearance.fontWeight, 600);
   assert.equal(
     await (await fetch('/media/' + restoredPrefs.appearance.backgrounds[0].id)).text(),
     'GIF89a-test',
@@ -138,4 +156,14 @@ test('compressed encrypted archive restores multiple chunks; truncated archive c
     bytes,
   );
   assert.notEqual(freshDb.settings.preferences.appearance.backgrounds[0].id, background.id);
+  assert.equal(
+    freshDb.settings.preferences.quickAppearance.background.id,
+    freshDb.settings.preferences.appearance.backgrounds[0].id,
+  );
+  assert.equal(
+    await (
+      await fetch('/media/' + freshDb.settings.preferences.quickAppearance.background.id)
+    ).text(),
+    'GIF89a-test',
+  );
 });

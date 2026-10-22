@@ -10,8 +10,38 @@ tests/ui-test-data/
 *.syvault
 *.syvault2
 *.exe
+*.exe.config
 .env
 .env.*
 !.env.example
 # Historical real-data runs may include machine-specific paths.
 docs/archive/
+
+# Workspace outputs, verification files and local build caches.
+outputs/
+config/deployment.local.json
+config/backend-runtime.local.json
+config/shared-backend.local.json
+tmp/
+previews/telegram-chat/vendor/web-a/dist/
+previews/telegram-chat/vendor/web-a/.cache/
+
+# Release APKs (built artifacts; 0.3.0/0.3.1 even contain private diary images).
+安装包/
+*.apk
+
+# Downloaded / vendored third-party bundles and native binaries.
+# Restore them with the matching tools/*.mjs or build script, never from git.
+*.zip
+*.nupkg
+*.dll
+resources/vendor/
+desktop/vendor/
+runtimes/
+previews/telegram-chat/vendor/
+
+# Machine-specific device and tool paths (template: tools/android-device-debug.example.json).
+tools/android-device-debug.json
+
+# Archived one-off scripts that hardcode personal backup paths.
+tools/manual/archive/

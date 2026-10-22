@@ -1,7 +1,8 @@
 import { ordinal, isHidden } from './entry-state.js';
+import { dateParts } from './time-zone.js';
 export function recall(entries, { date = new Date(), period = 12, categories = [] } = {}) {
-  const target = new Date(date),
-    today = ordinal(target);
+  const target = dateParts(date),
+    today = ordinal(date);
   return entries
     .filter((e) => {
       if (
@@ -11,14 +12,9 @@ export function recall(entries, { date = new Date(), period = 12, categories = [
         (categories.length && !categories.includes(e.category))
       )
         return false;
-      const d = new Date(e.date),
-        months = (target.getFullYear() - d.getFullYear()) * 12 + target.getMonth() - d.getMonth();
-      return (
-        ordinal(d) < today &&
-        d.getDate() === target.getDate() &&
-        months > 0 &&
-        months % period === 0
-      );
+      const d = dateParts(e.date),
+        months = (+target.year - +d.year) * 12 + +target.month - +d.month;
+      return ordinal(e.date) < today && d.day === target.day && months > 0 && months % period === 0;
     })
     .sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
 }

@@ -1,0 +1,9 @@
+{
+  "serial": "<ADB_DEVICE_SERIAL>",
+  "package": "dev.shiye.visualqa",
+  "adb": "<ANDROID_SDK>/platform-tools/adb.exe",
+  "scrcpy": "<SCRCPY_DIR>/scrcpy.exe",
+  "scrcpyVersion": "5.0.1",
+  "archiveSha256": "b12a2c4ee8be317422451fc7dcf8ee20a71b5ea7ef9ad73ddd825a25316227a5",
+  "release": "https://github.com/Genymobile/scrcpy/releases/tag/v5.0.1"
+}
