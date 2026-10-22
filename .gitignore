@@ -45,3 +45,22 @@ tools/android-device-debug.json
 
 # Archived one-off scripts that hardcode personal backup paths.
 tools/manual/archive/
+
+# Internal working notes: kept on disk for day-to-day work, deliberately not published.
+AGENTS.md
+WORKSPACE.md
+docs/validation/
+docs/ACTIVE-SESSION-COORDINATION.md
+docs/DEVELOPMENT-HANDOFF.md
+docs/*HANDOFF*.md
+docs/*CONTINUATION*.md
+docs/*FEEDBACK*.md
+docs/*PROGRESS*.md
+docs/*REPORT*.md
+docs/*AUDIT*.md
+docs/*ACCEPTANCE*.md
+docs/*REGRESSION*.md
+docs/*VISUAL-REVIEW*.md
+docs/ITERATION-*.md
+docs/2026-*.md
+docs/QUICK-CAPTURE-0.9.*.md
